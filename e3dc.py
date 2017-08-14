@@ -1,6 +1,8 @@
 #!/usr/bin/env python
-
 # Python class to connect to an E3/DC system through the internet portal
+#
+# Copyright 2017 Francesco Santini <francesco.santini@gmail.com>
+# Licensed under a MIT license. See LICENSE for details
 
 import requests
 import hashlib
