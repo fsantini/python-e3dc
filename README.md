@@ -48,6 +48,7 @@ Poll returns a dictionary like the following:
 {
 	'consumption': {'battery': 470, 'house': 477, 'wallbox': 0}, # consumption in W. Positive values are exiting the system
 	'production': {'grid': -4, 'solar': 951}, # production in W. Positive values are entering the system
+	'stateOfCharge' : 77, # battery charge status in %
 	'sysStatus': '2623', # status
 	'time': datetime.datetime(2017, 8, 14, 7, 6, 13) # timestamp of the poll
 } 

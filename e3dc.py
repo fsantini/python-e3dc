@@ -105,6 +105,7 @@ class E3DC:
                 {
                     'time': datetime object containing the timestamp
                     'sysStatus': string containing the system status code
+                    'stateOfCharge': battery charge status in %
                     'production': { production values: positive means entering the system
                         'solar' : production from solar in W
                         'grid' : absorption from grid in W
@@ -123,6 +124,7 @@ class E3DC:
         outObj = {
             'time': dateutil.parser.parse(raw['time']),
             'sysStatus': raw['SYSSTATUS'],
+            'stateOfCharge': int(raw['SOC']),
             'production': {
                 'solar' : int(raw["POWER_PV_S1"]) + int(raw["POWER_PV_S2"]) + int(raw["POWER_PV_S3"]),
                 'grid' : int(raw["POWER_LM_L1"]) + int(raw["POWER_LM_L2"]) + int(raw["POWER_LM_L3"])
