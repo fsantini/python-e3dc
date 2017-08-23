@@ -10,6 +10,8 @@ import time
 import dateutil.parser
 import ast
 
+from ._e3dc_rscp import E3DC_RSCP, rscpFindTag
+
 REMOTE_ADDRESS='https://s10.e3dc.com/s10/phpcmd/cmd.php'
 REQUEST_INTERVAL_SEC = 10 # minimum interval between requests
 
@@ -42,6 +44,7 @@ class E3DC:
         self.lastRequestTime = -1
         self.lastRequest = None
         self.connected = False
+        self.rscp = E3DC_RSCP(self.username, self.password, self.serialNumber)
         
     def connect(self):
         """Connects to the E3DC portal and opens a session
@@ -136,3 +139,46 @@ class E3DC:
                 }
             }
         return outObj
+    
+    def poll_switches(keepAlive = False):
+        """
+            This function uses the RSCP interface to poll the switch status
+            if keepAlive is False, the connection is closed afterwards
+        """
+        
+        if not self.rscp.isConnected():
+            self.rscp.connect()
+            
+        switchDesc = self.rscp.sendRequest( ("HA_REQ_DATAPOINT_LIST", "None", None), None, True )
+        switchStatus = self.rscpsendRequest( ("HA_REQ_ACTUATOR_STATES", "None", None), None, True )
+        
+        descList = switchDesc[2] # get the payload of the container
+        statusList = switchStatus[2]
+        
+        switchList = []
+        
+        for switch in range(descList):
+            switchID = rscpFindTag(descList[switch], 'HA_DATAPOINT_INDEX')[2]
+            switchType = rscpFindTag(descList[switch], 'HA_DATAPOINT_TYPE')[2]
+            switchName = rscpFindTag(descList[switch], 'HA_DATAPOINT_NAME')[2]
+            switchStatus = rscpFindTag(statusList[switch], 'HA_DATAPOINT_STATE_VALUE')[2]
+            switchList.append({'id': switchID, 'type': switchType, 'name': switchName, 'status': switchStatus})
+            
+        if not keepAlive:
+            self.rscp.disconnect()
+                               
+    def set_switch_onoff(switchID, value, keepAlive = False):
+        
+        if not self.rscp.isConnected():
+            self.rscp.connect()
+        
+        cmd = "on" if value else "off"
+        
+        result = swlf.rscp.sendRequest( ("HA_REQ_COMMAND_ACTUATOR", "Container", [
+                    ("HA_DATAPOINT_INDEX", "Uint16", switchID),
+                    ("HA_REQ_COMMAND", "CString", cmd)]) , None, True)
+        
+        if not keepAlive:
+            self.rscp.disconnect()
+        
+        
