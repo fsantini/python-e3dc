@@ -8,7 +8,7 @@ import requests
 import hashlib
 import time
 import dateutil.parser
-import ast
+import json
 
 from ._e3dc_rscp import E3DC_RSCP, rscpFindTag
 
@@ -53,10 +53,13 @@ class E3DC:
             e3dc.AuthenticationError: login error
         """
         # login request
-        loginPayload = {'DO' : 'LOGIN', 'USERNAME' : self.username, 'PASSWD' : self.password}
-        r = requests.post(REMOTE_ADDRESS, data=loginPayload)
+        loginPayload = {'DO' : 'LOGIN', 'USERNAME' : self.username, 'PASSWD' : self.password, 'DENV': 'E3DC'}
         
-        jsonResponse = r.json()
+        try:
+            r = requests.post(REMOTE_ADDRESS, data=loginPayload)
+            jsonResponse = r.json()
+        except:
+            raise AuthenticationError("Error communicating with server")
         if jsonResponse['ERRNO'] != 0:
             raise AuthenticationError("Login error")
         
@@ -64,9 +67,13 @@ class E3DC:
         self.jar = r.cookies
         
         # set the proper device
-        deviceSelectPayload = {'DO' : 'GETCONTENT', 'MODID' : 'IDOVERVIEWUNITMAIN', 'ARG0' : self.serialNumber, 'TOS' : -7200}
-        r = requests.post(REMOTE_ADDRESS, data=deviceSelectPayload, cookies = self.jar)
-        jsonResponse = r.json()
+        deviceSelectPayload = {'DO' : 'GETCONTENT', 'MODID' : 'IDOVERVIEWUNITMAIN', 'ARG0' : self.serialNumber, 'TOS' : -7200, 'DENV': 'E3DC'}
+        
+        try:
+            r = requests.post(REMOTE_ADDRESS, data=deviceSelectPayload, cookies = self.jar)
+            jsonResponse = r.json()
+        except:
+            raise AuthenticationError("Error communicating with server")
         if jsonResponse['ERRNO'] != 0:
             raise AuthenticationError("Error selecting device")
         self.connected = True
@@ -82,23 +89,27 @@ class E3DC:
         """
         
         if self.connected == False:
-            raise PollError("Not connected! Call connect first")
+            self.connect()
         
         if self.lastRequest is not None and (time.time() - self.lastRequestTime) < REQUEST_INTERVAL_SEC:
             return lastRequest
         
-        pollPayload = { 'DO' : 'LIVEUNITDATA' }
+        pollPayload = { 'DO' : 'LIVEUNITDATA', 'DENV': 'E3DC' }
         pollHeaders = { 'Pragma' : 'no-cache', 'Cache-Control' : 'no-cache' }
         
-        r = requests.post(REMOTE_ADDRESS, data=pollPayload, cookies = self.jar, headers = pollHeaders)
+        try:
+            r = requests.post(REMOTE_ADDRESS, data=pollPayload, cookies = self.jar, headers = pollHeaders)
+            jsonResponse = r.json()
+        except:
+            self.connected = False
+            raise PollError("Error communicating with server")
         
-        jsonResponse = r.json()
         if jsonResponse['ERRNO'] != 0:
             raise PollError("Error polling: %d" % (jsonResponse['ERRNO']))
         
         self.lastRequest = jsonResponse['CONTENT']
         self.lastRequestTime = time.time()
-        return ast.literal_eval(jsonResponse['CONTENT'])
+        return json.loads(jsonResponse['CONTENT'])
         
     def poll(self):
         """Polls the portal for the current status and returns a digest
@@ -140,7 +151,7 @@ class E3DC:
             }
         return outObj
     
-    def poll_switches(keepAlive = False):
+    def poll_switches(self, keepAlive = False):
         """
             This function uses the RSCP interface to poll the switch status
             if keepAlive is False, the connection is closed afterwards
@@ -150,14 +161,14 @@ class E3DC:
             self.rscp.connect()
             
         switchDesc = self.rscp.sendRequest( ("HA_REQ_DATAPOINT_LIST", "None", None), None, True )
-        switchStatus = self.rscpsendRequest( ("HA_REQ_ACTUATOR_STATES", "None", None), None, True )
+        switchStatus = self.rscp.sendRequest( ("HA_REQ_ACTUATOR_STATES", "None", None), None, True )
         
         descList = switchDesc[2] # get the payload of the container
         statusList = switchStatus[2]
         
         switchList = []
         
-        for switch in range(descList):
+        for switch in range(len(descList)):
             switchID = rscpFindTag(descList[switch], 'HA_DATAPOINT_INDEX')[2]
             switchType = rscpFindTag(descList[switch], 'HA_DATAPOINT_TYPE')[2]
             switchName = rscpFindTag(descList[switch], 'HA_DATAPOINT_NAME')[2]
@@ -166,19 +177,30 @@ class E3DC:
             
         if not keepAlive:
             self.rscp.disconnect()
+        
+        return switchList
                                
-    def set_switch_onoff(switchID, value, keepAlive = False):
+    def set_switch_onoff(self, switchID, value, keepAlive = False):
+        """
+            This function uses the RSCP interface to turn a switch on or off
+            The switchID is as returned by poll_switches
+        """
         
         if not self.rscp.isConnected():
             self.rscp.connect()
         
         cmd = "on" if value else "off"
         
-        result = swlf.rscp.sendRequest( ("HA_REQ_COMMAND_ACTUATOR", "Container", [
+        result = self.rscp.sendRequest( ("HA_REQ_COMMAND_ACTUATOR", "Container", [
                     ("HA_DATAPOINT_INDEX", "Uint16", switchID),
                     ("HA_REQ_COMMAND", "CString", cmd)]) , None, True)
         
         if not keepAlive:
             self.rscp.disconnect()
         
+        
+        if result[0] == "HA_COMMAND_ACTUATOR" and result[2] == True:
+            return True
+        else:
+            return False # operation did not succeed
         

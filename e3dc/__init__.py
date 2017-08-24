@@ -8,6 +8,7 @@
 
 """
 
-from ._e3dc import E3DC
-from ._e3dc_rscp import SocketNotReady, RequestTimeoutError, rscpFindTag
+from ._e3dc import E3DC, AuthenticationError, PollError
+from ._e3dc_rscp import SocketNotReady, RequestTimeoutError
 
+__version__ = "0.1.0"

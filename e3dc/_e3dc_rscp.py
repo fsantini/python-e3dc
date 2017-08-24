@@ -8,12 +8,12 @@ import websocket
 import time
 import struct
 import hashlib
-import thread # TODO: move to threading to make python3 easier
+import threading # TODO: move to threading to make python3 easier
 import tzlocal
 import pytz
 import datetime
 
-import _rscpLib
+import _rscpLib as rscpLib
 
 """
  The connection works the following way: (> outgoing, < incoming)
@@ -265,8 +265,12 @@ class E3DC_RSCP:
         self.ws = websocket.WebSocketApp(REMOTE_ADDRESS, 
                                          on_message = lambda ws, msg: self.on_message(msg),
                                          on_close = lambda ws: self.reset(),
-                                         on_error = lambda ws: self.reset())
-        thread.start_new_thread(self.ws.run_forever, ())
+                                         on_error = lambda ws, msg: self.reset())
+        
+        self.thread = threading.Thread( target = self.ws.run_forever )
+        #thread.start_new_thread(self.ws.run_forever, ())
+        self.thread.start()
+        
         for i in xrange(self.TIMEOUT*10):
             if self.isConnected(): break
             time.sleep(0.1)

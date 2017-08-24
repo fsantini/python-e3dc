@@ -4,7 +4,7 @@
 # Copyright 2017 Francesco Santini <francesco.santini@gmail.com>
 # Licensed under a MIT license. See LICENSE for details
 
-import _rscpTags
+import _rscpTags as rscpTags
 import struct
 import time
 import math
