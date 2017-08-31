@@ -8,9 +8,12 @@ import requests
 import hashlib
 import time
 import dateutil.parser
+import datetime
 import json
 
-from ._e3dc_rscp import E3DC_RSCP, rscpFindTag
+from _e3dc_rscp_web import E3DC_RSCP_web
+from _e3dc_rscp_local import E3DC_RSCP_local 
+from _rscpLib import rscpFindTag
 
 REMOTE_ADDRESS='https://s10.e3dc.com/s10/phpcmd/cmd.php'
 REQUEST_INTERVAL_SEC = 10 # minimum interval between requests
@@ -24,36 +27,64 @@ class PollError(Exception):
 class E3DC:
     """A class describing an E3DC system, used to poll the status from the portal
     """
-    def __init__(self, username, password, serialNumber, isPasswordMd5 = True):
+    
+    CONNECT_LOCAL = 1
+    CONNECT_WEB = 2
+    
+    def __init__(self, connectType, **kwargs):
         """Constructor of a E3DC object (does not connect)
-        
+    
         Args:
-            username (string): the user name to the E3DC portal
-            password (string): the password (as md5 digest by default)
-            serialNumber (string): the serial number of the system to monitor
-            isPasswordMd5 (boolean, optional): indicates whether the password is already md5 digest (recommended, default = True)
+            connectType: CONNECT_LOCAL: use local rscp connection
+                Named args for CONNECT_LOCAL:
+                username (string): username
+                password (string): password (plain text)
+                ipAddress (string): IP address of the E3DC system
+                key (string): encryption key as set in the E3DC settings
+            
+            connectType: CONNECT_WEB: use web connection
+                Named args for CONNECT_WEB:
+                username (string): username
+                password (string): password (plain text or md5 hash)
+                serialNumber (string): the serial number of the system to monitor
+                isPasswordMd5 (boolean, optional): indicates whether the password is already md5 digest (recommended, default = True)
         """
-        self.username = username
-        if isPasswordMd5:
-            self.password = password
-        else:
-            self.password = hashlib.md5(password).hexdigest()
         
-        self.serialNumber = serialNumber
+        self.connectType = connectType
+        self.username = kwargs['username']
+        if connectType == self.CONNECT_LOCAL:
+            self.ip = kwargs['ipAddress']
+            self.key = kwargs['key']
+            self.password = kwargs['password']
+            self.rscp = E3DC_RSCP_local(self.username, self.password, self.ip, self.key)
+            self.poll = self.poll_rscp
+        
+        else:
+            self.serialNumber = kwargs['serialNumber']
+            if 'isPasswordMd5' in kwargs:
+                if kwargs['isPasswordMd5'] == True:
+                    self.password = kwargs['password']
+                else:
+                    self.password = hashlib.md5(kwargs['password']).hexdigest()
+            self.rscp = E3DC_RSCP_web(self.username, self.password, self.serialNumber)
+            self.poll = self.poll_ajax
+        
         self.jar = None
         self.lastRequestTime = -1
         self.lastRequest = None
         self.connected = False
-        self.rscp = E3DC_RSCP(self.username, self.password, self.serialNumber)
         
-    def connect(self):
+    def connect_local(self):
+        pass
+        
+    def connect_web(self):
         """Connects to the E3DC portal and opens a session
         
         Raises:
             e3dc.AuthenticationError: login error
         """
         # login request
-        loginPayload = {'DO' : 'LOGIN', 'USERNAME' : self.username, 'PASSWD' : self.password, 'DENV': 'E3DC'}
+        loginPayload = {'DO' : 'LOGIN', 'USERNAME' : self.username, 'PASSWD' : self.password}
         
         try:
             r = requests.post(REMOTE_ADDRESS, data=loginPayload)
@@ -67,7 +98,7 @@ class E3DC:
         self.jar = r.cookies
         
         # set the proper device
-        deviceSelectPayload = {'DO' : 'GETCONTENT', 'MODID' : 'IDOVERVIEWUNITMAIN', 'ARG0' : self.serialNumber, 'TOS' : -7200, 'DENV': 'E3DC'}
+        deviceSelectPayload = {'DO' : 'GETCONTENT', 'MODID' : 'IDOVERVIEWUNITMAIN', 'ARG0' : self.serialNumber, 'TOS' : -7200}
         
         try:
             r = requests.post(REMOTE_ADDRESS, data=deviceSelectPayload, cookies = self.jar)
@@ -78,7 +109,7 @@ class E3DC:
             raise AuthenticationError("Error selecting device")
         self.connected = True
         
-    def poll_raw(self):
+    def poll_ajax_raw(self):
         """Polls the portal for the current status
         
         Returns:
@@ -89,12 +120,12 @@ class E3DC:
         """
         
         if self.connected == False:
-            self.connect()
+            self.connect_web()
         
         if self.lastRequest is not None and (time.time() - self.lastRequestTime) < REQUEST_INTERVAL_SEC:
             return lastRequest
         
-        pollPayload = { 'DO' : 'LIVEUNITDATA', 'DENV': 'E3DC' }
+        pollPayload = { 'DO' : 'LIVEUNITDATA' }
         pollHeaders = { 'Pragma' : 'no-cache', 'Cache-Control' : 'no-cache' }
         
         try:
@@ -111,7 +142,7 @@ class E3DC:
         self.lastRequestTime = time.time()
         return json.loads(jsonResponse['CONTENT'])
         
-    def poll(self):
+    def poll_ajax(self, **kwargs):
         """Polls the portal for the current status and returns a digest
         
         Returns:
@@ -134,7 +165,7 @@ class E3DC:
         Raises:
             e3dc.PollError in case of problems polling
         """
-        raw = self.poll_raw()
+        raw = self.poll_ajax_raw()
         outObj = {
             'time': dateutil.parser.parse(raw['time']),
             'sysStatus': raw['SYSSTATUS'],
@@ -151,6 +182,47 @@ class E3DC:
             }
         return outObj
     
+    def poll_rscp(self, keepAlive = False):
+        
+        if self.lastRequest is not None and (time.time() - self.lastRequestTime) < REQUEST_INTERVAL_SEC:
+            return lastRequest
+        
+        if not self.rscp.isConnected():
+            self.rscp.connect()
+        
+        ts = self.rscp.sendRequest( ('INFO_REQ_UTC_TIME', 'None', None) )[2]
+        #print time.time()
+        soc = self.rscp.sendRequest( ('EMS_REQ_BAT_SOC', 'None', None) )[2]
+        solar = self.rscp.sendRequest( ('EMS_REQ_POWER_PV', 'None', None) )[2]
+        bat = self.rscp.sendRequest( ('EMS_REQ_POWER_BAT', 'None', None) )[2]
+        #home = self.rscp.sendRequest( ('EMS_REQ_POWER_HOME', 'None', None) )[2]
+        grid = self.rscp.sendRequest( ('EMS_REQ_POWER_GRID', 'None', None) )[2]
+        wb = self.rscp.sendRequest( ('EMS_REQ_POWER_WB_ALL', 'None', None) )[2]
+        
+        home = solar + grid - bat - wb # make balance = 0
+        
+        if not keepAlive:
+            self.rscp.disconnect()
+            
+        outObj = {
+            'time': datetime.datetime.utcfromtimestamp(ts),
+            'sysStatus': 1234,
+            'stateOfCharge': soc,
+            'production': {
+                'solar' : solar,
+                'grid' : grid
+                },
+            'consumption': {
+                'battery': bat,
+                'house': home,
+                'wallbox': wb
+                }
+            }
+            
+        self.lastRequest = outObj
+        self.lastRequestTime = time.time()
+        return outObj
+    
     def poll_switches(self, keepAlive = False):
         """
             This function uses the RSCP interface to poll the switch status
@@ -160,11 +232,13 @@ class E3DC:
         if not self.rscp.isConnected():
             self.rscp.connect()
             
-        switchDesc = self.rscp.sendRequest( ("HA_REQ_DATAPOINT_LIST", "None", None), None, True )
-        switchStatus = self.rscp.sendRequest( ("HA_REQ_ACTUATOR_STATES", "None", None), None, True )
+        switchDesc = self.rscp.sendRequest( ("HA_REQ_DATAPOINT_LIST", "None", None) )
+        switchStatus = self.rscp.sendRequest( ("HA_REQ_ACTUATOR_STATES", "None", None) )
         
         descList = switchDesc[2] # get the payload of the container
         statusList = switchStatus[2]
+        
+        #print switchStatus
         
         switchList = []
         
@@ -172,7 +246,7 @@ class E3DC:
             switchID = rscpFindTag(descList[switch], 'HA_DATAPOINT_INDEX')[2]
             switchType = rscpFindTag(descList[switch], 'HA_DATAPOINT_TYPE')[2]
             switchName = rscpFindTag(descList[switch], 'HA_DATAPOINT_NAME')[2]
-            switchStatus = rscpFindTag(statusList[switch], 'HA_DATAPOINT_STATE_VALUE')[2]
+            switchStatus = rscpFindTag(statusList[switch], 'HA_DATAPOINT_STATE')[2]
             switchList.append({'id': switchID, 'type': switchType, 'name': switchName, 'status': switchStatus})
             
         if not keepAlive:
@@ -193,7 +267,7 @@ class E3DC:
         
         result = self.rscp.sendRequest( ("HA_REQ_COMMAND_ACTUATOR", "Container", [
                     ("HA_DATAPOINT_INDEX", "Uint16", switchID),
-                    ("HA_REQ_COMMAND", "CString", cmd)]) , None, True)
+                    ("HA_REQ_COMMAND", "CString", cmd)]))
         
         if not keepAlive:
             self.rscp.disconnect()
@@ -204,3 +278,5 @@ class E3DC:
         else:
             return False # operation did not succeed
         
+
+    

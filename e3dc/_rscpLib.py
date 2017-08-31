@@ -32,6 +32,17 @@ packFmtDict_VarSize = {
     "Error": "s"
 }
 
+# finds a submessage with a specific tag
+def rscpFindTag(decodedMsg, tag):
+    if decodedMsg[0] == tag:
+        return decodedMsg
+    if isinstance(decodedMsg[2], list):
+        for msg in decodedMsg[2]:
+            msgValue = rscpFindTag(msg, tag)
+            if msgValue is not None:
+                return msgValue
+    return None
+
 # magic and ctrl are endian swapped
 def endianSwapUint16(val):
     return struct.unpack("<H", struct.pack(">H", val))[0]
@@ -96,7 +107,7 @@ def rscpFrame(data):
     frame += struct.pack("<I", crc)
     return frame
 
-def rscpFrameDecode(frameData):
+def rscpFrameDecode(frameData, returnFrameLen = False):
     headerFmt = "<HHIIIH"
     crcFmt = "I"
     crc = None
@@ -107,9 +118,11 @@ def rscpFrameDecode(frameData):
     ctrl = endianSwapUint16(ctrl)
     
     if ctrl & 0x10: # crc enabled
-        data, crc = struct.unpack( "<" + str(length) + "s" + crcFmt, frameData[struct.calcsize(headerFmt):] )
+        totalLen = struct.calcsize(headerFmt) + length + struct.calcsize(crcFmt)
+        data, crc = struct.unpack( "<" + str(length) + "s" + crcFmt, frameData[struct.calcsize(headerFmt):totalLen] )
     else:
-        data = struct.unpack( "<" + str(length) + "s", frameData[struct.calcsize(headerFmt):] )[0]
+        totalLen = struct.calcsize(headerFmt) + length
+        data = struct.unpack( "<" + str(length) + "s", frameData[struct.calcsize(headerFmt):totalLen] )[0]
     
     # check crc
     if crc is not None:
@@ -118,7 +131,10 @@ def rscpFrameDecode(frameData):
             raise FrameError("CRC32 not validated")
     
     timestamp = sec1 + float(ns)/1000
-    return data, timestamp
+    if returnFrameLen:
+        return data, timestamp, totalLen
+    else:
+        return data, timestamp
 
 def rscpDecode(data):
 
@@ -151,7 +167,8 @@ def rscpDecode(data):
     elif strType == "Timestamp":
         fmt = "<iii"
         hiword, loword, ms = struct.unpack(fmt, data[headerSize:headerSize+struct.calcsize(fmt)])
-        t = hiword << 32 + loword + float(ms)*1e-9
+        #t = float((hiword << 32) + loword) + (float(ms)*1e-9) # this should work, but doesn't
+        t = float(hiword + loword) + (float(ms)*1e-9) # this seems to be correct
         return (strTag, strType, t), headerSize+struct.calcsize(fmt)
     elif strType == "None":
         return (strTag, strType, None), headerSize

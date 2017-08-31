@@ -1,48 +1,45 @@
 # python-e3dc
-Python API for querying E3/DC systems through the manufacturer's portal
+Python API for querying E3/DC systems, either through the manufacturer's portal or directly via RSCP connection
 
 This library provides an interface to query an E3/DC solar power management system through the web interface of the manufacturer.
 
-In order to use it you need:
+In order to use it you need (web connection):
 - Your user name
 - Your password
 - The serial number of the system which can be found when logging into the E3/DC webpage:
-![E3/DC screenshot](doc-ima/sn.png)
+  ![E3/DC screenshot](doc-ima/sn.png)
+
+Alternatively, for a local connection, you need:
+- Your user name
+- Your password
+- The IP address of the E3/DC system
+- The encryption key as set under the preferences of the system.
 
 ## Usage
 
-The password is better stored in your script as the md5 hash of the password itself. To calculate it (under Unix) you can use:
-	echo -n <password> | md5sum
-
 An example script using the library is the following:
 ```python
-import e3dc
-import time
-import pprint
+from e3dc import E3DC
 
+TCP_IP = '192.168.1.57'
 USERNAME = 'test@test.com'
-#the following is the md5 hash of the password
-PASSMD5 = '123456789abcdef0123456789abcdef0'
-# alternatively, you can define
-#PASSWORD = 'mypassword'
-SERIALNUMBER = '123456789012'
+PASS = 'MySecurePassword'
+KEY = 'abc123'
+SERIALNUMBER = '1234567890'
 
-e3dcObj = e3dc.E3DC(USERNAME, PASSMD5, SERIALNUMBER)
-# or
-# e3dcObj = e3dc.E3DC(USERNAME, PASSWORD, SERIALNUMBER, False)
+print "web connection"
+e3dc = E3DC(E3DC.CONNECT_WEB, username=USERNAME, password=PASS, serialNumber = SERIALNUMBER, isPasswordMd5=False)
+# connect to the portal and poll the status. This might raise an exception in case of failed login. This operation is performed with Ajax
+print e3dc.poll()
+# Poll the status of the switches using a remote RSCP connection via websockets
+# return value is in the format {'id': switchID, 'type': switchType, 'name': switchName, 'status': switchStatus}
+print e3dc.poll_switches()
 
-# connect to the portal. This might raise an exception in case of failed login. If not called, it will be automatically called by poll()
-e3dcObj.connect()
-
-# print the status every 60 seconds
-for i in range(10):
-    # the poll() method returns a dictionary with the basic status information
-    # for a more detailed view, use the poll_raw() command, which returns the data from the portal "as-is"
-    pprint.pprint(e3dcObj.poll())
-    # the poll_switches method returns a list of smart switches available on the system
-    # return value is in the format {'id': switchID, 'type': switchType, 'name': switchName, 'status': switchStatus}
-    pprint.pprint(e3dcObj.poll_switches())
-    time.sleep(60)
+print "local connection"
+e3dc = E3DC(E3DC.CONNECT_LOCAL, username=USERNAME, password=PASS, ipAddress = TCP_IP, key = KEY)
+# The following connections are performed through the RSCP interface
+print e3dc.poll()
+print e3dc.poll_switches()
 ```
 
 ## poll() return values
@@ -56,27 +53,25 @@ Poll returns a dictionary like the following:
 	'sysStatus': '2623', # status
 	'time': datetime.datetime(2017, 8, 14, 7, 6, 13) # timestamp of the poll
 } 
- ```
- 
- ## setting swiches
- 
- The e3dcObj.set_switch_onoff(switchID, value, keepAlive = False) method sets a smart switch on or off, where value is a boolean and True = on, False = off.
- The switchID is a number returned by the poll_switches method. This method only supports on/off switches and not dimmers or motors.
- 
- ## Note: The RSCP interface
- 
- The power production/consumption status is obtained by the portal through a simple Http request. On the other hand, the switch statuses are obtained and manipulated
- via a more complicated protocol, called by E3/DC RSCP. This protocol is binary and based on websockets.
- 
- The E3DC object automatically connects to the websocket and authenticates. Both the poll_switches and set_switch_onoff methods accept an optional keepAlive parameter.
- 
- If keepAlive is false, the websocket connection is closed after the command. This makes sense because these requests are not meant to be made as often as the status requests,
- however, if keepAlive is True, the connection is left open and kept alive in the background in a separate thread.
- 
- ## Known limitations
- 
- The first obvious limitation of the library is that it does not directly connect to the device, but communicates through the Internet portal. This means that the connection
- is rather slow and Internet connection is required.
- 
- The second limitation concerns the implemented RSCP methods. At the moment, only switch status requests and setting of on/off switches is implemented. I also lack the hardware
- to test different configurations. However, the RSCP protocol is (to my knowledge) fully implemented and it should be easy to extend the requests to other cases.
+```
+
+## Setting swiches
+
+The e3dcObj.set_switch_onoff(switchID, value, keepAlive = False) method sets a smart switch on or off, where value is a boolean and True = on, False = off.
+The switchID is a number returned by the poll_switches method. This method only supports on/off switches and not dimmers or motors.
+
+## Note: The RSCP interface
+
+The switch statuses are obtained and manipulated via a rather complicated protocol, called by E3/DC RSCP. This protocol is binary and based on websockets.
+
+The E3DC object automatically connects to the websocket and authenticates. Both the poll_switches and set_switch_onoff methods accept an optional keepAlive parameter.
+
+If keepAlive is false, the websocket connection is closed after the command. This makes sense because these requests are not meant to be made as often as the status requests, however, if keepAlive is True, the connection is left open and kept alive in the background in a separate thread.
+
+## Known limitations
+
+One limitation of the package concerns the implemented RSCP methods. At the moment, only switch status requests and setting of on/off switches is implemented. I also lack the hardware to test different configurations. However, the RSCP protocol is (to my knowledge) fully implemented and it should be easy to extend the requests to other cases.
+
+# Copyright notice
+
+The Rijndael algorithm comes from the python-cryptoplus package by Philippe Teuwen (https://github.com/doegox/python-cryptoplus) and distributed under a MIT license.
