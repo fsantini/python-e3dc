@@ -31,6 +31,17 @@ class E3DC:
     CONNECT_LOCAL = 1
     CONNECT_WEB = 2
     
+    DAY_MONDAY = 0
+    DAY_TUESDAY = 1
+    DAY_WEDNESDAY = 2
+    DAY_THURSDAY = 3
+    DAY_FRIDAY = 4
+    DAY_SATURDAY = 5
+    DAY_SUNDAY = 6
+    
+    IDLE_TYPE_CHARGE = 0
+    IDLE_TYPE_DISCHARGE = 1
+    
     def __init__(self, connectType, **kwargs):
         """Constructor of a E3DC object (does not connect)
     
@@ -73,6 +84,8 @@ class E3DC:
         self.lastRequestTime = -1
         self.lastRequest = None
         self.connected = False
+        self.idleCharge = None
+        self.idleDischarge = None
         
     def connect_local(self):
         pass
@@ -278,5 +291,135 @@ class E3DC:
         else:
             return False # operation did not succeed
         
+    def sendRequest(self, request, keepAlive = False):
+        if not self.rscp.isConnected():
+            self.rscp.connect()
+                
+        result = self.rscp.sendRequest( request )
+        
+        if not keepAlive:
+            self.rscp.disconnect()
+            
+        return result
+        
+    # initialize lists of idle times. Day 0 is monday!
+    def _initIdleLists(self):
+        idleCharge = []
+        idleDischarge = []
+        for i in range(7):
+            idleCharge.append( { 'start': (None, None), 'end': (None, None), 'active': False } )
+            idleDischarge.append( { 'start': (None, None), 'end': (None, None), 'active': False } )
+        return idleCharge, idleDischarge
+        
+    def get_idle_times(self, keepAlive = False):
+        idleTimesRaw = self.sendRequest(("EMS_REQ_GET_IDLE_PERIODS", "None", None), keepAlive)
+        if idleTimesRaw[0] != "EMS_GET_IDLE_PERIODS":
+            return None, None
+        idleCharge, idleDischarge = self._initIdleLists()
+        # initialize 
+        for period in idleTimesRaw[2]:
+            active = rscpFindTag(period, 'EMS_IDLE_PERIOD_ACTIVE')[2]
+            typ = rscpFindTag(period, 'EMS_IDLE_PERIOD_TYPE')[2]
+            day = rscpFindTag(period, 'EMS_IDLE_PERIOD_DAY')[2]
+            start = rscpFindTag(period, 'EMS_IDLE_PERIOD_START')
+            startHour = rscpFindTag(start, 'EMS_IDLE_PERIOD_HOUR')[2]
+            startMin = rscpFindTag(start, 'EMS_IDLE_PERIOD_MINUTE')[2]
+            end = rscpFindTag(period, 'EMS_IDLE_PERIOD_END')
+            endHour = rscpFindTag(end, 'EMS_IDLE_PERIOD_HOUR')[2]
+            endMin = rscpFindTag(end, 'EMS_IDLE_PERIOD_MINUTE')[2]
+            periodObj = { 'start': (startHour, startMin), 'end': (endHour, endMin), 'active': active }
+            if typ == self.IDLE_TYPE_CHARGE:
+                idleCharge[day] = periodObj
+            else:
+                idleDischarge[day] = periodObj
+                
+        return idleCharge, idleDischarge
+            
+    # set the whole period at once
+    def set_idle_periods(self, idleCharge, idleDischarge, keepAlive = False):
+        periodList = []
+        
+        def appendPeriod(typ, day, period):
+            startHour = period['start'][0]
+            startMin = period['start'][1]
+            endHour = period['end'][0]
+            endMin = period['end'][1]
+            active = period['active']
+            # if any hour is none, set to default
+            if None in [startHour, startMin, endHour, endMin]:
+                startHour = 0
+                startMin = 0
+                endHour = 1
+                endMin = 0
+                active = False
+                
+            periodList.append( ('EMS_IDLE_PERIOD', 'Container', [
+                        ('EMS_IDLE_PERIOD_TYPE', 'UChar8', typ),
+                        ('EMS_IDLE_PERIOD_DAY', 'UChar8', day),
+                        ('EMS_IDLE_PERIOD_ACTIVE', 'Bool', active),
+                        ('EMS_IDLE_PERIOD_START', 'Container', [
+                            ('EMS_IDLE_PERIOD_HOUR', 'UChar8', startHour),
+                            ('EMS_IDLE_PERIOD_MINUTE', 'UChar8', startMin)]),
+                        ('EMS_IDLE_PERIOD_END', 'Container', [
+                            ('EMS_IDLE_PERIOD_HOUR', 'UChar8', endHour),
+                            ('EMS_IDLE_PERIOD_MINUTE', 'UChar8', endMin)])]) )
+                        
+                                
+        
+        for day in range(len(idleCharge)):
+            appendPeriod(self.IDLE_TYPE_CHARGE, day, idleCharge[day])
+        
+        for day in range(len(idleDischarge)):
+            appendPeriod(self.IDLE_TYPE_DISCHARGE, day, idleDischarge[day])
+            
+        result = self.sendRequest( ('EMS_REQ_SET_IDLE_PERIODS', 'Container', periodList), keepAlive )
+        
+        if result[0] != 'EMS_SET_IDLE_PERIODS' or result[2] != 1:
+            return False
+        return True
+            
 
+            
     
+    def set_idle_time(self, typ, day, start, end, active, defer = False, keepAlive = False):
+        """  
+            set a specific idle time.
+            Type: charge/discharge
+            Day: day to set 
+            start: tuple (hour, min)
+            end: tuple (hour, min)
+            if start or end are (None, None), then the times are unchanged
+            active: status of the period
+            defer: controls whether to immediately apply changes or not
+        """
+        if self.idleCharge is None:
+            self.idleCharge, self.idleDischarge = self.get_idle_times( keepAlive or not defer ) # Note: keep this connection alive if explicitly said, 
+                                                                                                # or if not deferred, because then the closing will be done below in set_idle_periods
+                                                                                                
+        if self.idleCharge is None: return False
+    
+        # if day is none, just apply the changes (unless defer is true, which doesn't make sense)
+        if day is not None:
+            if typ == self.IDLE_TYPE_CHARGE:
+                idleList = self.idleCharge
+            else:
+                idleList = self.idleDischarge
+                
+            # if any of the start or end times is none, then only set the active status
+            if None in start + end:
+                idleList[day]['active'] = active
+            else:
+                periodObj = { 'start': start, 'end': end, 'active': active }
+                idleList[day] = periodObj
+            
+        # if we defer apply, then just return. We modified the internal lists
+        if not defer:
+            success = self.set_idle_periods(self.idleCharge, self.idleDischarge, keepAlive)
+            if success:
+                self.idleCharge = None
+                self.idleDischarge = None
+                return True
+            else:
+                return False
+        else:
+            return True
