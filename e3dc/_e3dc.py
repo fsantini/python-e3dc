@@ -423,3 +423,18 @@ class E3DC:
                 return False
         else:
             return True
+        
+    def is_battery_limited(self, keepAlive = False):
+        res = self.sendRequest(("EMS_REQ_GET_POWER_SETTINGS", "None", None), keepAlive)
+        limitsUsed = rscpFindTag(res, "EMS_POWER_LIMITS_USED")
+        if limitsUsed is None: return None
+        return limitsUsed[2]
+        
+    def battery_enable_disable(self, enabled, keepAlive = False):
+        if enabled:
+            res = self.sendRequest(("EMS_REQ_SET_POWER_SETTINGS", "Container", [ ("EMS_POWER_LIMITS_USED", "Bool", False), ("EMS_MAX_DISCHARGE_POWER", "Uint32", 3000), ("EMS_MAX_CHARGE_POWER", "Uint32", 3000) ]), keepAlive = True)
+        else:
+            res = self.sendRequest(("EMS_REQ_SET_POWER_SETTINGS", "Container", [ ("EMS_POWER_LIMITS_USED", "Bool", True), ("EMS_MAX_DISCHARGE_POWER", "Uint32", 0), ("EMS_MAX_CHARGE_POWER", "Uint32", 0) ]), keepAlive = True)
+            
+        # the following check if the battery is limited. If enabled is true, then battery should not be limited, and vice versa. If the following is false, it means failure
+        return self.is_battery_limited(keepAlive = keepAlive) != enabled

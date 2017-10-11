@@ -945,10 +945,16 @@ rscpTags = {
 }
 
 def getHexTag(tag_str):
-    return rscpTags.keys()[rscpTags.values().index(tag_str)]
+    try:
+        return rscpTags.keys()[rscpTags.values().index(tag_str)]
+    except (KeyError):
+        return int(tag_str, 0)
 
 def getTag(tag_hex):
-    return rscpTags[tag_hex]
+    try:
+        return rscpTags[tag_hex]
+    except (KeyError):
+        return hex(tag_hex)
 
 rscpDataTypes = {
 	0x00 : "None",
