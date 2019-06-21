@@ -10,6 +10,7 @@ import time
 import dateutil.parser
 import datetime
 import json
+import uuid
 
 from _e3dc_rscp_web import E3DC_RSCP_web
 from _e3dc_rscp_local import E3DC_RSCP_local 
@@ -81,6 +82,7 @@ class E3DC:
             self.poll = self.poll_ajax
         
         self.jar = None
+        self.guid = "GUID-" + str(uuid.uuid1())
         self.lastRequestTime = -1
         self.lastRequest = None
         self.connected = False
@@ -98,9 +100,10 @@ class E3DC:
         """
         # login request
         loginPayload = {'DO' : 'LOGIN', 'USERNAME' : self.username, 'PASSWD' : self.password}
+        headers = {'Window-Id' : self.guid}
         
         try:
-            r = requests.post(REMOTE_ADDRESS, data=loginPayload)
+            r = requests.post(REMOTE_ADDRESS, data=loginPayload, headers=headers)
             jsonResponse = r.json()
         except:
             raise AuthenticationError("Error communicating with server")
@@ -114,7 +117,7 @@ class E3DC:
         deviceSelectPayload = {'DO' : 'GETCONTENT', 'MODID' : 'IDOVERVIEWUNITMAIN', 'ARG0' : self.serialNumber, 'TOS' : -7200}
         
         try:
-            r = requests.post(REMOTE_ADDRESS, data=deviceSelectPayload, cookies = self.jar)
+            r = requests.post(REMOTE_ADDRESS, data=deviceSelectPayload, cookies = self.jar, headers=headers)
             jsonResponse = r.json()
         except:
             raise AuthenticationError("Error communicating with server")
@@ -139,7 +142,7 @@ class E3DC:
             return lastRequest
         
         pollPayload = { 'DO' : 'LIVEUNITDATA' }
-        pollHeaders = { 'Pragma' : 'no-cache', 'Cache-Control' : 'no-cache' }
+        pollHeaders = { 'Pragma' : 'no-cache', 'Cache-Control' : 'no-store', 'Window-Id' : self.guid }
         
         try:
             r = requests.post(REMOTE_ADDRESS, data=pollPayload, cookies = self.jar, headers = pollHeaders)
