@@ -945,10 +945,10 @@ rscpTags = {
 }
 
 def getHexTag(tag_str):
-    try:
-        return rscpTags.keys()[rscpTags.values().index(tag_str)]
-    except (KeyError):
-        return int(tag_str, 0)
+    for k, v in rscpTags.items():
+        if v == tag_str: return k
+    # key not found
+    return int(tag_str, 0)
 
 def getTag(tag_hex):
     try:
@@ -978,7 +978,9 @@ rscpDataTypes = {
 }
 
 def getHexDatatype(type_str):
-    return rscpDataTypes.keys()[rscpDataTypes.values().index(type_str)]
+    for k,v in rscpDataTypes.items():
+        if v == type_str: return k
+    raise KeyError(type_str)
 
 def getDatatype(type_hex):
     return rscpDataTypes[type_hex]

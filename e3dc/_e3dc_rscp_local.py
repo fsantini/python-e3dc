@@ -5,8 +5,8 @@
 # Licensed under a MIT license. See LICENSE for details
 
 import socket
-from _rscpLib import rscpFrame, rscpEncode, rscpFrameDecode, rscpDecode, rscpFindTag
-from _RSCPEncryptDecrypt import RSCPEncryptDecrypt
+from ._rscpLib import rscpFrame, rscpEncode, rscpFrameDecode, rscpDecode, rscpFindTag
+from ._RSCPEncryptDecrypt import RSCPEncryptDecrypt
 import time
 import datetime
 
@@ -24,10 +24,10 @@ class E3DC_RSCP_local:
     """A class describing an E3DC system, used to poll the status from the portal
     """
     def __init__(self, username, password, ip, key):
-        self.username = username
-        self.password = password
+        self.username = username.encode('utf-8')
+        self.password = password.encode('utf-8')
         self.ip = ip
-        self.key = key
+        self.key = key.encode('utf-8')
         self.socket = None
         self.encdec = None
         self.processedData = None

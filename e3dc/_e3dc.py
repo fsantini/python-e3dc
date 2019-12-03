@@ -12,9 +12,9 @@ import datetime
 import json
 import uuid
 
-from _e3dc_rscp_web import E3DC_RSCP_web
-from _e3dc_rscp_local import E3DC_RSCP_local 
-from _rscpLib import rscpFindTag
+from ._e3dc_rscp_web import E3DC_RSCP_web
+from ._e3dc_rscp_local import E3DC_RSCP_local 
+from ._rscpLib import rscpFindTag
 
 REMOTE_ADDRESS='https://s10.e3dc.com/s10/phpcmd/cmd.php'
 REQUEST_INTERVAL_SEC = 10 # minimum interval between requests
@@ -261,7 +261,7 @@ class E3DC:
         for switch in range(len(descList)):
             switchID = rscpFindTag(descList[switch], 'HA_DATAPOINT_INDEX')[2]
             switchType = rscpFindTag(descList[switch], 'HA_DATAPOINT_TYPE')[2]
-            switchName = rscpFindTag(descList[switch], 'HA_DATAPOINT_NAME')[2]
+            switchName = rscpFindTag(descList[switch], 'HA_DATAPOINT_NAME')[2].decode('utf-8')
             switchStatus = rscpFindTag(statusList[switch], 'HA_DATAPOINT_STATE')[2]
             switchList.append({'id': switchID, 'type': switchType, 'name': switchName, 'status': switchStatus})
             
