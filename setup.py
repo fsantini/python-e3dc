@@ -3,7 +3,7 @@ from setuptools import setup
 VERSION = "0.3.0"
 NAME = "e3dc"
  
-install_requires = ["requests", "websocket", "tzlocal", "pytz", "py3rijndael"]
+install_requires = ["requests", "tzlocal", "pytz", "py3rijndael", "websocket-client", "python-dateutil"]
 
 setup(
     name=NAME,
