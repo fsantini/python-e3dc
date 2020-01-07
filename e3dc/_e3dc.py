@@ -75,9 +75,9 @@ class E3DC:
             self.serialNumber = kwargs['serialNumber']
             if 'isPasswordMd5' in kwargs:
                 if kwargs['isPasswordMd5'] == True:
-                    self.password = kwargs['password']
+                    self.password = kwargs['password'].encode('utf-8')
                 else:
-                    self.password = hashlib.md5(kwargs['password']).hexdigest()
+                    self.password = hashlib.md5(kwargs['password'].encode('utf-8')).hexdigest()
             self.rscp = E3DC_RSCP_web(self.username, self.password, self.serialNumber)
             self.poll = self.poll_ajax
         
@@ -183,7 +183,7 @@ class E3DC:
         """
         raw = self.poll_ajax_raw()
         outObj = {
-            'time': dateutil.parser.parse(raw['time']),
+            'time': dateutil.parser.parse(raw['time']).replace(tzinfo=datetime.timezone.utc).isoformat(),
             'sysStatus': raw['SYSSTATUS'],
             'stateOfCharge': int(raw['SOC']),
             'production': {
@@ -221,7 +221,7 @@ class E3DC:
             self.rscp.disconnect()
             
         outObj = {
-            'time': datetime.datetime.utcfromtimestamp(ts),
+            'time': datetime.datetime.utcfromtimestamp(ts).replace(tzinfo=datetime.timezone.utc).isoformat(),
             'sysStatus': 1234,
             'stateOfCharge': soc,
             'production': {
