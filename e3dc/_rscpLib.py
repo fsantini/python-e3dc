@@ -181,4 +181,11 @@ def rscpDecode(data):
         fmt = "<" + str(length) + packFmtDict_VarSize[strType]
     
     val = struct.unpack(fmt, data[headerSize:headerSize+struct.calcsize(fmt)])[0]
+
+    if strType == 'Error':
+        val = rscpTags.getErrorcode(int.from_bytes(val,"little"))
+    elif isinstance(val, bytes) and strType == "CString":
+        # return string instead of bytes
+        val = val.decode("utf-8")
+    
     return (strTag, strType, val), headerSize+struct.calcsize(fmt)

@@ -1,6 +1,6 @@
 from setuptools import setup
 
-VERSION = "0.3.0"
+VERSION = "0.4.0"
 NAME = "e3dc"
  
 install_requires = ["requests", "tzlocal", "pytz", "py3rijndael", "websocket-client", "python-dateutil"]

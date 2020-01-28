@@ -46,33 +46,42 @@ class E3DC_RSCP_local:
         self.sendRequest(plainMsg) # same as sendRequest but doesn't return a value
         
     def sendRequest(self, plainMsg):
-        self._send(plainMsg)
-        receive = self._receive()
-        if receive[1] == 'Error':
+        try:
+            self._send(plainMsg)
+            receive = self._receive()
+        except:
+            self.disconnect()
             raise CommunicationError
+
+        if receive[1] == 'Error':
+            self.disconnect()
+            if receive[2] == "RSCP_ERR_ACCESS_DENIED":
+                raise RSCPAuthenticationError
+            else:
+                raise CommunicationError(receive[2])
         return receive
         
     def connect(self):
         if self.socket is not None:
             self.disconnect()
-        
-        self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.socket.connect((self.ip, PORT))
-        self.processedData = None
-
+        try:
+            self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            self.socket.settimeout(5)
+            self.socket.connect((self.ip, PORT))
+            self.processedData = None
+        except:
+            self.disconnect()
+            raise CommunicationError
         self.encdec = RSCPEncryptDecrypt(self.key)
 
         decData = self.sendRequest ( ('RSCP_REQ_AUTHENTICATION', 'Container', [
             ('RSCP_AUTHENTICATION_USER', 'CString', self.username),
             ('RSCP_AUTHENTICATION_PASSWORD', 'CString', self.password)]) )
         
-        if decData[1] == 'Error':
-            self.socket.close()
-            raise RSCPAuthenticationError("Invalid username or password")
-        
     def disconnect(self):
-        self.socket.close()
-        self.socket = None
+        if self.socket is not None:
+            self.socket.close()
+            self.socket = None
     
     def isConnected(self):
         return self.socket is not None
