@@ -72,6 +72,7 @@ class E3DC:
             self.password = kwargs['password']
             self.rscp = E3DC_RSCP_local(self.username, self.password, self.ip, self.key)
             self.poll = self.poll_rscp
+            self.serialNumber  = None
         
         else:
             self.serialNumber = kwargs['serialNumber']
@@ -88,8 +89,21 @@ class E3DC:
         self.lastRequestTime = -1
         self.lastRequest = None
         self.connected = False
-        self.idleCharge = None
-        self.idleDischarge = None
+
+        # static values
+        self.deratePercent = None
+        self.deratePower  = None
+        self.installedPeakPower  = None
+        self.installedBatteryCapacity = None
+        self.macAddress = None
+        self.model = None
+        self.maxAcPower  = None
+        self.maxBatChargePower = None
+        self.maxBatDischargePower = None
+        self.startDischargeDefault = None
+        self.pmIndex = None
+
+        self.get_system_info_static(keepAlive=True)
         
     def connect_local(self):
         pass
@@ -499,6 +513,47 @@ class E3DC:
             return False
         return True
 
+    def get_system_info_static(self, keepAlive = False):
+        """Polls the static system info via rscp protocol locally
+        """
+
+        self.deratePercent  = round(self.sendRequest( ('EMS_REQ_DERATE_AT_PERCENT_VALUE', 'None', None), keepAlive = True  )[2] * 100)
+        self.deratePower  = self.sendRequest( ('EMS_REQ_DERATE_AT_POWER_VALUE', 'None', None), keepAlive = True  )[2]
+        self.installedPeakPower  = self.sendRequest( ('EMS_REQ_INSTALLED_PEAK_POWER', 'None', None), keepAlive = True  )[2]
+        self.macAddress = self.sendRequest( ('INFO_REQ_MAC_ADDRESS', 'None', None), keepAlive = True  )[2]
+        self.serialNumber = self.sendRequest( ('INFO_REQ_SERIAL_NUMBER', 'None', None), keepAlive = keepAlive )[2]
+
+        sys_specs = self.sendRequest( ('EMS_REQ_GET_SYS_SPECS', 'None', None))[2]
+        for item in sys_specs:
+            if rscpFindTag(item, 'EMS_SYS_SPEC_NAME')[2] == "installedBatteryCapacity":
+                self.installedBatteryCapacity = rscpFindTag(item, 'EMS_SYS_SPEC_VALUE_INT')[2]
+            elif rscpFindTag(item, 'EMS_SYS_SPEC_NAME')[2] == "maxAcPower":
+                self.maxAcPower = rscpFindTag(item, 'EMS_SYS_SPEC_VALUE_INT')[2]
+            elif rscpFindTag(item, 'EMS_SYS_SPEC_NAME')[2] == "maxBatChargePower":
+                self.maxBatChargePower = rscpFindTag(item, 'EMS_SYS_SPEC_VALUE_INT')[2]
+            elif rscpFindTag(item, 'EMS_SYS_SPEC_NAME')[2] == "maxBatDischargPower":
+                self.maxBatDischargePower = rscpFindTag(item, 'EMS_SYS_SPEC_VALUE_INT')[2]
+
+        if self.serialNumber[4] == "4":
+            self.model = "S10E"
+            self.pmIndex = 0
+        elif self.serialNumber[4] == "5":
+            self.model = "S10mini"
+            self.pmIndex = 6
+        elif self.serialNumber[4] == "6":
+            self.model = "Quattroporte"
+            self.pmIndex = 0 #not validated
+        elif self.serialNumber[4] == "7":
+            self.model = "Pro"
+            self.pmIndex = 0 #not validated
+        else:
+            self.model = "NA"
+            self.pmIndex = 0
+
+        #EMS_REQ_SPECIFICATION_VALUES        
+
+        return True 
+
     def get_system_info(self, keepAlive = False):
         """Polls the system info via rscp protocol locally
         
@@ -507,36 +562,39 @@ class E3DC:
                 {
                     'deratePercent': % of installed peak power the feed in will be derated
                     'deratePower': W at which the feed in will be derated
+                    'installedBatteryCapacity': installed Battery Capacity in W
                     'installedPeakPower': installed peak power in W
+                    'maxAcPower': max AC power
                     'macAddress': the mac address
+                    'maxBatChargePower': max Battery charge power
+                    'maxBatDischargePower': max Battery discharge power
+                    'model': model connected to
                     'online': status if connected to online portal
                     'release': release version
-                    'serial': serial number of the system   
+                    'serial': serial number of the system 
                 }
         """  
         
-        deratePercent  = round(self.sendRequest( ('EMS_REQ_DERATE_AT_PERCENT_VALUE', 'None', None), keepAlive = True  )[2] * 100)
-        deratePower  = self.sendRequest( ('EMS_REQ_DERATE_AT_POWER_VALUE', 'None', None), keepAlive = True  )[2]
-        installedPeakPower  = self.sendRequest( ('EMS_REQ_INSTALLED_PEAK_POWER', 'None', None), keepAlive = True  )[2]
-        macAddress = self.sendRequest( ('INFO_REQ_MAC_ADDRESS', 'None', None), keepAlive = True  )[2]
-        online = self.sendRequest( ('SRV_REQ_IS_ONLINE', 'None', None), keepAlive = True  )[2]
-        serial = self.sendRequest( ('INFO_REQ_SERIAL_NUMBER', 'None', None), keepAlive = True )[2]
+        online = self.sendRequest( ('SRV_REQ_IS_ONLINE', 'None', None), keepAlive = True )[2]
 
         # use keepAlive setting for last request
         sw = self.sendRequest( ('INFO_REQ_SW_RELEASE', 'None', None), keepAlive = keepAlive  )[2]
-
-        #EMS_REQ_GET_SYS_SPECS
-        #EMS_REQ_SPECIFICATION_VALUES        
+  
         #EMS_EMERGENCY_POWER_STATUS
-
-        outObj = {
-            'deratePercent': deratePercent,
-            'deratePower': deratePower,
-            'installedPeakPower': installedPeakPower,
-            'macAddress': macAddress,
+       
+        outObj ={
+            'deratePercent': self.deratePercent,
+            'deratePower': self.deratePower,
+            'installedBatteryCapacity': self.installedBatteryCapacity,
+            'installedPeakPower': self.installedPeakPower,
+            'maxAcPower': self.maxAcPower,
+            'macAddress': self.macAddress,
+            'maxBatChargePower': self.maxBatChargePower,
+            'maxBatDischargePower': self.maxBatDischargePower,
+            'model': self.model,
             'online': online,
             'release': sw,
-            'serial': serial
+            'serial': self.serialNumber
             }
         return outObj        
 
@@ -708,6 +766,45 @@ class E3DC:
             }
         return outObj
 
+    def get_power_data(self, keepAlive = False):
+        """Polls the inverter data via rscp protocol locally
+        
+        Returns:
+            Dictionary containing the pvi data structured as follows:
+                {
+                    'acApparentPower': ac apparent power
+                    'acCurrent': ac current
+                    'acEnergyAll': ac energy all
+                    'acPower': ac power
+                    'acReactivePower': ac reactive power
+                    'acVoltage': ac voltage
+                    'dcCurrent': dc current
+                    'dcPower': dc power
+                    'dcVoltage': dc voltage
+                    'deviceConnected': boolean if pvi is connected
+                    'deviceInService': boolean if pvi is in service
+                    'deviceWorking': boolean if pvi is working
+                    'lastError': last error
+                    'temperature': temperature
+                }
+        """  
+        res = self.sendRequest( ('PM_REQ_DATA', 'Container', [ ('PM_INDEX', 'Uint16', self.pmIndex), ('PM_REQ_POWER_L1', 'None', None), ('PM_REQ_POWER_L2', 'None', None), ('PM_REQ_POWER_L3', 'None', None), ('PM_REQ_MAX_PHASE_POWER', 'None', None)]))
+        powerL1 = rscpFindTag(res, 'PM_POWER_L1')[2]
+        powerL2 = rscpFindTag(res, 'PM_POWER_L2')[2]
+        powerL3 = rscpFindTag(res, 'PM_POWER_L3')[2]
+        maxPhasePower = rscpFindTag(res, 'PM_MAX_PHASE_POWER')[2]
+
+        outObj = {
+            'power': {
+                'L1': powerL1,
+                'L2': powerL2,
+                'L3': powerL3
+            },
+            'maxPhasePower': maxPhasePower
+            }
+        return outObj
+
+
     def get_power_settings(self, keepAlive = False):
         """  
             Get Power Settings
@@ -746,7 +843,7 @@ class E3DC:
         return outObj
 
         
-    def set_power_limits(self, enable, max_charge = 3000, max_discharge = 3000, discharge_start = 65, keepAlive = False):
+    def set_power_limits(self, enable, max_charge = None, max_discharge = None, discharge_start = None, keepAlive = False):
         """  
             Setting the SmartPower power limits
             Input:
@@ -759,6 +856,16 @@ class E3DC:
                 -1 if error
                 1 if one value is nonoptimal
         """
+
+        if max_charge is None:
+            max_charge = self.maxBatChargePower
+
+        if max_discharge is None:
+            max_discharge = self.maxBatDischargePower
+
+        if discharge_start is None:
+            discharge_start = self.startDischargeDefault
+
         if enable:
             res = self.sendRequest(("EMS_REQ_SET_POWER_SETTINGS", "Container", [ ("EMS_POWER_LIMITS_USED", "Bool", True), ("EMS_MAX_DISCHARGE_POWER", "Uint32", max_discharge), ("EMS_MAX_CHARGE_POWER", "Uint32", max_charge), ("EMS_DISCHARGE_START_POWER", "Uint32", discharge_start) ]), keepAlive = keepAlive)
         else:
