@@ -1,6 +1,6 @@
 # python-e3dc
 
-**NOTE: This branch is deprecated and will soon be replaced by the python3 branch which has a slightly different API**
+**NOTE: This branch is now for python3 and it has a different API than the old python2.7**
 
 Python API for querying E3/DC systems, either through the manufacturer's portal or directly via RSCP connection
 
