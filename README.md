@@ -1,4 +1,7 @@
 # python-e3dc
+
+**NOTE: This branch is now for python3 and it has a different API than the old python2.7**
+
 Python API for querying E3/DC systems, either through the manufacturer's portal or directly via RSCP connection
 
 This library provides an interface to query an E3/DC solar power management system through the web interface of the manufacturer.
