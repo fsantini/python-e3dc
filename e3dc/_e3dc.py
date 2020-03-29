@@ -285,7 +285,7 @@ class E3DC:
         for switch in range(len(descList)):
             switchID = rscpFindTag(descList[switch], 'HA_DATAPOINT_INDEX')[2]
             switchType = rscpFindTag(descList[switch], 'HA_DATAPOINT_TYPE')[2]
-            switchName = rscpFindTag(descList[switch], 'HA_DATAPOINT_NAME')[2].decode('utf-8')
+            switchName = rscpFindTag(descList[switch], 'HA_DATAPOINT_NAME')[2]
             switchStatus = rscpFindTag(statusList[switch], 'HA_DATAPOINT_STATE')[2]
             switchList.append({'id': switchID, 'type': switchType, 'name': switchName, 'status': switchStatus})
         
@@ -410,9 +410,26 @@ class E3DC:
         """ set via rscp protocol the idle periods
         
         Inputs:
-            idelPeriods: Dictionary containing one or many idle periods
+            idlePeriods: Dictionary containing one or many idle periods
                 {
                     'idleCharge': list of the idle charge times
+                    [
+                        {
+                            'day': the week day from 0 to 6
+                            'start': list of start time
+                            [
+                                int: hour from 0 to 23
+                                int: minute from 0 to 59
+                            ]
+                            'end': list of end time
+                            [
+                                int: hour from 0 to 23
+                                int: minute from 0 to 59
+                            [
+                            'active': boolean of state
+                        }
+                    ],
+                    'idleDischarge': list of the idle discharge times
                     [
                         {
                             'day': the week day from 0 to 6
@@ -715,10 +732,10 @@ class E3DC:
                 Dictionary containing the condensed status information structured as follows:
                {
                 'discharge_start_power': minimum power requested to enable discharge
-                'max_charge_power': maximum charge power dependent on E3DC model
-                'max_discharge_power': maximum discharge power dependent on E3DC model
+                'maxChargePower': maximum charge power dependent on E3DC model
+                'maxDischargePower': maximum discharge power dependent on E3DC model
                 'powerSaveEnabled': status if power save is enabled
-                'power_limits_used': status if power limites are enabled
+                'powerLimitsUsed': status if power limites are enabled
                 'weatherForecastMode': Weather Forcast Mode
                 'weatherRegulatedChargeEnabled': status if weather regulated charge is enabled
                } 
