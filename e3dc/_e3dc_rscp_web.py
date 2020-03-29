@@ -13,7 +13,7 @@ import tzlocal
 import pytz
 import datetime
 
-import _rscpLib as rscpLib
+from . import _rscpLib as rscpLib
 
 """
  The connection works the following way: (> outgoing, < incoming)
@@ -247,7 +247,7 @@ class E3DC_RSCP_web:
         self.ws.send(outerFrame,  websocket.ABNF.OPCODE_BINARY)
         
         if synchronous == True:
-            for i in xrange(self.TIMEOUT*10):
+            for i in range(self.TIMEOUT*10):
                 if self.responseCallbackCalled: break
                 time.sleep(0.1)
             if not self.responseCallbackCalled: raise RequestTimeoutError
@@ -269,7 +269,7 @@ class E3DC_RSCP_web:
         #thread.start_new_thread(self.ws.run_forever, ())
         self.thread.start()
         
-        for i in xrange(self.TIMEOUT*10):
+        for i in range(self.TIMEOUT*10):
             if self.isConnected(): break
             time.sleep(0.1)
         if not self.isConnected(): raise RequestTimeoutError

@@ -4,7 +4,7 @@
 # Copyright 2017 Francesco Santini <francesco.santini@gmail.com>
 # Licensed under a MIT license. See LICENSE for details
 
-import _rscpTags as rscpTags
+from . import _rscpTags as rscpTags
 import struct
 import time
 import math
@@ -61,6 +61,9 @@ def rscpEncode(tagStr, typeStr = None, data = None):
         
     tagHex = rscpTags.getHexTag(tagStr)
     typeHex = rscpTags.getHexDatatype(typeStr)
+    
+    if type(data) is str:
+        data = data.encode('utf-8')
     
     packFmt = "<IBH" # format of header: little-endian, Uint32 tag, Uint8 type, Uint16 length
     headerLen = struct.calcsize(packFmt)
@@ -178,4 +181,11 @@ def rscpDecode(data):
         fmt = "<" + str(length) + packFmtDict_VarSize[strType]
     
     val = struct.unpack(fmt, data[headerSize:headerSize+struct.calcsize(fmt)])[0]
+
+    if strType == 'Error':
+        val = rscpTags.getErrorcode(int.from_bytes(val,"little"))
+    elif isinstance(val, bytes) and strType == "CString":
+        # return string instead of bytes
+        val = val.decode("utf-8")
+    
     return (strTag, strType, val), headerSize+struct.calcsize(fmt)

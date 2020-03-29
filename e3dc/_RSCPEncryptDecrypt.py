@@ -1,4 +1,5 @@
-from CryptoPlus.Cipher import python_Rijndael
+from py3rijndael import RijndaelCbc, ZeroPadding
+
 import math
 
 KEY_SIZE = 32
@@ -12,7 +13,7 @@ def zeroPad_multiple(string, value):
     if l % value == 0:
         return string
     newL = int(value * math.ceil(float(l)/value))
-    return string.ljust(newL, '\x00')
+    return string.ljust(newL, b'\x00')
 
 def truncate_multiple(string, value):
     l = len(string)
@@ -26,15 +27,15 @@ class RSCPEncryptDecrypt:
         if len(key) > KEY_SIZE:
             raise ParameterError("Key must be <%d bytes" % (KEY_SIZE))
         
-        self.key = key.ljust(KEY_SIZE,'\xff')
-        self.encryptIV = '\xff' * BLOCK_SIZE
-        self.decryptIV = '\xff' * BLOCK_SIZE
-        self.remainingData = ''
-        self.oldDecrypt = ''
+        self.key = key.ljust(KEY_SIZE,b'\xff')
+        self.encryptIV = b'\xff' * BLOCK_SIZE
+        self.decryptIV = b'\xff' * BLOCK_SIZE
+        self.remainingData = b''
+        self.oldDecrypt = b''
         
     def encrypt(self, plainText):
-        encryptor = python_Rijndael.new(self.key, python_Rijndael.MODE_CBC, self.encryptIV, blocksize = BLOCK_SIZE)
-        encText = encryptor.encrypt(zeroPad_multiple(plainText, BLOCK_SIZE))
+        encryptor = RijndaelCbc(self.key, self.encryptIV, padding=ZeroPadding(BLOCK_SIZE), block_size = BLOCK_SIZE)
+        encText = encryptor.encrypt( plainText )
         self.encryptIV = encText[-BLOCK_SIZE:]
         return encText
         
@@ -52,23 +53,23 @@ class RSCPEncryptDecrypt:
             previouslyProcessedData = int(BLOCK_SIZE * math.ceil(previouslyProcessedData/BLOCK_SIZE))
             
         remainingData = self.oldDecrypt[previouslyProcessedData:]
-        if self.oldDecrypt != '':
+        if self.oldDecrypt != b'':
             self.decryptIV = self.oldDecrypt[previouslyProcessedData - BLOCK_SIZE:previouslyProcessedData]
         
         self.oldDecrypt = encText # save current block
         
         toDecrypt = truncate_multiple(remainingData + encText, BLOCK_SIZE)
-        decryptor = python_Rijndael.new(self.key, python_Rijndael.MODE_CBC, self.decryptIV, blocksize = BLOCK_SIZE)
-        return decryptor.decrypt(toDecrypt).rstrip('\x00')
+        decryptor = RijndaelCbc(self.key, self.decryptIV, padding=ZeroPadding(BLOCK_SIZE), block_size = BLOCK_SIZE)
+        return decryptor.decrypt(toDecrypt)
                                         
         
 if __name__ == '__main__':
-    ed = RSCPEncryptDecrypt("love")
-    enc = ed.encrypt("hello")
-    print (enc,)
+    ed = RSCPEncryptDecrypt(b"love")
+    enc = ed.encrypt(b"hello")
+    print(enc)
     dec = ed.decrypt(enc)
-    print (dec,)
-    enc2 = ed.encrypt("hello")
-    print (enc2,)
+    print(dec)
+    enc2 = ed.encrypt(b"hello")
+    print(enc2)
     dec2 = ed.decrypt(enc2)
-    print (dec2,)
+    print(dec2)
