@@ -78,13 +78,14 @@ class E3DC_RSCP_web:
             serialNumber (string): the serial number of the system to monitor
             isPasswordMd5 (boolean, optional): indicates whether the password is already md5 digest (recommended, default = True)
         """
-        self.username = username
+        self.username = username.encode('utf-8')
+        self.password = password.encode('utf-8')
         if isPasswordMd5:
             self.password = password
         else:
             self.password = hashlib.md5(password).hexdigest()
         
-        self.serialNumber = serialNumber
+        self.serialNumber = serialNumber.encode('utf-8')
         self.reset()
         
     def reset(self):
@@ -103,17 +104,18 @@ class E3DC_RSCP_web:
         virtualConn = rscpLib.rscpFrame(rscpLib.rscpEncode("SERVER_REQ_NEW_VIRTUAL_CONNECTION", "Container", [
                                                         ("SERVER_USER", "CString", self.username),
                                                         ("SERVER_PASSWD", "CString", self.password),
-                                                        ("SERVER_IDENTIFIER", "CString", "S10-" + self.serialNumber),
+                                                        ("SERVER_IDENTIFIER", "CString", b'S10-' + self.serialNumber),
                                                         ("SERVER_TYPE", "Int32", 4),
                                                         ("SERVER_HASH_CODE", "Int32", 1234567890)]))
 
-        #print "--------------------- Sending virtual conn"
+        #print("--------------------- Sending virtual conn")
         self.ws.send(virtualConn,  websocket.ABNF.OPCODE_BINARY)
         
     
     def respondToINFORequest(self, decoded):
         TIMEZONE_STR, utcDiffS = calcTimeZone()
         tag = decoded[0]
+        #print(tag)
         if tag == 'INFO_REQ_IP_ADDRESS':
             return rscpLib.rscpEncode("INFO_IP_ADDRESS", "CString","0.0.0.0")
         elif tag == "INFO_REQ_SUBNET_MASK":
@@ -134,7 +136,7 @@ class E3DC_RSCP_web:
             return rscpLib.rscpEncode("INFO_A35_SERIAL_NUMBER", "CString","123456")
         elif tag == "INFO_REQ_INFO":
             return rscpLib.rscpEncode("INFO_INFO", "Container",
-                                    [("INFO_SERIAL_NUMBER","CString","WEB_" + hashlib.md5(self.username+str(self.conId)).hexdigest()),
+                                    [("INFO_SERIAL_NUMBER","CString","WEB_" + hashlib.md5(self.username+bytes(self.conId)).hexdigest()),
                                     ("INFO_PRODUCTION_DATE","CString","570412800000"), 
                                     ("INFO_MAC_ADDRESS","CString","00:00:00:00:00:00")])
         elif tag == "INFO_SERIAL_NUMBER":
@@ -173,7 +175,7 @@ class E3DC_RSCP_web:
         elif decodedMsg[0] == 'SERVER_REQ_RSCP_CMD':
             thisConId = rscpLib.rscpFindTag(decodedMsg, 'SERVER_CONNECTION_ID')[2]
             data = rscpLib.rscpFrameDecode( rscpLib.rscpFindTag(decodedMsg, 'SERVER_RSCP_DATA')[2] )[0]
-            response = ''
+            response = b''
             self.responseCallbackCalled = False
             while len(data) > 0:
                 decoded, l = rscpLib.rscpDecode(data)
@@ -185,8 +187,9 @@ class E3DC_RSCP_web:
                     if self.responseCallback is not None:
                         self.responseCallback(decoded) # !!! Important!!! This is where the callback is called with the decoded inner frame
                         self.responseCallbackCalled = True
-                    responseChunk = ''
+                    responseChunk = b''
                         
+                if type(responseChunk) is str: responseChunk = responseChunk.encode('utf-8')
                 response += responseChunk
             if self.responseCallbackCalled: self.responseCallback = None # unregister the callback. Good idea??
             if len(response) == 0: return # do not send an empty response

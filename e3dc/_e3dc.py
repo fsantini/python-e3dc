@@ -78,7 +78,7 @@ class E3DC:
             self.serialNumber = kwargs['serialNumber']
             if 'isPasswordMd5' in kwargs:
                 if kwargs['isPasswordMd5'] == True:
-                    self.password = kwargs['password'].encode('utf-8')
+                    self.password = kwargs['password']
                 else:
                     self.password = hashlib.md5(kwargs['password'].encode('utf-8')).hexdigest()
             self.rscp = E3DC_RSCP_web(self.username, self.password, self.serialNumber)
@@ -140,7 +140,7 @@ class E3DC:
         if jsonResponse['ERRNO'] != 0:
             raise AuthenticationError("Error selecting device")
         self.connected = True
-        
+                
     def poll_ajax_raw(self):
         """Polls the portal for the current status
         
@@ -538,7 +538,8 @@ class E3DC:
         self.deratePower  = self.sendRequest( ('EMS_REQ_DERATE_AT_POWER_VALUE', 'None', None), keepAlive = True  )[2]
         self.installedPeakPower  = self.sendRequest( ('EMS_REQ_INSTALLED_PEAK_POWER', 'None', None), keepAlive = True  )[2]
         self.macAddress = self.sendRequest( ('INFO_REQ_MAC_ADDRESS', 'None', None), keepAlive = True  )[2]
-        self.serialNumber = self.sendRequest( ('INFO_REQ_SERIAL_NUMBER', 'None', None), keepAlive = keepAlive )[2]
+        if not self.serialNumber: # do not send this for a web connection because it screws up the handshake!
+            self.serialNumber = self.sendRequest( ('INFO_REQ_SERIAL_NUMBER', 'None', None), keepAlive = keepAlive )[2]
 
         sys_specs = self.sendRequest( ('EMS_REQ_GET_SYS_SPECS', 'None', None))[2]
         for item in sys_specs:
