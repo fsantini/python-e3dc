@@ -530,20 +530,26 @@ class E3DC:
             return False
         return True
 
-    def getDBData(self, year: int = None, month: int = None, day: int = None, keepAlive = False):
-        """Reads DB data and summed up values for the given timespan via rscp protocol locally
+   def get_db_data(self, year: int = None, month: int = None, day: int = None, keepAlive=False):
+        """
+            Reads DB data and summed up values for the given timespan via rscp protocol locally
+            All parameters are optional, but if none is given, the db data for today is retrieved
+            Example call for yearly sum up
+                yearProduction = [(key, typ, value) for key, typ, value in  (get_db_data(year=2020, keepAlive=True))[2][0][2] if key == 'DB_DC_POWER'][0][2]
 
                 Returns:
-                   Dictionary containing the db information as returned by the portal
+                   Dictionary containing the db information in raw format as returned by the portal
         """
+
         startDate: int
         span: int
-        request: str
+        dbRequest: str
 
-        if day: 
-            span = 60 * 60 * 24    # one day
+        if day:
+            # one day
+            span = 60 * 60 * 24
             startDate = int(time.mktime(datetime.date(year, month, day).timetuple()))
-            request = 'DB_REQ_HISTORY_DATA_DAY'
+            dbRequest = 'DB_REQ_HISTORY_DATA_DAY'
         elif month:
             requestDate = datetime.date(year, month, 1)
             if 12 == month:
@@ -551,24 +557,20 @@ class E3DC:
             else:
                 delta = requestDate.replace(month=month + 1)
             span = int(time.mktime(delta.timetuple()) - time.mktime(requestDate.timetuple()))
-            startDate = int(time.mktime(datetime.date(year, month, 1).timetuple()))
-            request = 'DB_REQ_HISTORY_DATA_MONTH'
+            startDate = int(time.mktime(requestDate.timetuple()))
+            dbRequest = 'DB_REQ_HISTORY_DATA_MONTH'
         elif year:
             requestDate = datetime.date(year, 1, 1)
             span = int(time.mktime(datetime.date(year + 1, 1, 1).timetuple()) - time.mktime(requestDate.timetuple()))
-            startDate = int(time.mktime(datetime.date(year, 1, 1).timetuple()))
-            request = 'DB_REQ_HISTORY_DATA_YEAR'
+            startDate = int(time.mktime(requestDate.timetuple()))
+            dbRequest = 'DB_REQ_HISTORY_DATA_YEAR'
         else:  # today
-            span = 60 * 60 * 24   # one day
-            # dates are in UTC, so to get accurate data for today 
-            if datetime.datetime.utcnow() > datetime.datetime.now():
-                UTC_OFFSET_TIMEDELTA = datetime.utcnow() - datetime.now()
-            else:
-                UTC_OFFSET_TIMEDELTA = datetime.datetime.now() - datetime.datetime.utcnow()
-            startDate = int(time.mktime((datetime.date.today()).timetuple()) - round(UTC_OFFSET_TIMEDELTA.seconds / 10) * 10)
-            request = 'DB_REQ_HISTORY_DATA_DAY'
-
-        return self.sendRequest((request, 'Container', [
+            # one day
+            span = 60 * 60 * 24
+            today = datetime.date.today()
+            startDate = int(time.mktime(datetime.date(today.year, today.month, today.day).timetuple()))
+            dbRequest = 'DB_REQ_HISTORY_DATA_DAY'
+        return self.sendRequest((dbRequest, 'Container', [
             ('DB_REQ_HISTORY_TIME_START', 'Uint64', startDate),
             ('DB_REQ_HISTORY_TIME_INTERVAL', 'Uint64', 0),
             ('DB_REQ_HISTORY_TIME_SPAN', 'Uint64', span)]), keepAlive=True)
