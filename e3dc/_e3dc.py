@@ -530,7 +530,7 @@ class E3DC:
             return False
         return True
 
-   def get_db_data(self, year: int = None, month: int = None, day: int = None, keepAlive=False):
+    def get_db_data(self, year: int = None, month: int = None, day: int = None, keepAlive=False):
         """
             Reads DB data and summed up values for the given timespan via rscp protocol locally
             All parameters are optional, but if none is given, the db data for today is retrieved
