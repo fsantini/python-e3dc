@@ -530,50 +530,65 @@ class E3DC:
             return False
         return True
 
-    def get_db_data(self, year: int = None, month: int = None, day: int = None, keepAlive=False):
+    def get_db_data(self, startDate: datetime.date = None, timespan: str = 'DAY', keepAlive=False):
         """
             Reads DB data and summed up values for the given timespan via rscp protocol locally
             All parameters are optional, but if none is given, the db data for today is retrieved
-            Example call for yearly sum up
-                yearProduction = [(key, typ, value) for key, typ, value in  (get_db_data(year=2020, keepAlive=True))[2][0][2] if key == 'DB_DC_POWER'][0][2]
+            Possible values for timespan are 'YEAR', 'MONTH' or 'DAY'
 
-                Returns:
-                   Dictionary containing the db information in raw format as returned by the portal
+            Returns:
+                Dictionary containing the stored db information structured as follows:
+
+                {
+                'bat_power_in': power entering battery, charging
+                'bat_power_out': power leavinb battery, discharging
+                'solarProduction': power production
+                'grid_power_in': power taken from the grid
+                'grid_power_out': power into the grid
+                'consumption':  self consumed power
+                'stateOfCharge': battery charge level in %
+                'consumed_production':  power directly consumed in %
+                'autarky':  autarky in the period in %
+                }
         """
 
-        startDate: int
-        span: int
-        dbRequest: str
+        span: int = 0
+        if startDate is None:
+            startDate = datetime.date.today()
+        requestDate: int = int(time.mktime(startDate.timetuple()))
 
-        if day:
-            # one day
-            span = 60 * 60 * 24
-            startDate = int(time.mktime(datetime.date(year, month, day).timetuple()))
-            dbRequest = 'DB_REQ_HISTORY_DATA_DAY'
-        elif month:
-            requestDate = datetime.date(year, month, 1)
-            if 12 == month:
-                delta = requestDate.replace(month=1, year=year + 1)
+        if 'YEAR' == timespan:
+            spanDate = startDate.replace(year=startDate.year + 1)
+            span = int(time.mktime(spanDate.timetuple()) - requestDate)
+        if 'MONTH' == timespan:
+            if (12 == startDate.month):
+                spanDate = startDate.replace(month=1, year=startDate.year + 1)
             else:
-                delta = requestDate.replace(month=month + 1)
-            span = int(time.mktime(delta.timetuple()) - time.mktime(requestDate.timetuple()))
-            startDate = int(time.mktime(requestDate.timetuple()))
-            dbRequest = 'DB_REQ_HISTORY_DATA_MONTH'
-        elif year:
-            requestDate = datetime.date(year, 1, 1)
-            span = int(time.mktime(datetime.date(year + 1, 1, 1).timetuple()) - time.mktime(requestDate.timetuple()))
-            startDate = int(time.mktime(requestDate.timetuple()))
-            dbRequest = 'DB_REQ_HISTORY_DATA_YEAR'
-        else:  # today
-            # one day
-            span = 60 * 60 * 24
-            today = datetime.date.today()
-            startDate = int(time.mktime(datetime.date(today.year, today.month, today.day).timetuple()))
-            dbRequest = 'DB_REQ_HISTORY_DATA_DAY'
-        return self.sendRequest((dbRequest, 'Container', [
-            ('DB_REQ_HISTORY_TIME_START', 'Uint64', startDate),
+                spanDate = startDate.replace(month=startDate.month + 1)
+            span = int(time.mktime(spanDate.timetuple()) - requestDate)
+        if 'DAY' == timespan:
+            span = 24 * 60 * 60
+
+        if span == 0:
+            return None
+
+        response = self.sendRequest(('DB_REQ_HISTORY_DATA_DAY', 'Container', [
+            ('DB_REQ_HISTORY_TIME_START', 'Uint64', requestDate),
             ('DB_REQ_HISTORY_TIME_INTERVAL', 'Uint64', 0),
-            ('DB_REQ_HISTORY_TIME_SPAN', 'Uint64', span)]), keepAlive=True)
+            ('DB_REQ_HISTORY_TIME_SPAN', 'Uint64', span)]), keepAlive=keepAlive)
+
+        outObj = {
+            'bat_power_in': rscpFindTag(response[2][0], 'DB_BAT_POWER_IN')[2],
+            'bat_power_out': rscpFindTag(response[2][0], 'DB_BAT_POWER_OUT')[2],
+            'solarProduction': rscpFindTag(response[2][0], 'DB_DC_POWER')[2],
+            'grid_power_in': rscpFindTag(response[2][0], 'DB_GRID_POWER_IN')[2],
+            'grid_power_out': rscpFindTag(response[2][0], 'DB_GRID_POWER_OUT')[2],
+            'consumption': rscpFindTag(response[2][0], 'DB_CONSUMPTION')[2],
+            'stateOfCharge': rscpFindTag(response[2][0], 'DB_BAT_CHARGE_LEVEL')[2],
+            'consumed_production': rscpFindTag(response[2][0], 'DB_CONSUMED_PRODUCTION')[2],
+            'autarky': rscpFindTag(response[2][0], 'DB_AUTARKY')[2]
+        }
+        return outObj
 
     def get_system_info_static(self, keepAlive = False):
         """Polls the static system info via rscp protocol locally
