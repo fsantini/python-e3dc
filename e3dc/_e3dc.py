@@ -676,7 +676,7 @@ class E3DC:
             }
         return outObj        
 
-    def get_battery_data(self, keepAlive = False):
+    def get_battery_data(self, keepAlive = False, batIndex = 0):
         """Polls the baterry data via rscp protocol locally
         
         Returns:
@@ -705,7 +705,7 @@ class E3DC:
         """  
 
         req = self.sendRequest( ('BAT_REQ_DATA', 'Container', [ 
-            ('BAT_INDEX', 'Uint16', 0), 
+            ('BAT_INDEX', 'Uint16', batIndex), 
             ('BAT_REQ_DEVICE_STATE', 'None', None), 
             ('BAT_REQ_MAX_DCB_CELL_TEMPERATURE', 'None', None),
             ('BAT_REQ_MODULE_VOLTAGE', 'None', None), 
