@@ -66,22 +66,22 @@ class E3DC:
         
         self.connectType = connectType
         self.username = kwargs['username']
+        self.serialNumber  = None
+        self.serialNumberPrefix  = None
         if connectType == self.CONNECT_LOCAL:
             self.ip = kwargs['ipAddress']
             self.key = kwargs['key']
             self.password = kwargs['password']
             self.rscp = E3DC_RSCP_local(self.username, self.password, self.ip, self.key)
             self.poll = self.poll_rscp
-            self.serialNumber  = None
-        
         else:
-            self.serialNumber = kwargs['serialNumber']
+            self._set_serial(kwargs['serialNumber'])
             if 'isPasswordMd5' in kwargs:
                 if kwargs['isPasswordMd5'] == True:
                     self.password = kwargs['password']
                 else:
                     self.password = hashlib.md5(kwargs['password'].encode('utf-8')).hexdigest()
-            self.rscp = E3DC_RSCP_web(self.username, self.password, self.serialNumber)
+            self.rscp = E3DC_RSCP_web(self.username, self.password, '{}{}'.format(self.serialNumberPrefix, self.serialNumber))
             self.poll = self.poll_ajax
         
         self.jar = None
@@ -105,6 +105,36 @@ class E3DC:
 
         self.get_system_info_static(keepAlive=True)
         
+    def _set_serial(self, serial):
+        if serial[0].isdigit():
+            self.serialNumber = serial
+        else:
+            self.serialNumber = serial[:4]
+            self.serialNumberPrefix = serial[4:]
+        if self.serialNumber.startswith("4"):
+            self.model = "S10E"
+            self.pmIndex = 0
+            if not self.serialNumberPrefix:
+                self.serialNumberPrefix = 'S10-'
+        elif self.serialNumber.startswith("5"):
+            self.model = "S10mini"
+            self.pmIndex = 6
+            if not self.serialNumberPrefix:
+                self.serialNumberPrefix = 'S10-'
+        elif self.serialNumber.startswith("6"):
+            self.model = "Quattroporte"
+            self.pmIndex = 0 #not validated
+            if not self.serialNumberPrefix:
+                self.serialNumberPrefix = 'S10-' # Not sure if this is corrent
+        elif self.serialNumber.startswith("7"):
+            self.model = "Pro"
+            self.pmIndex = 0
+            if not self.serialNumberPrefix:
+                self.serialNumberPrefix = 'P10-'
+        else:
+            self.model = "NA"
+            self.pmIndex = 0
+
     def connect_local(self):
         pass
         
@@ -599,7 +629,7 @@ class E3DC:
         self.installedPeakPower  = self.sendRequest( ('EMS_REQ_INSTALLED_PEAK_POWER', 'None', None), keepAlive = True  )[2]
         self.macAddress = self.sendRequest( ('INFO_REQ_MAC_ADDRESS', 'None', None), keepAlive = True  )[2]
         if not self.serialNumber: # do not send this for a web connection because it screws up the handshake!
-            self.serialNumber = self.sendRequest( ('INFO_REQ_SERIAL_NUMBER', 'None', None), keepAlive = keepAlive )[2]
+            self._set_serial(self.sendRequest( ('INFO_REQ_SERIAL_NUMBER', 'None', None), keepAlive = keepAlive )[2])
 
         sys_specs = self.sendRequest( ('EMS_REQ_GET_SYS_SPECS', 'None', None))[2]
         for item in sys_specs:
@@ -611,22 +641,6 @@ class E3DC:
                 self.maxBatChargePower = rscpFindTag(item, 'EMS_SYS_SPEC_VALUE_INT')[2]
             elif rscpFindTag(item, 'EMS_SYS_SPEC_NAME')[2] == "maxBatDischargPower":
                 self.maxBatDischargePower = rscpFindTag(item, 'EMS_SYS_SPEC_VALUE_INT')[2]
-
-        if self.serialNumber[4] == "4":
-            self.model = "S10E"
-            self.pmIndex = 0
-        elif self.serialNumber[4] == "5":
-            self.model = "S10mini"
-            self.pmIndex = 6
-        elif self.serialNumber[4] == "6":
-            self.model = "Quattroporte"
-            self.pmIndex = 0 #not validated
-        elif self.serialNumber[4] == "7":
-            self.model = "Pro"
-            self.pmIndex = 0 #not validated
-        else:
-            self.model = "NA"
-            self.pmIndex = 0
 
         #EMS_REQ_SPECIFICATION_VALUES        
 

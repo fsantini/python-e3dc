@@ -69,13 +69,13 @@ class E3DC_RSCP_web:
     
     TIMEOUT = 10 # timeout in sec
     
-    def __init__(self, username, password, serialNumber, isPasswordMd5 = True):
+    def __init__(self, username, password, serialNumberWithPrefix, isPasswordMd5 = True):
         """Constructor of a E3DC_RSCP object (does not connect)
         
         Args:
             username (string): the user name to the E3DC portal
             password (string): the password (as md5 digest by default)
-            serialNumber (string): the serial number of the system to monitor
+            serialNumberWithPrefix (string): the serial number of the system to monitor
             isPasswordMd5 (boolean, optional): indicates whether the password is already md5 digest (recommended, default = True)
         """
         self.username = username.encode('utf-8')
@@ -85,7 +85,7 @@ class E3DC_RSCP_web:
         else:
             self.password = hashlib.md5(password).hexdigest()
         
-        self.serialNumber = serialNumber.encode('utf-8')
+        self.serialNumberWithPrefix = serialNumberWithPrefix.encode('utf-8')
         self.reset()
         
     def reset(self):
@@ -104,7 +104,7 @@ class E3DC_RSCP_web:
         virtualConn = rscpLib.rscpFrame(rscpLib.rscpEncode("SERVER_REQ_NEW_VIRTUAL_CONNECTION", "Container", [
                                                         ("SERVER_USER", "CString", self.username),
                                                         ("SERVER_PASSWD", "CString", self.password),
-                                                        ("SERVER_IDENTIFIER", "CString", b'S10-' + self.serialNumber),
+                                                        ("SERVER_IDENTIFIER", "CString", self.serialNumberWithPrefix),
                                                         ("SERVER_TYPE", "Int32", 4),
                                                         ("SERVER_HASH_CODE", "Int32", 1234567890)]))
 
