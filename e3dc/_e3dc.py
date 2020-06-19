@@ -155,7 +155,7 @@ class E3DC:
             self.connect_web()
         
         if self.lastRequest is not None and (time.time() - self.lastRequestTime) < REQUEST_INTERVAL_SEC:
-            return lastRequest
+            return json.loads(self.lastRequest)
         
         pollPayload = { 'DO' : 'LIVEUNITDATA' }
         pollHeaders = { 'Pragma' : 'no-cache', 'Cache-Control' : 'no-store', 'Window-Id' : self.guid }
