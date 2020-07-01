@@ -109,8 +109,8 @@ class E3DC:
         if serial[0].isdigit():
             self.serialNumber = serial
         else:
-            self.serialNumber = serial[:4]
-            self.serialNumberPrefix = serial[4:]
+            self.serialNumber = serial[4:]
+            self.serialNumberPrefix = serial[:4]
         if self.serialNumber.startswith("4"):
             self.model = "S10E"
             self.pmIndex = 0
