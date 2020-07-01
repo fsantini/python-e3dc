@@ -786,12 +786,13 @@ class E3DC:
             }
         return outObj
 
-    def get_pvi_data(self, keepAlive = False):
+    def get_pvi_data(self, stringIndex = 0, keepAlive = False):
         """Polls the inverter data via rscp protocol locally
         
         Returns:
             Dictionary containing the pvi data structured as follows:
                 {
+                    'stringIndex': string inde
                     'acApparentPower': ac apparent power
                     'acCurrent': ac current
                     'acEnergyAll': ac energy all
@@ -809,7 +810,7 @@ class E3DC:
                 }
         """  
         req = self.sendRequest( ('PVI_REQ_DATA', 'Container', [ 
-            ('PVI_INDEX', 'Uint16', 0), 
+            ('PVI_INDEX', 'Uint16', stringIndex),
             ('PVI_REQ_TEMPERATURE', 'None', None),
             ('PVI_REQ_AC_VOLTAGE', 'None', None),
             ('PVI_REQ_AC_CURRENT', 'None', None),
@@ -843,6 +844,7 @@ class E3DC:
 
 
         outObj = {
+            'stringIndex': stringIndex,
             'acApparentPower': acApparentPower,
             'acCurrent': acCurrent,
             'acEnergyAll': acEnergyAll,
