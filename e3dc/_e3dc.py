@@ -690,12 +690,13 @@ class E3DC:
             }
         return outObj        
 
-    def get_battery_data(self, keepAlive = False, batIndex = 0):
+    def get_battery_data(self, batIndex = 0, keepAlive = False):
         """Polls the baterry data via rscp protocol locally
         
         Returns:
             Dictionary containing the battery data structured as follows:
                 {
+                    'batIndex': battery index
                     'chargeCycles': charge cycles
                     'current': current
                     'designCapacity': designed capacity
@@ -762,6 +763,7 @@ class E3DC:
         usuableRemainingCapacity = round(rscpFindTag(req, 'BAT_USABLE_REMAINING_CAPACITY')[2],2)
 
         outObj = {
+            'batIndex': batIndex,
             'chargeCycles': chargeCycles,
             'current': current,
             'designCapacity': designCapacity,
