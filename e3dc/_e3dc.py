@@ -786,13 +786,14 @@ class E3DC:
             }
         return outObj
 
-    def get_pvi_data(self, stringIndex = 0, keepAlive = False):
+    def get_pvi_data(self, stringIndex = 0, pviTracker = 0, keepAlive = False):
         """Polls the inverter data via rscp protocol locally
         
         Returns:
             Dictionary containing the pvi data structured as follows:
                 {
-                    'stringIndex': string inde
+                    'stringIndex': string index
+                    'pviTracker': pvi Tracker
                     'acApparentPower': ac apparent power
                     'acCurrent': ac current
                     'acEnergyAll': ac energy all
@@ -811,18 +812,18 @@ class E3DC:
         """  
         req = self.sendRequest( ('PVI_REQ_DATA', 'Container', [ 
             ('PVI_INDEX', 'Uint16', stringIndex),
-            ('PVI_REQ_TEMPERATURE', 'None', None),
-            ('PVI_REQ_AC_VOLTAGE', 'None', None),
-            ('PVI_REQ_AC_CURRENT', 'None', None),
-            ('PVI_REQ_AC_POWER', 'None', None),
-            ('PVI_REQ_AC_APPARENTPOWER', 'None', None),
-            ('PVI_REQ_AC_REACTIVEPOWER', 'None', None),
-            ('PVI_REQ_DC_VOLTAGE', 'None', None),
-            ('PVI_REQ_DC_CURRENT', 'None', None),
-            ('PVI_REQ_DC_POWER', 'None', None),
-            ('PVI_REQ_DEVICE_STATE', 'None', None),
-            ('PVI_REQ_LAST_ERROR', 'None', None),
-            ('PVI_REQ_AC_ENERGY_ALL', 'None', None)
+            ('PVI_REQ_TEMPERATURE', 'Uint16', pviTracker),
+            ('PVI_REQ_AC_VOLTAGE', 'Uint16', pviTracker),
+            ('PVI_REQ_AC_CURRENT', 'Uint16', pviTracker),
+            ('PVI_REQ_AC_POWER', 'Uint16', pviTracker),
+            ('PVI_REQ_AC_APPARENTPOWER', 'Uint16', pviTracker),
+            ('PVI_REQ_AC_REACTIVEPOWER', 'Uint16', pviTracker),
+            ('PVI_REQ_DC_VOLTAGE', 'Uint16', pviTracker),
+            ('PVI_REQ_DC_CURRENT', 'Uint16', pviTracker),
+            ('PVI_REQ_DC_POWER', 'Uint16', pviTracker),
+            ('PVI_REQ_DEVICE_STATE', 'Uint16', pviTracker),
+            ('PVI_REQ_LAST_ERROR', 'Uint16', pviTracker),
+            ('PVI_REQ_AC_ENERGY_ALL', 'Uint16', pviTracker)
             ]), keepAlive = keepAlive )
 
         deviceStateContainer = rscpFindTag(req, 'PVI_DEVICE_STATE')
@@ -845,6 +846,7 @@ class E3DC:
 
         outObj = {
             'stringIndex': stringIndex,
+            'pviTracker': pviTracker,
             'acApparentPower': acApparentPower,
             'acCurrent': acCurrent,
             'acEnergyAll': acEnergyAll,
@@ -1016,3 +1018,4 @@ class E3DC:
             return 0
         else:
             return -1
+        
