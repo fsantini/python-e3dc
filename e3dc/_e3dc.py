@@ -604,7 +604,7 @@ class E3DC:
 
         response = self.sendRequest(('DB_REQ_HISTORY_DATA_DAY', 'Container', [
             ('DB_REQ_HISTORY_TIME_START', 'Uint64', requestDate),
-            ('DB_REQ_HISTORY_TIME_INTERVAL', 'Uint64', 0),
+            ('DB_REQ_HISTORY_TIME_INTERVAL', 'Uint64', span),
             ('DB_REQ_HISTORY_TIME_SPAN', 'Uint64', span)]), keepAlive=keepAlive)
 
         outObj = {
