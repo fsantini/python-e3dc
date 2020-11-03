@@ -1929,7 +1929,8 @@ rscpErrorCodes = {
 	0x05 : "RSCP_ERR_OUT_OF_BOUNDS",
 	0x06 : "RSCP_ERR_NOT_AVAILABLE",
 	0x07 : "RSCP_ERR_UNKNOWN_TAG",
-	0x08 : "RSCP_ERR_ALREADY_IN_USE"
+	0x08 : "RSCP_ERR_ALREADY_IN_USE",
+	0xFFFFFFFF: "UNEXPECTED ERROR"  # happens for example in get_db_data if time and span is invalid (not available)
 }
 
 def getHexDatatype(type_str):
