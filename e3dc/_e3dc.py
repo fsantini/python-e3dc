@@ -12,7 +12,7 @@ import datetime
 import json
 import uuid
 from ._e3dc_rscp_web import E3DC_RSCP_web
-from ._e3dc_rscp_local import E3DC_RSCP_local, RSCPAuthenticationError
+from ._e3dc_rscp_local import E3DC_RSCP_local, RSCPAuthenticationError, RSCPNotAvailableError
 from ._rscpLib import rscpFindTag
 
 REMOTE_ADDRESS='https://s10.e3dc.com/s10/phpcmd/cmd.php'
@@ -20,6 +20,9 @@ REQUEST_INTERVAL_SEC = 10 # minimum interval between requests
 REQUEST_INTERVAL_SEC_LOCAL = 1 # minimum interval between requests
 
 class AuthenticationError(Exception):
+    pass
+
+class NotAvailableError(Exception):
     pass
 
 class PollError(Exception):
@@ -372,6 +375,8 @@ class E3DC:
                 break
             except RSCPAuthenticationError:
                 raise AuthenticationError()
+            except RSCPNotAvailableError:
+                raise NotAvailableError()
             except Exception as err:
                 retry += 1
                 if retry > retries:

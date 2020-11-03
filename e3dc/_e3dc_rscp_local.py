@@ -16,6 +16,9 @@ BUFFER_SIZE=1024*32
 class RSCPAuthenticationError(Exception):
     pass
 
+class RSCPNotAvailableError(Exception):
+    pass
+
 class CommunicationError(Exception):
     pass
 
@@ -57,6 +60,8 @@ class E3DC_RSCP_local:
             self.disconnect()
             if receive[2] == "RSCP_ERR_ACCESS_DENIED":
                 raise RSCPAuthenticationError
+            elif receive[2] == "RSCP_ERR_NOT_AVAILABLE":
+                raise RSCPNotAvailableError
             else:
                 raise CommunicationError(receive[2])
         return receive
