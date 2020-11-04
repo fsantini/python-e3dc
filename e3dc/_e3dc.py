@@ -128,7 +128,7 @@ class E3DC:
             self.model = "Quattroporte"
             self.pmIndex = 0 #not validated
             if not self.serialNumberPrefix:
-                self.serialNumberPrefix = 'S10-' # Not sure if this is corrent
+                self.serialNumberPrefix = 'Q10-'
         elif self.serialNumber.startswith("7"):
             self.model = "Pro"
             self.pmIndex = 0
