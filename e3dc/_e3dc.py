@@ -98,6 +98,7 @@ class E3DC:
         self.deratePower  = None
         self.installedPeakPower  = None
         self.installedBatteryCapacity = None
+        self.externalSourceAvailable = None
         self.macAddress = None
         self.model = None
         self.maxAcPower  = None
@@ -105,6 +106,7 @@ class E3DC:
         self.maxBatDischargePower = None
         self.startDischargeDefault = None
         self.pmIndex = None
+        self.pmIndexExt = None
 
         self.get_system_info_static(keepAlive=True)
         
@@ -117,26 +119,31 @@ class E3DC:
         if self.serialNumber.startswith("4"):
             self.model = "S10E"
             self.pmIndex = 0
+            self.pmIndexExt = 1
             if not self.serialNumberPrefix:
                 self.serialNumberPrefix = 'S10-'
         elif self.serialNumber.startswith("5"):
             self.model = "S10mini"
             self.pmIndex = 6
+            self.pmIndexExt = 1
             if not self.serialNumberPrefix:
                 self.serialNumberPrefix = 'S10-'
         elif self.serialNumber.startswith("6"):
             self.model = "Quattroporte"
             self.pmIndex = 6
+            self.pmIndexExt = 1
             if not self.serialNumberPrefix:
                 self.serialNumberPrefix = 'Q10-'
         elif self.serialNumber.startswith("7"):
             self.model = "Pro"
             self.pmIndex = 0
+            self.pmIndexExt = 1
             if not self.serialNumberPrefix:
                 self.serialNumberPrefix = 'P10-'
         else:
             self.model = "NA"
             self.pmIndex = 0
+            self.pmIndexExt = 1
 
     def connect_local(self):
         pass
@@ -636,6 +643,7 @@ class E3DC:
         self.deratePercent  = round(self.sendRequest( ('EMS_REQ_DERATE_AT_PERCENT_VALUE', 'None', None), keepAlive = True  )[2] * 100)
         self.deratePower  = self.sendRequest( ('EMS_REQ_DERATE_AT_POWER_VALUE', 'None', None), keepAlive = True  )[2]
         self.installedPeakPower  = self.sendRequest( ('EMS_REQ_INSTALLED_PEAK_POWER', 'None', None), keepAlive = True  )[2]
+        self.externalSourceAvailable  = self.sendRequest( ('EMS_REQ_EXT_SRC_AVAILABLE', 'None', None), keepAlive = True  )[2]
         self.macAddress = self.sendRequest( ('INFO_REQ_MAC_ADDRESS', 'None', None), keepAlive = True  )[2]
         if not self.serialNumber: # do not send this for a web connection because it screws up the handshake!
             self._set_serial(self.sendRequest( ('INFO_REQ_SERIAL_NUMBER', 'None', None), keepAlive = keepAlive )[2])
@@ -665,6 +673,7 @@ class E3DC:
                     'deratePower': W at which the feed in will be derated
                     'installedBatteryCapacity': installed Battery Capacity in W
                     'installedPeakPower': installed peak power in W
+                    'externalSourceAvailable': wether an additional power meter is installed
                     'maxAcPower': max AC power
                     'macAddress': the mac address
                     'maxBatChargePower': max Battery charge power
@@ -688,6 +697,7 @@ class E3DC:
             'deratePower': self.deratePower,
             'installedBatteryCapacity': self.installedBatteryCapacity,
             'installedPeakPower': self.installedPeakPower,
+            'externalSourceAvailable': self.externalSourceAvailable,
             'maxAcPower': self.maxAcPower,
             'macAddress': self.macAddress,
             'maxBatChargePower': self.maxBatChargePower,
@@ -873,29 +883,53 @@ class E3DC:
             }
         return outObj
 
+
     def get_power_data(self, keepAlive = False):
         """Polls the inverter data via rscp protocol locally
         
         Returns:
-            Dictionary containing the pvi data structured as follows:
+            Dictionary containing the power data structured as follows:
                 {
-                    'acApparentPower': ac apparent power
-                    'acCurrent': ac current
-                    'acEnergyAll': ac energy all
-                    'acPower': ac power
-                    'acReactivePower': ac reactive power
-                    'acVoltage': ac voltage
-                    'dcCurrent': dc current
-                    'dcPower': dc power
-                    'dcVoltage': dc voltage
-                    'deviceConnected': boolean if pvi is connected
-                    'deviceInService': boolean if pvi is in service
-                    'deviceWorking': boolean if pvi is working
-                    'lastError': last error
-                    'temperature': temperature
+                    'maxPhasePower': max power of the device
+                    'power': {
+                        'L1': L1 power
+                        'L2': L2 power
+                        'L3': L3 power
+                    }
                 }
         """  
         res = self.sendRequest( ('PM_REQ_DATA', 'Container', [ ('PM_INDEX', 'Uint16', self.pmIndex), ('PM_REQ_POWER_L1', 'None', None), ('PM_REQ_POWER_L2', 'None', None), ('PM_REQ_POWER_L3', 'None', None), ('PM_REQ_MAX_PHASE_POWER', 'None', None)]))
+        powerL1 = rscpFindTag(res, 'PM_POWER_L1')[2]
+        powerL2 = rscpFindTag(res, 'PM_POWER_L2')[2]
+        powerL3 = rscpFindTag(res, 'PM_POWER_L3')[2]
+        maxPhasePower = rscpFindTag(res, 'PM_MAX_PHASE_POWER')[2]
+
+        outObj = {
+            'power': {
+                'L1': powerL1,
+                'L2': powerL2,
+                'L3': powerL3
+            },
+            'maxPhasePower': maxPhasePower
+            }
+        return outObj
+
+
+    def get_power_data_ext(self, keepAlive = False):
+        """Polls the external inverter data via rscp protocol locally
+        
+        Returns:
+            Dictionary containing the power data structured as follows:
+                {
+                    'maxPhasePower': max power of the device
+                    'power': {
+                        'L1': L1 power
+                        'L2': L2 power
+                        'L3': L3 power
+                    }
+                }
+        """  
+        res = self.sendRequest( ('PM_REQ_DATA', 'Container', [ ('PM_INDEX', 'Uint16', self.pmIndexExt), ('PM_REQ_POWER_L1', 'None', None), ('PM_REQ_POWER_L2', 'None', None), ('PM_REQ_POWER_L3', 'None', None), ('PM_REQ_MAX_PHASE_POWER', 'None', None)]))
         powerL1 = rscpFindTag(res, 'PM_POWER_L1')[2]
         powerL2 = rscpFindTag(res, 'PM_POWER_L2')[2]
         powerL3 = rscpFindTag(res, 'PM_POWER_L3')[2]
