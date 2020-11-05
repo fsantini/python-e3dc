@@ -126,7 +126,7 @@ class E3DC:
                 self.serialNumberPrefix = 'S10-'
         elif self.serialNumber.startswith("6"):
             self.model = "Quattroporte"
-            self.pmIndex = 0 #not validated
+            self.pmIndex = 6
             if not self.serialNumberPrefix:
                 self.serialNumberPrefix = 'Q10-'
         elif self.serialNumber.startswith("7"):
@@ -278,6 +278,7 @@ class E3DC:
         sys = self.sendRequest( ('EMS_REQ_SYS_STATUS', 'None', None), keepAlive=True )[2]
         soc = self.sendRequest( ('EMS_REQ_BAT_SOC', 'None', None), keepAlive=True )[2]
         solar = self.sendRequest( ('EMS_REQ_POWER_PV', 'None', None), keepAlive=True )[2]
+        add = self.sendRequest( ('EMS_REQ_POWER_ADD', 'None', None), keepAlive=True )[2]
         bat = self.sendRequest( ('EMS_REQ_POWER_BAT', 'None', None), keepAlive=True )[2]
         #home = self.sendRequest( ('EMS_REQ_POWER_HOME', 'None', None), keepAlive=True )[2]
         grid = self.sendRequest( ('EMS_REQ_POWER_GRID', 'None', None), keepAlive=True )[2]
@@ -288,7 +289,7 @@ class E3DC:
         # last call, use keepAlive value
         autarky = round(self.sendRequest( ('EMS_REQ_AUTARKY', 'None', None), keepAlive=keepAlive )[2],2)
         
-        home = solar + grid - bat - wb # make balance = 0
+        home = solar + grid - add - bat - wb # make balance = 0
 
             
         outObj = {
@@ -300,6 +301,7 @@ class E3DC:
             },
             'production': {
                 'solar' : solar,
+                'add' : add,
                 'grid' : grid
             },
             'selfConsumption': sc,
