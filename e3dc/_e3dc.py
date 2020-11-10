@@ -187,9 +187,6 @@ class E3DC:
         if self.connected == False:
             self.connect_web()
         
-        if self.lastRequest is not None and (time.time() - self.lastRequestTime) < REQUEST_INTERVAL_SEC:
-            return lastRequest
-        
         pollPayload = { 'DO' : 'LIVEUNITDATA' }
         pollHeaders = { 'Pragma' : 'no-cache', 'Cache-Control' : 'no-store', 'Window-Id' : self.guid }
         
@@ -203,8 +200,6 @@ class E3DC:
         if jsonResponse['ERRNO'] != 0:
             raise PollError("Error polling: %d" % (jsonResponse['ERRNO']))
         
-        self.lastRequest = jsonResponse['CONTENT']
-        self.lastRequestTime = time.time()
         return json.loads(jsonResponse['CONTENT'])
         
     def poll_ajax(self, **kwargs):
@@ -230,6 +225,9 @@ class E3DC:
         Raises:
             e3dc.PollError in case of problems polling
         """
+        if self.lastRequest is not None and (time.time() - self.lastRequestTime) < REQUEST_INTERVAL_SEC:
+            return lastRequest
+        
         raw = self.poll_ajax_raw()
         outObj = {
             'time': dateutil.parser.parse(raw['time']).replace(tzinfo=datetime.timezone.utc),
@@ -245,6 +243,10 @@ class E3DC:
                 'wallbox': int(raw["POWER_WALLBOX"])
                 }
             }
+            
+        self.lastRequest = outObj
+        self.lastRequestTime = time.time()
+        
         return outObj
     
     def poll_rscp(self, keepAlive = False):
