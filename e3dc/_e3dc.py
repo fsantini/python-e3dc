@@ -71,21 +71,6 @@ class E3DC:
         self.username = kwargs['username']
         self.serialNumber  = None
         self.serialNumberPrefix  = None
-        if connectType == self.CONNECT_LOCAL:
-            self.ip = kwargs['ipAddress']
-            self.key = kwargs['key']
-            self.password = kwargs['password']
-            self.rscp = E3DC_RSCP_local(self.username, self.password, self.ip, self.key)
-            self.poll = self.poll_rscp
-        else:
-            self._set_serial(kwargs['serialNumber'])
-            if 'isPasswordMd5' in kwargs:
-                if kwargs['isPasswordMd5'] == True:
-                    self.password = kwargs['password']
-                else:
-                    self.password = hashlib.md5(kwargs['password'].encode('utf-8')).hexdigest()
-            self.rscp = E3DC_RSCP_web(self.username, self.password, '{}{}'.format(self.serialNumberPrefix, self.serialNumber))
-            self.poll = self.poll_ajax
         
         self.jar = None
         self.guid = "GUID-" + str(uuid.uuid1())
@@ -107,6 +92,22 @@ class E3DC:
         self.startDischargeDefault = None
         self.pmIndex = None
         self.pmIndexExt = None
+
+        if connectType == self.CONNECT_LOCAL:
+            self.ip = kwargs['ipAddress']
+            self.key = kwargs['key']
+            self.password = kwargs['password']
+            self.rscp = E3DC_RSCP_local(self.username, self.password, self.ip, self.key)
+            self.poll = self.poll_rscp
+        else:
+            self._set_serial(kwargs['serialNumber'])
+            if 'isPasswordMd5' in kwargs:
+                if kwargs['isPasswordMd5'] == True:
+                    self.password = kwargs['password']
+                else:
+                    self.password = hashlib.md5(kwargs['password'].encode('utf-8')).hexdigest()
+            self.rscp = E3DC_RSCP_web(self.username, self.password, '{}{}'.format(self.serialNumberPrefix, self.serialNumber))
+            self.poll = self.poll_ajax
 
         self.get_system_info_static(keepAlive=True)
         
@@ -236,12 +237,14 @@ class E3DC:
             return lastRequest
         
         raw = self.poll_ajax_raw()
+        strPmIndex = str(self.pmIndexExt)
         outObj = {
             'time': dateutil.parser.parse(raw['time']).replace(tzinfo=datetime.timezone.utc),
             'sysStatus': raw['SYSSTATUS'],
             'stateOfCharge': int(raw['SOC']),
             'production': {
                 'solar' : int(raw["POWER_PV_S1"]) + int(raw["POWER_PV_S2"]) + int(raw["POWER_PV_S3"]),
+                'add' : int(raw["PM" + strPmIndex + "_L1"]) + int(raw["PM" + strPmIndex + "_L2"]) + int(raw["PM" + strPmIndex + "_L3"]),
                 'grid' : int(raw["POWER_LM_L1"]) + int(raw["POWER_LM_L2"]) + int(raw["POWER_LM_L3"])
                 },
             'consumption': {
