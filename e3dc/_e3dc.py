@@ -234,7 +234,7 @@ class E3DC:
             e3dc.PollError in case of problems polling
         """
         if self.lastRequest is not None and (time.time() - self.lastRequestTime) < REQUEST_INTERVAL_SEC:
-            return lastRequest
+            return self.lastRequest
         
         raw = self.poll_ajax_raw()
         strPmIndex = str(self.pmIndexExt)
