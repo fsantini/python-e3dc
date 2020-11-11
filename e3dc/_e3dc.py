@@ -46,7 +46,7 @@ class E3DC:
     DAY_SATURDAY = 5
     DAY_SUNDAY = 6
 
-    IDLE_TYPE = {'idleCharge': 0, 'idleDisharge': 1}
+    IDLE_TYPE = {'idleCharge': 0, 'idleDischarge': 1}
     
     def __init__(self, connectType, **kwargs):
         """Constructor of a E3DC object (does not connect)
