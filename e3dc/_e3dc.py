@@ -219,15 +219,16 @@ class E3DC:
                     'time': datetime object containing the timestamp
                     'sysStatus': string containing the system status code
                     'stateOfCharge': battery charge status in %
-                    'production': { production values: positive means entering the system
-                        'solar' : production from solar in W
-                        'grid' : absorption from grid in W
-                        },
                     'consumption': { consumption values: positive means exiting the system
                         'battery': power entering battery (positive: charging, negative: discharging)
                         'house': house consumption
                         'wallbox': wallbox consumption
-                    }
+                    },
+                    'production': { production values: positive means entering the system
+                        'solar' : production from solar in W
+                        'add' : additional external power in W
+                        'grid' : absorption from grid in W
+                        }
                 }
             
         Raises:
@@ -244,7 +245,7 @@ class E3DC:
             'stateOfCharge': int(raw['SOC']),
             'production': {
                 'solar' : int(raw["POWER_PV_S1"]) + int(raw["POWER_PV_S2"]) + int(raw["POWER_PV_S3"]),
-                'add' : int(raw["PM" + strPmIndex + "_L1"]) + int(raw["PM" + strPmIndex + "_L2"]) + int(raw["PM" + strPmIndex + "_L3"]),
+                'add' : -(int(raw["PM" + strPmIndex + "_L1"]) + int(raw["PM" + strPmIndex + "_L2"]) + int(raw["PM" + strPmIndex + "_L3"])),
                 'grid' : int(raw["POWER_LM_L1"]) + int(raw["POWER_LM_L2"]) + int(raw["POWER_LM_L3"])
                 },
             'consumption': {
@@ -270,11 +271,12 @@ class E3DC:
                         'battery': power entering battery (positive: charging, negative: discharging)
                         'house': house consumption
                         'wallbox': wallbox consumption
-                    }                    
+                    }
                     'production': { production values: positive means entering the system
                         'solar' : production from solar in W
+                        'add' : additional external power in W
                         'grid' : absorption from grid in W
-                    }            
+                    }
                     'stateOfCharge': battery charge status in %
                     'sysStatus': string containing the system status code
                     'selfConsumption': self consumed power in %
@@ -290,7 +292,7 @@ class E3DC:
         solar = self.sendRequest( ('EMS_REQ_POWER_PV', 'None', None), keepAlive=True )[2]
         add = self.sendRequest( ('EMS_REQ_POWER_ADD', 'None', None), keepAlive=True )[2]
         bat = self.sendRequest( ('EMS_REQ_POWER_BAT', 'None', None), keepAlive=True )[2]
-        #home = self.sendRequest( ('EMS_REQ_POWER_HOME', 'None', None), keepAlive=True )[2]
+        home = self.sendRequest( ('EMS_REQ_POWER_HOME', 'None', None), keepAlive=True )[2]
         grid = self.sendRequest( ('EMS_REQ_POWER_GRID', 'None', None), keepAlive=True )[2]
         wb = self.sendRequest( ('EMS_REQ_POWER_WB_ALL', 'None', None), keepAlive=True )[2]
 
@@ -298,9 +300,6 @@ class E3DC:
 
         # last call, use keepAlive value
         autarky = round(self.sendRequest( ('EMS_REQ_AUTARKY', 'None', None), keepAlive=keepAlive )[2],2)
-        
-        home = solar + grid - add - bat - wb # make balance = 0
-
             
         outObj = {
             'autarky': autarky,
@@ -311,7 +310,7 @@ class E3DC:
             },
             'production': {
                 'solar' : solar,
-                'add' : add,
+                'add' : -add,
                 'grid' : grid
             },
             'selfConsumption': sc,
