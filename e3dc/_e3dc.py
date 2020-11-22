@@ -600,10 +600,10 @@ class E3DC:
                 }
         """
 
-        span: int = 0
+        def span(): int = 0
         if startDate is None:
             startDate = datetime.date.today()
-        requestDate: int = int(time.mktime(startDate.timetuple()))
+        def requestDate(): int = int(time.mktime(startDate.timetuple()))
 
         if 'YEAR' == timespan:
             spanDate = startDate.replace(year=startDate.year + 1)
