@@ -33,16 +33,16 @@ SERIALNUMBER = '1234567890'
 print "web connection"
 e3dc = E3DC(E3DC.CONNECT_WEB, username=USERNAME, password=PASS, serialNumber = SERIALNUMBER, isPasswordMd5=False)
 # connect to the portal and poll the status. This might raise an exception in case of failed login. This operation is performed with Ajax
-print e3dc.poll()
+print(e3dc.poll())
 # Poll the status of the switches using a remote RSCP connection via websockets
 # return value is in the format {'id': switchID, 'type': switchType, 'name': switchName, 'status': switchStatus}
-print e3dc.poll_switches()
+print(e3dc.poll_switches())
 
-print "local connection"
+print("local connection")
 e3dc = E3DC(E3DC.CONNECT_LOCAL, username=USERNAME, password=PASS, ipAddress = TCP_IP, key = KEY)
 # The following connections are performed through the RSCP interface
-print e3dc.poll()
-print e3dc.poll_switches()
+print(e3dc.poll())
+print(e3dc.poll_switches())
 ```
 
 ## poll() return values
