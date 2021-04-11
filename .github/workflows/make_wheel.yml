@@ -1,0 +1,31 @@
+name: Build Wheel
+
+# run on new version tag
+on:
+    push:
+        tags: v.*
+    workflow_dispatch:
+        
+jobs:
+    job:
+        name: Build wheel
+        runs-on: ubuntu-latest
+        steps:
+            - name: Prepare python
+              uses: actions/setp-python@v2
+              with:
+                python-version: 3.8
+            
+            - name: Install python dependencies
+              run: pip install wheel twine
+              
+            - name: Checkout repository
+              uses: actions/checkout@v2
+                with:
+                    path: repo
+            
+            - name: Build wheel
+              run: |
+                cd repo
+                python setup.py sdist bdist_wheel
+                ls dist

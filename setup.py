@@ -1,7 +1,7 @@
 from setuptools import setup
 
 VERSION = "0.4.0"
-NAME = "e3dc"
+NAME = "pye3dc"
  
 install_requires = ["requests", "tzlocal", "pytz", "py3rijndael", "websocket-client", "python-dateutil"]
 
@@ -10,6 +10,7 @@ setup(
     version=VERSION,
     description="E3/DC client for python.",
     long_description=open("README.md").read(),
+    long_description_content_type='text/markdown',
     author="Francesco Santini",
     author_email="francesco.santini@gmail.com",
     license="MIT",
