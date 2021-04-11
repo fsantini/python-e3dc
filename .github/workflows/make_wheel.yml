@@ -4,7 +4,7 @@ name: Build Wheel
 on:
     push:
         tags: 
-            - v.*
+            - v*
     workflow_dispatch:
         
 jobs:
