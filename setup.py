@@ -1,6 +1,6 @@
 from setuptools import setup
 
-VERSION = "0.4.0"
+VERSION = "0.5.0"
 NAME = "pye3dc"
  
 install_requires = ["requests", "tzlocal", "pytz", "py3rijndael", "websocket-client", "python-dateutil"]
@@ -15,6 +15,7 @@ setup(
     author_email="francesco.santini@gmail.com",
     license="MIT",
     url="https://github.com/fsantini/python-e3dc.git",
+    python_requires='>=3',
     install_requires=install_requires,
     packages=["e3dc"]
 )
