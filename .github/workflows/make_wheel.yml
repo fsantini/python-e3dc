@@ -21,8 +21,8 @@ jobs:
               
             - name: Checkout repository
               uses: actions/checkout@v2
-                with:
-                  path: repo
+              with:
+                path: repo
             
             - name: Build wheel
               run: |
