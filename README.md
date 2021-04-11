@@ -18,6 +18,12 @@ Alternatively, for a local connection, you need:
 - The IP address of the E3/DC system
 - The encryption key as set under the preferences of the system.
 
+## Installation
+
+This package can be installed from pip:
+
+`pip install pye3dc`
+
 ## Usage
 
 An example script using the library is the following:
