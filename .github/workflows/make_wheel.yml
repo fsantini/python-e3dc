@@ -29,3 +29,4 @@ jobs:
                 cd repo
                 python setup.py sdist bdist_wheel
                 ls dist
+                twine check dist/*
