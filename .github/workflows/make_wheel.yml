@@ -3,7 +3,8 @@ name: Build Wheel
 # run on new version tag
 on:
     push:
-        tags: v.*
+        tags: 
+            - v.*
     workflow_dispatch:
         
 jobs:
