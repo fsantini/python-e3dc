@@ -36,7 +36,7 @@ PASS = 'MySecurePassword'
 KEY = 'abc123'
 SERIALNUMBER = '1234567890'
 
-print "web connection"
+print("web connection")
 e3dc = E3DC(E3DC.CONNECT_WEB, username=USERNAME, password=PASS, serialNumber = SERIALNUMBER, isPasswordMd5=False)
 # connect to the portal and poll the status. This might raise an exception in case of failed login. This operation is performed with Ajax
 print(e3dc.poll())
