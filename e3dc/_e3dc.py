@@ -278,7 +278,6 @@ class E3DC:
                         'grid' : absorption from grid in W
                     }
                     'stateOfCharge': battery charge status in %
-                    'sysStatus': string containing the system status code
                     'selfConsumption': self consumed power in %
                     'time': datetime object containing the timestamp
                 }
@@ -287,7 +286,6 @@ class E3DC:
             return self.lastRequest
         
         ts = self.sendRequest( ('INFO_REQ_UTC_TIME', 'None', None), keepAlive=True )[2]
-        sys = self.sendRequest( ('EMS_REQ_SYS_STATUS', 'None', None), keepAlive=True )[2]
         soc = self.sendRequest( ('EMS_REQ_BAT_SOC', 'None', None), keepAlive=True )[2]
         solar = self.sendRequest( ('EMS_REQ_POWER_PV', 'None', None), keepAlive=True )[2]
         add = self.sendRequest( ('EMS_REQ_POWER_ADD', 'None', None), keepAlive=True )[2]
@@ -315,7 +313,6 @@ class E3DC:
             },
             'selfConsumption': sc,
             'stateOfCharge': soc,
-            'sysStatus': sys,
             'time': datetime.datetime.utcfromtimestamp(ts).replace(tzinfo=datetime.timezone.utc)
             }
             
@@ -681,13 +678,10 @@ class E3DC:
                     'maxBatChargePower': max Battery charge power
                     'maxBatDischargePower': max Battery discharge power
                     'model': model connected to
-                    'online': status if connected to online portal
                     'release': release version
                     'serial': serial number of the system 
                 }
         """  
-        
-        online = self.sendRequest( ('SRV_REQ_IS_ONLINE', 'None', None), keepAlive = True )[2]
 
         # use keepAlive setting for last request
         sw = self.sendRequest( ('INFO_REQ_SW_RELEASE', 'None', None), keepAlive = keepAlive  )[2]
@@ -705,11 +699,69 @@ class E3DC:
             'maxBatChargePower': self.maxBatChargePower,
             'maxBatDischargePower': self.maxBatDischargePower,
             'model': self.model,
-            'online': online,
             'release': sw,
             'serial': self.serialNumber
             }
         return outObj        
+
+    def get_system_status(self, keepAlive = False):
+        """Polls the system status via rscp protocol locally
+        
+        Returns:
+            Dictionary containing the system status structured as follows:
+                {
+                    'dcdcAlive': dcdc alive
+                    'powerMeterAlive': power meter alive
+                    'batteryModuleAlive': battery module alive
+                    'pvModuleAlive': pv module alive
+                    'pvInverterInited': pv inverter inited
+                    'serverConnectionAlive': server connection alive
+                    'pvDerated':  pv derated due to deratePower limit reached
+                    'emsAlive': emd alive
+                    'acModeBlocked': ad mode blocked
+                    'sysConfChecked': sys conf checked
+                    'emergencyPowerStarted': emergency power started
+                    'emergencyPowerOverride': emergency power override
+                    'wallBoxAlive': wall box alive
+                    'powerSaveEnabled': power save enabled
+                    'chargeIdlePeriodActive': charge idle period active
+                    'dischargeIdlePeriodActive': discharge idle period active
+                    'waitForWeatherBreakthrough': wait for weather breakthrouhgh
+                    'rescueBatteryEnabled': rescue battery enabled
+                    'emergencyReserveReached': emergencey reserve reached
+                    'socSyncRequested': soc sync requested
+                }
+        """  
+
+        # use keepAlive setting for last request
+        sw = self.sendRequest( ('EMS_REQ_SYS_STATUS', 'None', None), keepAlive = keepAlive  )[2]
+        SystemStatusBools = [bool(int(i)) for i in reversed(list(f"{sw:022b}"))]
+
+        outObj = {
+            'dcdcAlive': 0,
+            'powerMeterAlive': 1,
+            'batteryModuleAlive': 2,
+            'pvModuleAlive': 3,
+            'pvInverterInited': 4,
+            'serverConnectionAlive': 5,
+            'pvDerated': 6,
+            'emsAlive': 7,
+            #'acCouplingMode:2;              // 8-9
+            'acModeBlocked': 10,
+            'sysConfChecked': 11,
+            'emergencyPowerStarted': 12,
+            'emergencyPowerOverride': 13,
+            'wallBoxAlive': 14,
+            'powerSaveEnabled': 15,
+            'chargeIdlePeriodActive': 16,
+            'dischargeIdlePeriodActive': 17,
+            'waitForWeatherBreakthrough': 18, # this status bit shows if weather regulated charge is active and the system is waiting for the sun power breakthrough. (PV power > derating power)
+            'rescueBatteryEnabled': 19,
+            'emergencyReserveReached': 20,
+            'socSyncRequested': 21
+            }
+        outObj = {k: SystemStatusBools[v] for k, v in outObj.items()}
+        return outObj  
 
     def get_battery_data(self, batIndex = 0, keepAlive = False):
         """Polls the baterry data via rscp protocol locally
