@@ -137,7 +137,7 @@ class E3DC:
                 self.serialNumberPrefix = 'Q10-'
         elif self.serialNumber.startswith("7"):
             self.model = "Pro"
-            self.pmIndex = 0
+            self.pmIndex = 6
             self.pmIndexExt = 1
             if not self.serialNumberPrefix:
                 self.serialNumberPrefix = 'P10-'
