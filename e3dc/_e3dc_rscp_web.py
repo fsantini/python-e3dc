@@ -10,7 +10,6 @@ import struct
 import hashlib
 import threading # TODO: move to threading to make python3 easier
 import tzlocal
-import pytz
 import datetime
 
 from . import _rscpLib as rscpLib
@@ -48,10 +47,7 @@ class RequestTimeoutError(Exception):
 def calcTimeZone():
     # calculate time zone
     localtz = tzlocal.get_localzone()
-    utctz = pytz.timezone("UTC")
-
     naiveNow = datetime.datetime.now()
-    localNow = localtz.localize(naiveNow)
     utcDiff = localtz.utcoffset(naiveNow) #this is a timedelta
     utcDiffS = utcDiff.total_seconds()
     utcDiffH = int(utcDiffS/60/60) # this is local - utc (eg 2 = UTC+2)
