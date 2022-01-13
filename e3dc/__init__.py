@@ -9,10 +9,18 @@
 """
 
 from ._e3dc import E3DC, AuthenticationError, PollError
-from ._e3dc_rscp_web import SocketNotReady, RequestTimeoutError
-from ._e3dc_rscp_local import RSCPAuthenticationError, CommunicationError
+from ._e3dc_rscp_local import CommunicationError, RSCPAuthenticationError
+from ._e3dc_rscp_web import RequestTimeoutError, SocketNotReady
 from ._rscpLib import FrameError
 
-
-
-__version__ = "0.5.2"
+__all__ = [
+    E3DC,
+    AuthenticationError,
+    PollError,
+    CommunicationError,
+    RSCPAuthenticationError,
+    RequestTimeoutError,
+    SocketNotReady,
+    FrameError,
+]
+__version__ = "0.6.0"
