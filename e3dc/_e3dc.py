@@ -112,7 +112,7 @@ class E3DC:
         else:
             self._set_serial(kwargs["serialNumber"])
             if "isPasswordMd5" in kwargs:
-                if kwargs["isPasswordMd5"] == True:
+                if kwargs["isPasswordMd5"]:
                     self.password = kwargs["password"]
                 else:
                     self.password = hashlib.md5(
@@ -222,7 +222,7 @@ class E3DC:
             e3dc.PollError in case of problems polling
         """
 
-        if self.connected == False:
+        if not self.connected:
             self.connect_web()
 
         pollPayload = {"DO": "LIVEUNITDATA"}
@@ -435,7 +435,7 @@ class E3DC:
             keepAlive=keepAlive,
         )
 
-        if result[0] == "HA_COMMAND_ACTUATOR" and result[2] == True:
+        if result[0] == "HA_COMMAND_ACTUATOR" and result[2]:
             return True
         else:
             return False  # operation did not succeed
@@ -462,7 +462,7 @@ class E3DC:
                 raise AuthenticationError()
             except RSCPNotAvailableError:
                 raise NotAvailableError()
-            except Exception as err:
+            except Exception:
                 retry += 1
                 if retry > retries:
                     raise SendError("Max retries reached")
@@ -594,11 +594,10 @@ class E3DC:
         """
 
         periodList = []
-        idlePeriodsCurrent = self.get_idle_periods(keepAlive=True)
 
         if not isinstance(idlePeriods, dict):
             raise TypeError("object is not a dict")
-        elif not "idleCharge" in idlePeriods and not "idleDischarge" in idlePeriods:
+        elif "idleCharge" not in idlePeriods and "idleDischarge" not in idlePeriods:
             raise ValueError("neither key idleCharge nor idleDischarge in object")
 
         for idle_type in ["idleCharge", "idleDischarge"]:
@@ -606,7 +605,7 @@ class E3DC:
                 if isinstance(idlePeriods[idle_type], list):
                     for idlePeriod in idlePeriods[idle_type]:
                         if isinstance(idlePeriod, dict):
-                            if not "day" in idlePeriod:
+                            if "day" not in idlePeriod:
                                 raise ValueError("day key in " + idle_type + " missing")
                             elif isinstance(idlePeriod["day"], bool):
                                 raise TypeError("day in " + idle_type + " not a bool")
@@ -614,8 +613,6 @@ class E3DC:
                                 raise ValueError(
                                     "day in " + idle_type + " out of range"
                                 )
-                            else:
-                                day = idlePeriod["day"]
 
                             if idlePeriod.keys() & ["active", "start", "end"]:
                                 if "active" in idlePeriod:
@@ -950,7 +947,7 @@ class E3DC:
             "serverConnectionAlive": 5,
             "pvDerated": 6,
             "emsAlive": 7,
-            #'acCouplingMode:2;              // 8-9
+            # 'acCouplingMode:2;              // 8-9
             "acModeBlocked": 10,
             "sysConfChecked": 11,
             "emergencyPowerStarted": 12,

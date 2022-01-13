@@ -4,12 +4,10 @@
 # Copyright 2017 Francesco Santini <francesco.santini@gmail.com>
 # Licensed under a MIT license. See LICENSE for details
 
-import datetime
 import socket
-import time
 
 from ._RSCPEncryptDecrypt import RSCPEncryptDecrypt
-from ._rscpLib import rscpDecode, rscpEncode, rscpFindTag, rscpFrame, rscpFrameDecode
+from ._rscpLib import rscpDecode, rscpEncode, rscpFrame
 
 PORT = 5033
 BUFFER_SIZE = 1024 * 32
@@ -83,7 +81,7 @@ class E3DC_RSCP_local:
             raise CommunicationError
         self.encdec = RSCPEncryptDecrypt(self.key)
 
-        decData = self.sendRequest(
+        self.sendRequest(
             (
                 "RSCP_REQ_AUTHENTICATION",
                 "Container",

@@ -214,7 +214,6 @@ class E3DC_RSCP:
             # this signifies some error
             self.disconnect()
         elif decodedMsg[0] == "SERVER_REQ_RSCP_CMD":
-            thisConId = rscpFindTag(decodedMsg, "SERVER_CONNECTION_ID")[2]
             data = rscpLib.rscpFrameDecode(
                 rscpFindTag(decodedMsg, "SERVER_RSCP_DATA")[2]
             )[0]
@@ -301,7 +300,7 @@ class E3DC_RSCP:
 
         self.ws.send(outerFrame, websocket.ABNF.OPCODE_BINARY)
 
-        if synchronous == True:
+        if synchronous:
             for i in range(self.TIMEOUT * 10):
                 if self.responseCallbackCalled:
                     break
