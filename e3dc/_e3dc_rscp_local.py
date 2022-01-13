@@ -4,11 +4,12 @@
 # Copyright 2017 Francesco Santini <francesco.santini@gmail.com>
 # Licensed under a MIT license. See LICENSE for details
 
-import socket
-from ._rscpLib import rscpFrame, rscpEncode, rscpFrameDecode, rscpDecode, rscpFindTag
-from ._RSCPEncryptDecrypt import RSCPEncryptDecrypt
-import time
 import datetime
+import socket
+import time
+
+from ._RSCPEncryptDecrypt import RSCPEncryptDecrypt
+from ._rscpLib import rscpDecode, rscpEncode, rscpFindTag, rscpFrame, rscpFrameDecode
 
 PORT = 5033
 BUFFER_SIZE=1024*32

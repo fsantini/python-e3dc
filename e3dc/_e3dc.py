@@ -4,15 +4,21 @@
 # Copyright 2017 Francesco Santini <francesco.santini@gmail.com>
 # Licensed under a MIT license. See LICENSE for details
 
-import requests
-import hashlib
-import time
-import dateutil.parser
 import datetime
+import hashlib
 import json
+import time
 import uuid
+
+import dateutil.parser
+import requests
+
+from ._e3dc_rscp_local import (
+    E3DC_RSCP_local,
+    RSCPAuthenticationError,
+    RSCPNotAvailableError,
+)
 from ._e3dc_rscp_web import E3DC_RSCP_web
-from ._e3dc_rscp_local import E3DC_RSCP_local, RSCPAuthenticationError, RSCPNotAvailableError
 from ._rscpLib import rscpFindTag
 
 REMOTE_ADDRESS='https://s10.e3dc.com/s10/phpcmd/cmd.php'

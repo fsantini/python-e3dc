@@ -4,13 +4,14 @@
 # Copyright 2017 Francesco Santini <francesco.santini@gmail.com>
 # Licensed under a MIT license. See LICENSE for details
 
-import websocket
-import time
-import struct
-import hashlib
-import threading # TODO: move to threading to make python3 easier
-import tzlocal
 import datetime
+import hashlib
+import struct
+import threading  # TODO: move to threading to make python3 easier
+import time
+
+import tzlocal
+import websocket
 
 from . import _rscpLib as rscpLib
 

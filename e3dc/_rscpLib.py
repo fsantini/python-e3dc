@@ -4,11 +4,12 @@
 # Copyright 2017 Francesco Santini <francesco.santini@gmail.com>
 # Licensed under a MIT license. See LICENSE for details
 
-from . import _rscpTags as rscpTags
+import math
 import struct
 import time
-import math
 import zlib
+
+from . import _rscpTags as rscpTags
 
 packFmtDict_FixedSize = {
     "Bool": "?",

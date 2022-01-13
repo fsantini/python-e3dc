@@ -1,6 +1,6 @@
-from py3rijndael import RijndaelCbc, ZeroPadding
-
 import math
+
+from py3rijndael import RijndaelCbc, ZeroPadding
 
 KEY_SIZE = 32
 BLOCK_SIZE = 32
