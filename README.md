@@ -1,6 +1,6 @@
 # python-e3dc
 
-**NOTE: This branch is now for python3 and it has a different API than the old python2.7**
+**NOTE: With Release 0.6.0 at least Python 3.7 is required**
 
 Python API for querying E3/DC systems, either through the manufacturer's portal or directly via RSCP connection
 
