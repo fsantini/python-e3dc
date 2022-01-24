@@ -231,9 +231,9 @@ class E3DC_RSCP_web:
             response = b""
             self.responseCallbackCalled = False
             while len(data) > 0:
-                decoded, l = rscpLib.rscpDecode(data)
+                decoded, size = rscpLib.rscpDecode(data)
                 # print "Inner frame chunk decoded", decoded
-                data = data[l:]
+                data = data[size:]
                 responseChunk = self.respondToINFORequest(decoded)
                 if responseChunk is None:
                     # this is not a standard request: call the registered callback

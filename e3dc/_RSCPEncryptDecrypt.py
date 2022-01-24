@@ -14,19 +14,19 @@ class ParameterError(Exception):
 
 def zeroPad_multiple(string, value):
     """Zero padding string."""
-    l = len(string)
-    if l % value == 0:
+    length = len(string)
+    if length % value == 0:
         return string
-    newL = int(value * math.ceil(float(l) / value))
+    newL = int(value * math.ceil(float(length) / value))
     return string.ljust(newL, b"\x00")
 
 
 def truncate_multiple(string, value):
     """Truncating sting."""
-    l = len(string)
-    if l % value == 0:
+    length = len(string)
+    if length % value == 0:
         return string
-    newL = int(value * math.floor(float(l) / value))
+    newL = int(value * math.floor(float(length) / value))
     return string[:newL]
 
 
@@ -63,11 +63,13 @@ class RSCPEncryptDecrypt:
     def decrypt(self, encText, previouslyProcessedData=None):
         """Method to decryt encrypted text."""
         if previouslyProcessedData is None:
-            l = len(self.oldDecrypt)
-            if l % BLOCK_SIZE == 0:
-                previouslyProcessedData = l
+            length = len(self.oldDecrypt)
+            if length % BLOCK_SIZE == 0:
+                previouslyProcessedData = length
             else:
-                previouslyProcessedData = int(BLOCK_SIZE * math.floor(l / BLOCK_SIZE))
+                previouslyProcessedData = int(
+                    BLOCK_SIZE * math.floor(length / BLOCK_SIZE)
+                )
 
         # previouslyProcessedData was passed by the parent: it means that a frame was decoded and there was some data left. This does not include the padding zeros
         if previouslyProcessedData % BLOCK_SIZE != 0:
