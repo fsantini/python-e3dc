@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Python class to connect to an E3/DC system through the internet portal
+# Python class to connect to an E3/DC system.
 #
 # Copyright 2017 Francesco Santini <francesco.santini@gmail.com>
 # Licensed under a MIT license. See LICENSE for details
@@ -33,8 +33,9 @@ packFmtDict_VarSize = {
     "Error": "s",
 }
 
-# finds a submessage with a specific tag
+
 def rscpFindTag(decodedMsg, tag):
+    """Finds a submessage with a specific tag."""
     if decodedMsg[0] == tag:
         return decodedMsg
     if isinstance(decodedMsg[2], list):
@@ -45,16 +46,19 @@ def rscpFindTag(decodedMsg, tag):
     return None
 
 
-# magic and ctrl are endian swapped
 def endianSwapUint16(val):
+    """Endian swaps magic and ctrl."""
     return struct.unpack("<H", struct.pack(">H", val))[0]
 
 
 class FrameError(Exception):
+    """Class for Frame Error Exception."""
+
     pass
 
 
 def rscpEncode(tagStr, typeStr=None, data=None):
+    """RSCP encodes data."""
     if isinstance(tagStr, tuple):
         typeStr = tagStr[1]
         data = tagStr[2]
@@ -108,6 +112,7 @@ def rscpEncode(tagStr, typeStr=None, data=None):
 
 
 def rscpFrame(data):
+    """Generates RSCP frame."""
     magic = endianSwapUint16(0xE3DC)
     ctrl = endianSwapUint16(0x11)
     t = time.time()
@@ -123,6 +128,7 @@ def rscpFrame(data):
 
 
 def rscpFrameDecode(frameData, returnFrameLen=False):
+    """Decodes RSCP Frame."""
     headerFmt = "<HHIIIH"
     crcFmt = "I"
     crc = None
@@ -162,7 +168,7 @@ def rscpFrameDecode(frameData, returnFrameLen=False):
 
 
 def rscpDecode(data):
-
+    """Decodes RSCP data."""
     headerFmt = (
         "<IBH"  # format of header: little-endian, Uint32 tag, Uint8 type, Uint16 length
     )
@@ -213,6 +219,7 @@ def rscpDecode(data):
         val = rscpTags.getErrorcode(int.from_bytes(val, "little"))
     elif isinstance(val, bytes) and strType == "CString":
         # return string instead of bytes
-        val = val.decode("utf-8")
+        # ignore none utf-8 bytes
+        val = val.decode("utf-8", "ignore")
 
     return (strTag, strType, val), headerSize + struct.calcsize(fmt)

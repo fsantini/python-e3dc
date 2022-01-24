@@ -27,56 +27,54 @@ REQUEST_INTERVAL_SEC_LOCAL = 1  # minimum interval between requests
 
 
 class AuthenticationError(Exception):
+    """Class for Authentication Error Exception."""
+
     pass
 
 
 class NotAvailableError(Exception):
+    """Class for Not Available Error Exception."""
+
     pass
 
 
 class PollError(Exception):
+    """Class for Poll Error Exception."""
+
     pass
 
 
 class SendError(Exception):
+    """Class for Send Error Exception."""
+
     pass
 
 
 class E3DC:
-    """A class describing an E3DC system, used to poll the status from the portal"""
+    """A class describing an E3DC system."""
 
     CONNECT_LOCAL = 1
     CONNECT_WEB = 2
 
-    DAY_MONDAY = 0
-    DAY_TUESDAY = 1
-    DAY_WEDNESDAY = 2
-    DAY_THURSDAY = 3
-    DAY_FRIDAY = 4
-    DAY_SATURDAY = 5
-    DAY_SUNDAY = 6
-
-    IDLE_TYPE = {"idleCharge": 0, "idleDischarge": 1}
+    _IDLE_TYPE = {"idleCharge": 0, "idleDischarge": 1}
 
     def __init__(self, connectType, **kwargs):
-        """Constructor of a E3DC object (does not connect)
+        """Constructor of a E3DC object.
 
         Args:
-            connectType: CONNECT_LOCAL: use local rscp connection
-                Named args for CONNECT_LOCAL:
-                username (string): username
-                password (string): password (plain text)
-                ipAddress (string): IP address of the E3DC system
-                key (string): encryption key as set in the E3DC settings
+            connectType: can be one of the following
+                E3DC.CONNECT_LOCAL use local rscp connection
+                E3DC.CONNECT_WEB use web connection
+            **kwargs: Arbitrary keyword argument
 
-            connectType: CONNECT_WEB: use web connection
-                Named args for CONNECT_WEB:
-                username (string): username
-                password (string): password (plain text or md5 hash)
-                serialNumber (string): the serial number of the system to monitor
-                isPasswordMd5 (boolean, optional): indicates whether the password is already md5 digest (recommended, default = True)
+        Keyword Args:
+            username (str): username
+            password (str): password (plain text)
+            ipAddress (str): IP address of the E3DC system - required for CONNECT_LOCAL
+            key (str): encryption key as set in the E3DC settings - required for CONNECT_LOCAL
+            serialNumber (str): the serial number of the system to monitor - required for CONNECT_WEB
+            isPasswordMd5 (Optional[bool]): indicates whether the password is already md5 digest (recommended, default = True) - required for CONNECT_WEB
         """
-
         self.connectType = connectType
         self.username = kwargs["username"]
         self.serialNumber = None
@@ -128,6 +126,8 @@ class E3DC:
         self.get_system_info_static(keepAlive=True)
 
     def _set_serial(self, serial):
+        self.batIndex = 0
+        self.pmIndexExt = 1
         if serial[0].isdigit():
             self.serialNumber = serial
         else:
@@ -136,37 +136,29 @@ class E3DC:
         if self.serialNumber.startswith("4"):
             self.model = "S10E"
             self.pmIndex = 0
-            self.pmIndexExt = 1
             if not self.serialNumberPrefix:
                 self.serialNumberPrefix = "S10-"
         elif self.serialNumber.startswith("5"):
             self.model = "S10mini"
             self.pmIndex = 6
-            self.pmIndexExt = 1
             if not self.serialNumberPrefix:
                 self.serialNumberPrefix = "S10-"
         elif self.serialNumber.startswith("6"):
             self.model = "Quattroporte"
             self.pmIndex = 6
-            self.pmIndexExt = 1
             if not self.serialNumberPrefix:
                 self.serialNumberPrefix = "Q10-"
         elif self.serialNumber.startswith("7"):
             self.model = "Pro"
             self.pmIndex = 6
-            self.pmIndexExt = 1
             if not self.serialNumberPrefix:
                 self.serialNumberPrefix = "P10-"
         else:
             self.model = "NA"
             self.pmIndex = 0
-            self.pmIndexExt = 1
-
-    def connect_local(self):
-        pass
 
     def connect_web(self):
-        """Connects to the E3DC portal and opens a session
+        """Connects to the E3DC portal and opens a session.
 
         Raises:
             e3dc.AuthenticationError: login error
@@ -213,15 +205,14 @@ class E3DC:
         self.connected = True
 
     def poll_ajax_raw(self):
-        """Polls the portal for the current status
+        """Polls the portal for the current status.
 
         Returns:
-            Dictionary containing the status information in raw format as returned by the portal
+            dict: Dictionary containing the status information in raw format as returned by the portal
 
         Raises:
             e3dc.PollError in case of problems polling
         """
-
         if not self.connected:
             self.connect_web()
 
@@ -247,24 +238,29 @@ class E3DC:
         return json.loads(jsonResponse["CONTENT"])
 
     def poll_ajax(self, **kwargs):
-        """Polls the portal for the current status and returns a digest
+        """Polls the portal for the current status and returns a digest.
+
+        Args:
+            **kwars: argument list
 
         Returns:
-            Dictionary containing the condensed status information structured as follows:
+            dict: Dictionary containing the condensed status information structured as follows::
+
                 {
-                    'time': datetime object containing the timestamp
-                    'sysStatus': string containing the system status code
-                    'stateOfCharge': battery charge status in %
-                    'consumption': { consumption values: positive means exiting the system
-                        'battery': power entering battery (positive: charging, negative: discharging)
-                        'house': house consumption
-                        'wallbox': wallbox consumption
-                    },
-                    'production': { production values: positive means entering the system
-                        'solar' : production from solar in W
-                        'add' : additional external power in W
-                        'grid' : absorption from grid in W
-                        }
+                    "autarky": <autarky in %>,
+                    "consumption": {
+                        "battery": <power entering battery (positive: charging, negative: discharging)>,
+                        "house": <house consumption>,
+                        "wallbox": <wallbox consumption>
+                    }
+                    "production": {
+                        "solar" : <production from solar in W>,
+                        "add" : <additional external power in W>,
+                        "grid" : <absorption from grid in W>
+                    }
+                    "stateOfCharge": <battery charge status in %>,
+                    "selfConsumption": <self consumed power in %>,
+                    "time": <datetime object containing the timestamp>
                 }
 
         Raises:
@@ -312,25 +308,29 @@ class E3DC:
         return outObj
 
     def poll_rscp(self, keepAlive=False):
-        """Polls via rscp protocol locally
+        """Polls via rscp protocol locally.
+
+        Args:
+            keepAlive (Optional[bool]): True to keep connection alive
 
         Returns:
-            Dictionary containing the condensed status information structured as follows:
+            dict: Dictionary containing the condensed status information structured as follows::
+
                 {
-                    'autarky': autarky in %
-                    'consumption': { consumption values: positive means exiting the system
-                        'battery': power entering battery (positive: charging, negative: discharging)
-                        'house': house consumption
-                        'wallbox': wallbox consumption
+                    "autarky": <autarky in %>,
+                    "consumption": {
+                        "battery": <power entering battery (positive: charging, negative: discharging)>,
+                        "house": <house consumption>,
+                        "wallbox": <wallbox consumption>
                     }
-                    'production': { production values: positive means entering the system
-                        'solar' : production from solar in W
-                        'add' : additional external power in W
-                        'grid' : absorption from grid in W
+                    "production": {
+                        "solar" : <production from solar in W>,
+                        "add" : <additional external power in W>,
+                        "grid" : <absorption from grid in W>
                     }
-                    'stateOfCharge': battery charge status in %
-                    'selfConsumption': self consumed power in %
-                    'time': datetime object containing the timestamp
+                    "stateOfCharge": <battery charge status in %>,
+                    "selfConsumption": <self consumed power in %>,
+                    "time": <datetime object containing the timestamp>
                 }
         """
         if (
@@ -377,11 +377,23 @@ class E3DC:
         return outObj
 
     def poll_switches(self, keepAlive=False):
-        """
-        This function uses the RSCP interface to poll the switch status
-        if keepAlive is False, the connection is closed afterwards
-        """
+        """This function uses the RSCP interface to poll the switch status.
 
+        Args:
+            keepAlive (Optional[bool]): True to keep connection alive
+
+        Returns:
+            list[dict]: list of the switches::
+
+                [
+                    {
+                        "id": <id>,
+                        "type": <type>,
+                        "name": <name>,
+                        "status": <status>
+                    }
+                ]
+        """
         if not self.rscp.isConnected():
             self.rscp.connect()
 
@@ -394,8 +406,6 @@ class E3DC:
 
         descList = switchDesc[2]  # get the payload of the container
         statusList = switchStatus[2]
-
-        # print switchStatus
 
         switchList = []
 
@@ -416,11 +426,17 @@ class E3DC:
         return switchList
 
     def set_switch_onoff(self, switchID, value, keepAlive=False):
-        """
-        This function uses the RSCP interface to turn a switch on or off
-        The switchID is as returned by poll_switches
-        """
+        """This function uses the RSCP interface to turn a switch on or off.
 
+        Args:
+            switchID (int): id of the switch
+            value (str): value
+            keepAlive (Optional[bool]): True to keep connection alive
+
+        Returns:
+            True/False
+
+        """
         cmd = "on" if value else "off"
 
         result = self.sendRequest(
@@ -441,12 +457,18 @@ class E3DC:
             return False  # operation did not succeed
 
     def sendRequest(self, request, retries=3, keepAlive=False):
-        """
-        This function uses the RSCP interface to make an request
+        """This function uses the RSCP interface to make a request.
+
         Does make retries in case of exceptions like Socket.Error
+
+        Args:
+            request: the request to send
+            retries (Optional[int]): number of retries
+            keepAlive (Optional[bool]): True to keep connection alive
 
         Returns:
             An object with the received data
+
         Raises:
             e3dc.AuthenticationError: login error
             e3dc.SendError: if retries are reached
@@ -473,43 +495,47 @@ class E3DC:
         return result
 
     def get_idle_periods(self, keepAlive=False):
-        """poll via rscp protocol to get idle periods
+        """Poll via rscp protocol to get idle periods.
+
+        Args:
+            keepAlive (Optional[bool]): True to keep connection alive
 
         Returns:
-            Dictionary containing the idle periods:
+            dict: Dictionary containing the idle periods structured as follows::
+
                 {
-                    'idleCharge': list of the idle charge times
+                    "idleCharge":
                     [
                         {
-                            'day': the week day from 0 to 6
-                            'start': list of start time
+                            "day": <the week day from 0 to 6>,
+                            "start":
                             [
-                                int: hour from 0 to 23
-                                int: minute from 0 to 59
-                            ]
-                            'end': list of end time
+                                <hour from 0 to 23>,
+                                <minute from 0 to 59>
+                            ],
+                            "end":
                             [
-                                int: hour from 0 to 23
-                                int: minute from 0 to 59
-                            [
-                            'active': boolean of state
+                                <hour from 0 to 23>,
+                                <minute from 0 to 59>
+                            ],
+                            "active": <boolean of state>
                         }
-                    ]
-                    'idleDischarge': list of the idle discharge times
+                    ],
+                    "idleDischarge":
                     [
                         {
-                            'day': the week day from 0 to 6
-                            'start': list of start time
+                            "day": <the week day from 0 to 6>,
+                            "start":
                             [
-                                int: hour from 0 to 23
-                                int: minute from 0 to 59
-                            ]
-                            'end': list of end time
+                                <hour from 0 to 23>,
+                                <minute from 0 to 59>
+                            ],
+                            "end":
                             [
-                                int: hour from 0 to 23
-                                int: minute from 0 to 59
-                            [
-                            'active': boolean of state
+                                <hour from 0 to 23>,
+                                <minute from 0 to 59>
+                            ],
+                            "active": <boolean of state>
                         }
                     ]
                 }
@@ -540,7 +566,7 @@ class E3DC:
                 "active": active,
             }
 
-            if typ == self.IDLE_TYPE["idleCharge"]:
+            if typ == self._IDLE_TYPE["idleCharge"]:
                 idlePeriods["idleCharge"][day] = periodObj
             else:
                 idlePeriods["idleDischarge"][day] = periodObj
@@ -548,51 +574,53 @@ class E3DC:
         return idlePeriods
 
     def set_idle_periods(self, idlePeriods, keepAlive=False):
-        """set via rscp protocol the idle periods
+        """Set idle periods via rscp protocol.
 
-        Inputs:
-            idlePeriods: Dictionary containing one or many idle periods
+        Args:
+            idlePeriods (dict): Dictionary containing one or many idle periods::
+
                 {
-                    'idleCharge': list of the idle charge times
+                    "idleCharge":
                     [
                         {
-                            'day': the week day from 0 to 6
-                            'start': list of start time
+                            "day": <the week day from 0 to 6>,
+                            "start":
                             [
-                                int: hour from 0 to 23
-                                int: minute from 0 to 59
-                            ]
-                            'end': list of end time
+                                <hour from 0 to 23>,
+                                <minute from 0 to 59>
+                            ],
+                            "end":
                             [
-                                int: hour from 0 to 23
-                                int: minute from 0 to 59
-                            [
-                            'active': boolean of state
+                                <hour from 0 to 23>,
+                                <minute from 0 to 59>
+                            ],
+                            "active": <boolean of state>
                         }
                     ],
-                    'idleDischarge': list of the idle discharge times
+                    "idleDischarge":
                     [
                         {
-                            'day': the week day from 0 to 6
-                            'start': list of start time
+                            "day": <the week day from 0 to 6>,
+                            "start":
                             [
-                                int: hour from 0 to 23
-                                int: minute from 0 to 59
-                            ]
-                            'end': list of end time
+                                <hour from 0 to 23>,
+                                <minute from 0 to 59>
+                            ],
+                            "end":
                             [
-                                int: hour from 0 to 23
-                                int: minute from 0 to 59
-                            [
-                            'active': boolean of state
+                                <hour from 0 to 23>,
+                                <minute from 0 to 59>
+                            ],
+                            "active": <boolean of state>
                         }
                     ]
                 }
+            keepAlive (Optional[bool]): True to keep connection alive
+
         Returns:
             True if success
             False if error
         """
-
         periodList = []
 
         if not isinstance(idlePeriods, dict):
@@ -668,7 +696,7 @@ class E3DC:
                                                 (
                                                     "EMS_IDLE_PERIOD_TYPE",
                                                     "UChar8",
-                                                    self.IDLE_TYPE[idle_type],
+                                                    self._IDLE_TYPE[idle_type],
                                                 ),
                                                 (
                                                     "EMS_IDLE_PERIOD_DAY",
@@ -741,27 +769,28 @@ class E3DC:
     def get_db_data(
         self, startDate: datetime.date = None, timespan: str = "DAY", keepAlive=False
     ):
-        """
-        Reads DB data and summed up values for the given timespan via rscp protocol locally
-        All parameters are optional, but if none is given, the db data for today is retrieved
-        Possible values for timespan are 'YEAR', 'MONTH' or 'DAY'
+        """Reads DB data and summed up values for the given timespan via rscp protocol locally.
+
+        Args:
+            startDate (datetime.date): start date for timespan, default today
+            timespan (str): string specifying the time span ["DAY", "MONTH", "YEAR"]
+            keepAlive (Optional[bool]): True to keep connection alive
 
         Returns:
-            Dictionary containing the stored db information structured as follows:
+            dict: Dictionary containing the stored db information structured as follows::
 
-            {
-            'bat_power_in': power entering battery, charging
-            'bat_power_out': power leavinb battery, discharging
-            'solarProduction': power production
-            'grid_power_in': power taken from the grid
-            'grid_power_out': power into the grid
-            'consumption':  self consumed power
-            'stateOfCharge': battery charge level in %
-            'consumed_production':  power directly consumed in %
-            'autarky':  autarky in the period in %
-            }
+                {
+                    "autarky": <autarky in the period in %>,
+                    "bat_power_in": <power entering battery, charging>,
+                    "bat_power_out": <power leavinb battery, discharging>,
+                    "consumed_production": <power directly consumed in %>,
+                    "consumption": <self consumed power>,
+                    "grid_power_in": <power taken from the grid>,
+                    "grid_power_out": <power into the grid>,
+                    "stateOfCharge": <battery charge level in %>,
+                    "solarProduction": <power production>,
+                }
         """
-
         span: int = 0
         if startDate is None:
             startDate = datetime.date.today()
@@ -796,23 +825,26 @@ class E3DC:
         )
 
         outObj = {
+            "autarky": rscpFindTag(response[2][0], "DB_AUTARKY")[2],
             "bat_power_in": rscpFindTag(response[2][0], "DB_BAT_POWER_IN")[2],
             "bat_power_out": rscpFindTag(response[2][0], "DB_BAT_POWER_OUT")[2],
-            "solarProduction": rscpFindTag(response[2][0], "DB_DC_POWER")[2],
-            "grid_power_in": rscpFindTag(response[2][0], "DB_GRID_POWER_IN")[2],
-            "grid_power_out": rscpFindTag(response[2][0], "DB_GRID_POWER_OUT")[2],
-            "consumption": rscpFindTag(response[2][0], "DB_CONSUMPTION")[2],
-            "stateOfCharge": rscpFindTag(response[2][0], "DB_BAT_CHARGE_LEVEL")[2],
             "consumed_production": rscpFindTag(
                 response[2][0], "DB_CONSUMED_PRODUCTION"
             )[2],
-            "autarky": rscpFindTag(response[2][0], "DB_AUTARKY")[2],
+            "consumption": rscpFindTag(response[2][0], "DB_CONSUMPTION")[2],
+            "grid_power_in": rscpFindTag(response[2][0], "DB_GRID_POWER_IN")[2],
+            "grid_power_out": rscpFindTag(response[2][0], "DB_GRID_POWER_OUT")[2],
+            "stateOfCharge": rscpFindTag(response[2][0], "DB_BAT_CHARGE_LEVEL")[2],
+            "solarProduction": rscpFindTag(response[2][0], "DB_DC_POWER")[2],
         }
         return outObj
 
     def get_system_info_static(self, keepAlive=False):
-        """Polls the static system info via rscp protocol locally"""
+        """Polls the static system info via rscp protocol locally.
 
+        Args:
+            keepAlive (Optional[bool]): True to keep connection alive
+        """
         self.deratePercent = round(
             self.sendRequest(
                 ("EMS_REQ_DERATE_AT_PERCENT_VALUE", "None", None), keepAlive=True
@@ -836,11 +868,13 @@ class E3DC:
         ):  # do not send this for a web connection because it screws up the handshake!
             self._set_serial(
                 self.sendRequest(
-                    ("INFO_REQ_SERIAL_NUMBER", "None", None), keepAlive=keepAlive
+                    ("INFO_REQ_SERIAL_NUMBER", "None", None), keepAlive=True
                 )[2]
             )
 
-        sys_specs = self.sendRequest(("EMS_REQ_GET_SYS_SPECS", "None", None))[2]
+        sys_specs = self.sendRequest(
+            ("EMS_REQ_GET_SYS_SPECS", "None", None), keepAlive=keepAlive
+        )[2]
         for item in sys_specs:
             if rscpFindTag(item, "EMS_SYS_SPEC_NAME")[2] == "installedBatteryCapacity":
                 self.installedBatteryCapacity = rscpFindTag(
@@ -860,26 +894,29 @@ class E3DC:
         return True
 
     def get_system_info(self, keepAlive=False):
-        """Polls the system info via rscp protocol locally
+        """Polls the system info via rscp protocol locally.
+
+        Args:
+            keepAlive (Optional[bool]): True to keep connection alive
 
         Returns:
-            Dictionary containing the system info structured as follows:
+            dict: Dictionary containing the system info structured as follows::
+
                 {
-                    'deratePercent': % of installed peak power the feed in will be derated
-                    'deratePower': W at which the feed in will be derated
-                    'installedBatteryCapacity': installed Battery Capacity in W
-                    'installedPeakPower': installed peak power in W
-                    'externalSourceAvailable': wether an additional power meter is installed
-                    'maxAcPower': max AC power
-                    'macAddress': the mac address
-                    'maxBatChargePower': max Battery charge power
-                    'maxBatDischargePower': max Battery discharge power
-                    'model': model connected to
-                    'release': release version
-                    'serial': serial number of the system
+                    "deratePercent": <% of installed peak power the feed in will be derated>,
+                    "deratePower": <W at which the feed in will be derated>,
+                    "externalSourceAvailable": <wether an additional power meter is installed>,
+                    "installedBatteryCapacity": <installed Battery Capacity in W>,
+                    "installedPeakPower": <installed peak power in W>,
+                    "maxAcPower": <max AC power>,
+                    "macAddress": <the mac address>,
+                    "maxBatChargePower": <max Battery charge power>,
+                    "maxBatDischargePower": <max Battery discharge power>,
+                    "model": <model connected to>,
+                    "release": <release version>,
+                    "serial": <serial number of the system>
                 }
         """
-
         # use keepAlive setting for last request
         sw = self.sendRequest(
             ("INFO_REQ_SW_RELEASE", "None", None), keepAlive=keepAlive
@@ -890,9 +927,9 @@ class E3DC:
         outObj = {
             "deratePercent": self.deratePercent,
             "deratePower": self.deratePower,
+            "externalSourceAvailable": self.externalSourceAvailable,
             "installedBatteryCapacity": self.installedBatteryCapacity,
             "installedPeakPower": self.installedPeakPower,
-            "externalSourceAvailable": self.externalSourceAvailable,
             "maxAcPower": self.maxAcPower,
             "macAddress": self.macAddress,
             "maxBatChargePower": self.maxBatChargePower,
@@ -904,34 +941,37 @@ class E3DC:
         return outObj
 
     def get_system_status(self, keepAlive=False):
-        """Polls the system status via rscp protocol locally
+        """Polls the system status via rscp protocol locally.
+
+        Args:
+            keepAlive (Optional[bool]): True to keep connection alive
 
         Returns:
-            Dictionary containing the system status structured as follows:
+            dict: Dictionary containing the system status structured as follows::
+
                 {
-                    'dcdcAlive': dcdc alive
-                    'powerMeterAlive': power meter alive
-                    'batteryModuleAlive': battery module alive
-                    'pvModuleAlive': pv module alive
-                    'pvInverterInited': pv inverter inited
-                    'serverConnectionAlive': server connection alive
-                    'pvDerated':  pv derated due to deratePower limit reached
-                    'emsAlive': emd alive
-                    'acModeBlocked': ad mode blocked
-                    'sysConfChecked': sys conf checked
-                    'emergencyPowerStarted': emergency power started
-                    'emergencyPowerOverride': emergency power override
-                    'wallBoxAlive': wall box alive
-                    'powerSaveEnabled': power save enabled
-                    'chargeIdlePeriodActive': charge idle period active
-                    'dischargeIdlePeriodActive': discharge idle period active
-                    'waitForWeatherBreakthrough': wait for weather breakthrouhgh
-                    'rescueBatteryEnabled': rescue battery enabled
-                    'emergencyReserveReached': emergencey reserve reached
-                    'socSyncRequested': soc sync requested
+                    "dcdcAlive": <dcdc alive>,
+                    "powerMeterAlive": <power meter alive>,
+                    "batteryModuleAlive": <battery module alive>,
+                    "pvModuleAlive": <pv module alive>,
+                    "pvInverterInited": <pv inverter inited>,
+                    "serverConnectionAlive": <server connection alive>,
+                    "pvDerated": <pv derated due to deratePower limit reached>,
+                    "emsAlive": <emd alive>,
+                    "acModeBlocked": <ad mode blocked>,
+                    "sysConfChecked": <sys conf checked>,
+                    "emergencyPowerStarted": <emergency power started>,
+                    "emergencyPowerOverride": <emergency power override>,
+                    "wallBoxAlive": <wall box alive>,
+                    "powerSaveEnabled": <power save enabled>,
+                    "chargeIdlePeriodActive": <charge idle period active>,
+                    "dischargeIdlePeriodActive": <discharge idle period active>,
+                    "waitForWeatherBreakthrough": <wait for weather breakthrouhgh>,
+                    "rescueBatteryEnabled": <rescue battery enabled>,
+                    "emergencyReserveReached": <emergencey reserve reached>,
+                    "socSyncRequested": <soc sync requested>
                 }
         """
-
         # use keepAlive setting for last request
         sw = self.sendRequest(
             ("EMS_REQ_SYS_STATUS", "None", None), keepAlive=keepAlive
@@ -947,7 +987,7 @@ class E3DC:
             "serverConnectionAlive": 5,
             "pvDerated": 6,
             "emsAlive": 7,
-            # 'acCouplingMode:2;              // 8-9
+            # "acCouplingMode:2;              // 8-9
             "acModeBlocked": 10,
             "sysConfChecked": 11,
             "emergencyPowerStarted": 12,
@@ -964,34 +1004,91 @@ class E3DC:
         outObj = {k: SystemStatusBools[v] for k, v in outObj.items()}
         return outObj
 
-    def get_battery_data(self, batIndex=0, keepAlive=False):
-        """Polls the baterry data via rscp protocol locally
+    def get_battery_data(self, batIndex=None, dcb=None, keepAlive=False):
+        """Polls the baterry data via rscp protocol locally.
+
+        Args:
+            batIndex (Optional[int]): battery index
+            dcb (Union[int, list]): dcb list
+            keepAlive (Optional[bool]): True to keep connection alive
 
         Returns:
-            Dictionary containing the battery data structured as follows:
+            dict: Dictionary containing the battery data structured as follows::
+
                 {
-                    'batIndex': battery index
-                    'chargeCycles': charge cycles
-                    'current': current
-                    'designCapacity': designed capacity
-                    'deviceConnected': boolean if battery connected
-                    'deviceInService': boolean if battery in service
-                    'deviceName': device name
-                    'deviceWorking': boolean if battery working
-                    'eodVoltage': end of discharge voltage
-                    'errorCode': error code
-                    'maxBatVoltage': maximum battery voltage
-                    'maxChargeCurrent': maximum charge current
-                    'maxDcbCellTemp': maximum Dcb cell temp
-                    'maxDischargeCurrent': maximum discharge current
-                    'moduleVoltage': module voltage
-                    'rsoc': state of charge
-                    'statusCode': status code
-                    'terminalVoltage': terminal voltage
-                    'usuableCapacity': usuable capacity
-                    'usuableRemainingCapacity': usuable remaining capacity
+                    "asoc": <absolute state of charge>,
+                    "chargeCycles": <charge cycles>,
+                    "current": <current>,
+                    "dcbCount": <dcb count>,
+                    "dcbs": {"0":
+                        {
+                            "current": <current>,
+                            "currentAvg30s": <current average 30s>,
+                            "cycleCount": <cycle count>,
+                            "designCapacity": <design capacity>,
+                            "designVoltage": <design voltage>,
+                            "deviceName": <device name>,
+                            "endOfDischarge": <end of discharge>,
+                            "error": <error>,
+                            "fullChargeCapacity": <full charge capacity>,
+                            "fwVersion": <firmware version>,
+                            "manufactureDate": <manufacture date>,
+                            "manufactureName": <manufacture name>,
+                            "maxChargeCurrent": <max charge current>,
+                            "maxChargeTemperature": <max charge temperature>,
+                            "maxChargeVoltage": <max charge voltage>,
+                            "maxDischargeCurrent": <max discharge current>,
+                            "minChargeTemperature": <min charge temperature>,
+                            "parallelCellCount": <parallel cell count>,
+                            "sensorCount": <sensor countt>,
+                            "seriesCellCount": <cells in series count>,
+                            "pcbVersion": <pcb version>,
+                            "protocolVersion": <protocol version>,
+                            "remainingCapacity": <remaining capacity>,
+                            "serialCode": <serial code>,
+                            "serialNo": <serial no>,
+                            "soc": <state of charge>,
+                            "soh": <state of health>,
+                            "status": <status>,
+                            "temperatures": <temperatures>,
+                            "voltage": <voltage>,
+                            "voltageAvg30s": <voltage average 30s>,
+                            "voltages": <voltages>,
+                            "warning": <warning>
+                        }
+                    },
+                    "designCapacity": <design capacity>,
+                    "deviceConnected": <device connected>,
+                    "deviceInService": <device in service>,
+                    "deviceName": <device name>,
+                    "deviceWorking": <device working>,
+                    "eodVoltage": <eod voltage>,
+                    "errorCode": <error code>,
+                    "fcc": <full charge capacity>,
+                    "index": <batIndex>,
+                    "maxBatVoltage": <max battery voltage>,
+                    "maxChargeCurrent": <max charge current>,
+                    "maxDischargeCurrent": <max discharge current>,
+                    "maxDcbCellTemp": <max DCB cell temp>,
+                    "measuredResistance": <measured resistance>,
+                    "measuredResistanceRun": <measure resistance (RUN)>,
+                    "minDcbCellTemp": <min DCB cell temp>,
+                    "moduleVoltage": <module voltage>,
+                    "rc": <rc>,
+                    "readyForShutdown": <ready for shutdown>,
+                    "rsoc": <relative state of charge>,
+                    "rsocReal": <real relative state of charge>,
+                    "statusCode": <status code>,
+                    "terminalVoltage": <terminal voltage>,
+                    "totalUseTime": <total use time>,
+                    "totalDischargeTime": <total discharge time>,
+                    "trainingMode": <training mode>,
+                    "usuableCapacity": <usuable capacity>
+                    "usuableRemainingCapacity": <usuable remaining capacity>
                 }
         """
+        if batIndex is None:
+            batIndex = self.batIndex
 
         req = self.sendRequest(
             (
@@ -999,98 +1096,251 @@ class E3DC:
                 "Container",
                 [
                     ("BAT_INDEX", "Uint16", batIndex),
-                    ("BAT_REQ_DEVICE_STATE", "None", None),
-                    ("BAT_REQ_MAX_DCB_CELL_TEMPERATURE", "None", None),
-                    ("BAT_REQ_MODULE_VOLTAGE", "None", None),
+                    ("BAT_REQ_ASOC", "None", None),
+                    ("BAT_REQ_CHARGE_CYCLES", "None", None),
                     ("BAT_REQ_CURRENT", "None", None),
+                    ("BAT_REQ_DCB_COUNT", "None", None),
+                    ("BAT_REQ_DESIGN_CAPACITY", "None", None),
+                    ("BAT_REQ_DEVICE_NAME", "None", None),
+                    ("BAT_REQ_DEVICE_STATE", "None", None),
+                    ("BAT_REQ_EOD_VOLTAGE", "None", None),
+                    ("BAT_REQ_ERROR_CODE", "None", None),
+                    ("BAT_REQ_FCC", "None", None),
                     ("BAT_REQ_MAX_BAT_VOLTAGE", "None", None),
                     ("BAT_REQ_MAX_CHARGE_CURRENT", "None", None),
-                    ("BAT_REQ_EOD_VOLTAGE", "None", None),
                     ("BAT_REQ_MAX_DISCHARGE_CURRENT", "None", None),
+                    ("BAT_REQ_MAX_DCB_CELL_TEMPERATURE", "None", None),
+                    ("BAT_REQ_MIN_DCB_CELL_TEMPERATURE", "None", None),
+                    ("BAT_REQ_INTERNALS", "None", None),
+                    ("BAT_REQ_MODULE_VOLTAGE", "None", None),
+                    ("BAT_REQ_RC", "None", None),
+                    ("BAT_REQ_READY_FOR_SHUTDOWN", "None", None),
                     ("BAT_REQ_RSOC", "None", None),
-                    ("BAT_REQ_CHARGE_CYCLES", "None", None),
-                    ("BAT_REQ_TERMINAL_VOLTAGE", "None", None),
+                    ("BAT_REQ_RSOC_REAL", "None", None),
                     ("BAT_REQ_STATUS_CODE", "None", None),
-                    ("BAT_REQ_ERROR_CODE", "None", None),
-                    ("BAT_REQ_DEVICE_NAME", "None", None),
+                    ("BAT_REQ_TERMINAL_VOLTAGE", "None", None),
+                    ("BAT_REQ_TOTAL_USE_TIME", "None", None),
+                    ("BAT_REQ_TOTAL_DISCHARGE_TIME", "None", None),
+                    ("BAT_REQ_TRAINING_MODE", "None", None),
                     ("BAT_REQ_USABLE_CAPACITY", "None", None),
                     ("BAT_REQ_USABLE_REMAINING_CAPACITY", "None", None),
-                    ("BAT_REQ_DESIGN_CAPACITY", "None", None),
                 ],
             ),
-            keepAlive=keepAlive,
+            keepAlive=True,
         )
 
+        dcbCount = rscpFindTag(req, "BAT_DCB_COUNT")[2]
         deviceStateContainer = rscpFindTag(req, "BAT_DEVICE_STATE")
 
-        chargeCycles = rscpFindTag(req, "BAT_CHARGE_CYCLES")[2]
-        current = round(rscpFindTag(req, "BAT_CURRENT")[2], 2)
-        designCapacity = round(rscpFindTag(req, "BAT_DESIGN_CAPACITY")[2], 2)
-        deviceConnected = rscpFindTag(deviceStateContainer, "BAT_DEVICE_CONNECTED")[2]
-        deviceInService = rscpFindTag(deviceStateContainer, "BAT_DEVICE_IN_SERVICE")[2]
-        deviceName = rscpFindTag(req, "BAT_DEVICE_NAME")[2]
-        deviceWorking = rscpFindTag(deviceStateContainer, "BAT_DEVICE_WORKING")[2]
-        eodVoltage = round(rscpFindTag(req, "BAT_EOD_VOLTAGE")[2], 2)
-        errorCode = rscpFindTag(req, "BAT_ERROR_CODE")[2]
-        maxBatVoltage = round(rscpFindTag(req, "BAT_MAX_BAT_VOLTAGE")[2], 2)
-        maxChargeCurrent = round(rscpFindTag(req, "BAT_MAX_CHARGE_CURRENT")[2], 2)
-        maxDcbCellTemp = round(rscpFindTag(req, "BAT_MAX_DCB_CELL_TEMPERATURE")[2], 2)
-        maxDischargeCurrent = round(rscpFindTag(req, "BAT_MAX_DISCHARGE_CURRENT")[2], 2)
-        moduleVoltage = round(rscpFindTag(req, "BAT_MODULE_VOLTAGE")[2], 2)
-        rsoc = round(rscpFindTag(req, "BAT_RSOC")[2], 2)
-        statusCode = rscpFindTag(req, "BAT_STATUS_CODE")[2]
-        terminalVoltage = round(rscpFindTag(req, "BAT_TERMINAL_VOLTAGE")[2], 2)
-        usuableCapacity = round(rscpFindTag(req, "BAT_USABLE_CAPACITY")[2], 2)
-        usuableRemainingCapacity = round(
-            rscpFindTag(req, "BAT_USABLE_REMAINING_CAPACITY")[2], 2
-        )
-
         outObj = {
-            "batIndex": batIndex,
-            "chargeCycles": chargeCycles,
-            "current": current,
-            "designCapacity": designCapacity,
-            "deviceConnected": deviceConnected,
-            "deviceInService": deviceInService,
-            "deviceName": deviceName,
-            "deviceWorking": deviceWorking,
-            "eodVoltage": eodVoltage,
-            "errorCode": errorCode,
-            "maxBatVoltage": maxBatVoltage,
-            "maxChargeCurrent": maxChargeCurrent,
-            "maxDcbCellTemp": maxDcbCellTemp,
-            "maxDischargeCurrent": maxDischargeCurrent,
-            "moduleVoltage": moduleVoltage,
-            "rsoc": rsoc,
-            "statusCode": statusCode,
-            "terminalVoltage": terminalVoltage,
-            "usuableCapacity": usuableCapacity,
-            "usuableRemainingCapacity": usuableRemainingCapacity,
+            "asoc": rscpFindTag(req, "BAT_ASOC")[2],
+            "chargeCycles": rscpFindTag(req, "BAT_CHARGE_CYCLES")[2],
+            "current": round(rscpFindTag(req, "BAT_CURRENT")[2], 2),
+            "dcbCount": dcbCount,
+            "dcbs": {},
+            "designCapacity": round(rscpFindTag(req, "BAT_DESIGN_CAPACITY")[2], 2),
+            "deviceConnected": rscpFindTag(
+                deviceStateContainer, "BAT_DEVICE_CONNECTED"
+            )[2],
+            "deviceInService": rscpFindTag(
+                deviceStateContainer, "BAT_DEVICE_IN_SERVICE"
+            )[2],
+            "deviceName": rscpFindTag(req, "BAT_DEVICE_NAME")[2],
+            "deviceWorking": rscpFindTag(deviceStateContainer, "BAT_DEVICE_WORKING")[2],
+            "eodVoltage": round(rscpFindTag(req, "BAT_EOD_VOLTAGE")[2], 2),
+            "errorCode": rscpFindTag(req, "BAT_ERROR_CODE")[2],
+            "fcc": rscpFindTag(req, "BAT_FCC")[2],
+            "index": batIndex,
+            "maxBatVoltage": round(rscpFindTag(req, "BAT_MAX_BAT_VOLTAGE")[2], 2),
+            "maxChargeCurrent": round(rscpFindTag(req, "BAT_MAX_CHARGE_CURRENT")[2], 2),
+            "maxDischargeCurrent": round(
+                rscpFindTag(req, "BAT_MAX_DISCHARGE_CURRENT")[2], 2
+            ),
+            "maxDcbCellTemp": round(
+                rscpFindTag(req, "BAT_MAX_DCB_CELL_TEMPERATURE")[2], 2
+            ),
+            "measuredResistance": round(
+                rscpFindTag(req, "BAT_MEASURED_RESISTANCE")[2], 4
+            ),
+            "measuredResistanceRun": round(
+                rscpFindTag(req, "BAT_RUN_MEASURED_RESISTANCE")[2], 4
+            ),
+            "minDcbCellTemp": round(
+                rscpFindTag(req, "BAT_MIN_DCB_CELL_TEMPERATURE")[2], 2
+            ),
+            "moduleVoltage": round(rscpFindTag(req, "BAT_MODULE_VOLTAGE")[2], 2),
+            "rc": round(rscpFindTag(req, "BAT_RC")[2], 2),
+            "readyForShutdown": round(rscpFindTag(req, "BAT_READY_FOR_SHUTDOWN")[2], 2),
+            "rsoc": round(rscpFindTag(req, "BAT_RSOC")[2], 2),
+            "rsocReal": round(rscpFindTag(req, "BAT_RSOC_REAL")[2], 2),
+            "statusCode": rscpFindTag(req, "BAT_STATUS_CODE")[2],
+            "terminalVoltage": round(rscpFindTag(req, "BAT_TERMINAL_VOLTAGE")[2], 2),
+            "totalUseTime": rscpFindTag(req, "BAT_TOTAL_USE_TIME")[2],
+            "totalDischargeTime": rscpFindTag(req, "BAT_TOTAL_DISCHARGE_TIME")[2],
+            "trainingMode": rscpFindTag(req, "BAT_TRAINING_MODE")[2],
+            "usuableCapacity": round(rscpFindTag(req, "BAT_USABLE_CAPACITY")[2], 2),
+            "usuableRemainingCapacity": round(
+                rscpFindTag(req, "BAT_USABLE_REMAINING_CAPACITY")[2], 2
+            ),
         }
+
+        if dcb is None:
+            dcbs = range(0, dcbCount)
+        elif isinstance(dcb, list):
+            dcbs = dcb
+        else:
+            dcbs = [dcb]
+
+        for dcb in dcbs:
+            req = self.sendRequest(
+                (
+                    "BAT_REQ_DATA",
+                    "Container",
+                    [
+                        ("BAT_INDEX", "Uint16", batIndex),
+                        ("BAT_REQ_DCB_ALL_CELL_TEMPERATURES", "Uint16", dcb),
+                        ("BAT_REQ_DCB_ALL_CELL_VOLTAGES", "Uint16", dcb),
+                        ("BAT_REQ_DCB_INFO", "Uint16", dcb),
+                    ],
+                ),
+                keepAlive=True
+                if dcb != dcbs[-1]
+                else keepAlive,  # last request should honor keepAlive
+            )
+
+            info = rscpFindTag(req, "BAT_DCB_INFO")
+
+            temperatures_raw = rscpFindTag(
+                rscpFindTag(req, "BAT_DCB_ALL_CELL_TEMPERATURES"), "BAT_DATA"
+            )[2]
+            temperatures = []
+            sensorCount = rscpFindTag(info, "BAT_DCB_NR_SENSOR")[2]
+            for sensor in range(0, sensorCount):
+                temperatures.append(round(temperatures_raw[sensor][2], 2))
+
+            voltages_raw = rscpFindTag(
+                rscpFindTag(req, "BAT_DCB_ALL_CELL_VOLTAGES"), "BAT_DATA"
+            )[2]
+            voltages = []
+            seriesCellCount = rscpFindTag(info, "BAT_DCB_NR_SERIES_CELL")[2]
+            for cell in range(0, seriesCellCount):
+                voltages.append(round(voltages_raw[cell][2], 2))
+
+            dcbobj = {
+                "current": rscpFindTag(info, "BAT_DCB_CURRENT")[2],
+                "currentAvg30s": rscpFindTag(info, "BAT_DCB_CURRENT_AVG_30S")[2],
+                "cycleCount": rscpFindTag(info, "BAT_DCB_CYCLE_COUNT")[2],
+                "designCapacity": rscpFindTag(info, "BAT_DCB_DESIGN_CAPACITY")[2],
+                "designVoltage": rscpFindTag(info, "BAT_DCB_DESIGN_VOLTAGE")[2],
+                "deviceName": rscpFindTag(info, "BAT_DCB_DEVICE_NAME")[2],
+                "endOfDischarge": rscpFindTag(info, "BAT_DCB_END_OF_DISCHARGE")[2],
+                "error": rscpFindTag(info, "BAT_DCB_ERROR")[2],
+                "fullChargeCapacity": rscpFindTag(info, "BAT_DCB_FULL_CHARGE_CAPACITY")[
+                    2
+                ],
+                "fwVersion": rscpFindTag(info, "BAT_DCB_FW_VERSION")[2],
+                "manufactureDate": rscpFindTag(info, "BAT_DCB_MANUFACTURE_DATE")[2],
+                "manufactureName": rscpFindTag(info, "BAT_DCB_MANUFACTURE_NAME")[2],
+                "maxChargeCurrent": rscpFindTag(info, "BAT_DCB_MAX_CHARGE_CURRENT")[2],
+                "maxChargeTemperature": rscpFindTag(
+                    info, "BAT_DCB_CHARGE_HIGH_TEMPERATURE"
+                )[2],
+                "maxChargeVoltage": rscpFindTag(info, "BAT_DCB_MAX_CHARGE_VOLTAGE")[2],
+                "maxDischargeCurrent": rscpFindTag(
+                    info, "BAT_DCB_MAX_DISCHARGE_CURRENT"
+                )[2],
+                "minChargeTemperature": rscpFindTag(
+                    info, "BAT_DCB_CHARGE_LOW_TEMPERATURE"
+                )[2],
+                "parallelCellCount": rscpFindTag(info, "BAT_DCB_NR_PARALLEL_CELL")[2],
+                "sensorCount": sensorCount,
+                "seriesCellCount": seriesCellCount,
+                "pcbVersion": rscpFindTag(info, "BAT_DCB_PCB_VERSION")[2],
+                "protocolVersion": rscpFindTag(info, "BAT_DCB_PROTOCOL_VERSION")[2],
+                "remainingCapacity": rscpFindTag(info, "BAT_DCB_REMAINING_CAPACITY")[2],
+                "serialCode": rscpFindTag(info, "BAT_DCB_SERIALCODE")[2],
+                "serialNo": rscpFindTag(info, "BAT_DCB_SERIALNO")[2],
+                "soc": rscpFindTag(info, "BAT_DCB_SOC")[2],
+                "soh": rscpFindTag(info, "BAT_DCB_SOH")[2],
+                "status": rscpFindTag(info, "BAT_DCB_STATUS")[2],
+                "temperatures": temperatures,
+                "voltage": rscpFindTag(info, "BAT_DCB_VOLTAGE")[2],
+                "voltageAvg30s": rscpFindTag(info, "BAT_DCB_VOLTAGE_AVG_30S")[2],
+                "voltages": voltages,
+                "warning": rscpFindTag(info, "BAT_DCB_WARNING")[2],
+            }
+            outObj["dcbs"][str(dcb)] = dcbobj
         return outObj
 
-    def get_pvi_data(self, stringIndex=0, pviTracker=0, keepAlive=False):
-        """Polls the inverter data via rscp protocol locally
+    def get_pvi_data(self, pviIndex=0, string=None, phase=None, keepAlive=False):
+        """Polls the inverter data via rscp protocol locally.
+
+        Args:
+            pviIndex (Optional[int]): pv inverter index
+            string (Union[int, list]): string list
+            phase (Union[int, list]): phase list
+            keepAlive (Optional[bool]): True to keep connection alive
 
         Returns:
-            Dictionary containing the pvi data structured as follows:
+            dict: Dictionary containing the pvi data structured as follows::
+
                 {
-                    'stringIndex': string index
-                    'pviTracker': pvi Tracker
-                    'acApparentPower': ac apparent power
-                    'acCurrent': ac current
-                    'acEnergyAll': ac energy all
-                    'acPower': ac power
-                    'acReactivePower': ac reactive power
-                    'acVoltage': ac voltage
-                    'dcCurrent': dc current
-                    'dcPower': dc power
-                    'dcVoltage': dc voltage
-                    'deviceConnected': boolean if pvi is connected
-                    'deviceInService': boolean if pvi is in service
-                    'deviceWorking': boolean if pvi is working
-                    'lastError': last error
-                    'temperature': temperature
+                    "acMaxApparentPower": <max apparent AC power>,
+                    "cosPhi": {
+                        "active": <active>,
+                        "value": <value>,
+                        "excited": <excited>
+                    },
+                    "deviceState": {
+                        "connected": <connected>,
+                        "working": <working>,
+                        "inService": <in service>
+                    },
+                    "frequency": {
+                        "under": <frequency under>,
+                        "over": <frequency over>
+                    },
+                    "index": <pviIndex>,
+                    "lastError": <last error>,
+                    "maxPhaseCount": <max phase count>,
+                    "maxStringCount": <max string count>,
+                    "onGrid": <on grid>,
+                    "phases": { "0":
+                        {
+                            "power": <power>,
+                            "voltage": <voltage>,
+                            "current": <current>,
+                            "apparentPower": <apparent power>,
+                            "reactivePower": <reactive power>,
+                            "energyAll": <energy all>,
+                            "energyGridConsumption": <energy grid consumption>
+                        }
+                    },
+                    "powerMode": <power mode>,
+                    "serialNumber": <serial number>,
+                    "state": <state>,
+                    "strings": { "0":
+                        {
+                            "power": <power>,
+                            "voltage": <voltage>,
+                            "current": <current>,
+                            "energyAll": <energy all>
+                        }
+                    },
+                    "systemMode": <system mode>,
+                    "temperature": {
+                        "max": <max temperature>,
+                        "min": <min temperature>,
+                        "values": [<value>,<value>],
+                    },
+                    "type": <type>,
+                    "version": <version>,
+                    "voltageMonitoring": {
+                        "thresholdTop": <voltage threshold top>,
+                        "thresholdBottom": <voltage threshold bottom>,
+                        "slopeUp": <voltage slope up>,
+                        "slopeDown": <voltage slope down>,
+                    }
                 }
         """
         req = self.sendRequest(
@@ -1098,173 +1348,365 @@ class E3DC:
                 "PVI_REQ_DATA",
                 "Container",
                 [
-                    ("PVI_INDEX", "Uint16", stringIndex),
-                    ("PVI_REQ_TEMPERATURE", "Uint16", pviTracker),
-                    ("PVI_REQ_AC_VOLTAGE", "Uint16", pviTracker),
-                    ("PVI_REQ_AC_CURRENT", "Uint16", pviTracker),
-                    ("PVI_REQ_AC_POWER", "Uint16", pviTracker),
-                    ("PVI_REQ_AC_APPARENTPOWER", "Uint16", pviTracker),
-                    ("PVI_REQ_AC_REACTIVEPOWER", "Uint16", pviTracker),
-                    ("PVI_REQ_DC_VOLTAGE", "Uint16", pviTracker),
-                    ("PVI_REQ_DC_CURRENT", "Uint16", pviTracker),
-                    ("PVI_REQ_DC_POWER", "Uint16", pviTracker),
-                    ("PVI_REQ_DEVICE_STATE", "Uint16", pviTracker),
-                    ("PVI_REQ_LAST_ERROR", "Uint16", pviTracker),
-                    ("PVI_REQ_AC_ENERGY_ALL", "Uint16", pviTracker),
+                    ("PVI_INDEX", "Uint16", pviIndex),
+                    ("PVI_REQ_AC_MAX_PHASE_COUNT", "None", None),
+                    ("PVI_REQ_TEMPERATURE_COUNT", "None", None),
+                    ("PVI_REQ_DC_MAX_STRING_COUNT", "None", None),
+                    ("PVI_REQ_USED_STRING_COUNT", "None", None),
+                    ("PVI_REQ_TYPE", "None", None),
+                    ("PVI_REQ_SERIAL_NUMBER", "None", None),
+                    ("PVI_REQ_VERSION", "None", None),
+                    ("PVI_REQ_ON_GRID", "None", None),
+                    ("PVI_REQ_STATE", "None", None),
+                    ("PVI_REQ_LAST_ERROR", "None", None),
+                    ("PVI_REQ_COS_PHI", "None", None),
+                    ("PVI_REQ_VOLTAGE_MONITORING", "None", None),
+                    ("PVI_REQ_POWER_MODE", "None", None),
+                    ("PVI_REQ_SYSTEM_MODE", "None", None),
+                    ("PVI_REQ_FREQUENCY_UNDER_OVER", "None", None),
+                    ("PVI_REQ_MAX_TEMPERATURE", "None", None),
+                    ("PVI_REQ_MIN_TEMPERATURE", "None", None),
+                    ("PVI_REQ_AC_MAX_APPARENTPOWER", "None", None),
+                    ("PVI_REQ_DEVICE_STATE", "None", None),
+                ],
+            ),
+            keepAlive=True,
+        )
+
+        maxPhaseCount = int(rscpFindTag(req, "PVI_AC_MAX_PHASE_COUNT")[2])
+        maxStringCount = int(rscpFindTag(req, "PVI_DC_MAX_STRING_COUNT")[2])
+        usedStringCount = int(rscpFindTag(req, "PVI_USED_STRING_COUNT")[2])
+
+        voltageMonitoring = rscpFindTag(req, "PVI_VOLTAGE_MONITORING")
+        cosPhi = rscpFindTag(req, "PVI_COS_PHI")
+        frequency = rscpFindTag(req, "PVI_FREQUENCY_UNDER_OVER")
+        deviceState = rscpFindTag(req, "PVI_DEVICE_STATE")
+
+        outObj = {
+            "acMaxApparentPower": rscpFindTag(
+                rscpFindTag(req, "PVI_AC_MAX_APPARENTPOWER"), "PVI_VALUE"
+            )[2],
+            "cosPhi": {
+                "active": rscpFindTag(cosPhi, "PVI_COS_PHI_IS_AKTIV")[2],
+                "value": rscpFindTag(cosPhi, "PVI_COS_PHI_VALUE")[2],
+                "excited": rscpFindTag(cosPhi, "PVI_COS_PHI_EXCITED")[2],
+            },
+            "deviceState": {
+                "connected": rscpFindTag(deviceState, "PVI_DEVICE_CONNECTED")[2],
+                "working": rscpFindTag(deviceState, "PVI_DEVICE_WORKING")[2],
+                "inService": rscpFindTag(deviceState, "PVI_DEVICE_IN_SERVICE")[2],
+            },
+            "frequency": {
+                "under": rscpFindTag(frequency, "PVI_FREQUENCY_UNDER")[2],
+                "over": rscpFindTag(frequency, "PVI_FREQUENCY_OVER")[2],
+            },
+            "index": pviIndex,
+            "lastError": rscpFindTag(req, "PVI_LAST_ERROR")[2],
+            "maxPhaseCount": maxPhaseCount,
+            "maxStringCount": maxStringCount,
+            "onGrid": rscpFindTag(req, "PVI_ON_GRID")[2],
+            "phases": {},
+            "powerMode": rscpFindTag(req, "PVI_POWER_MODE")[2],
+            "serialNumber": rscpFindTag(req, "PVI_SERIAL_NUMBER")[2],
+            "state": rscpFindTag(req, "PVI_STATE")[2],
+            "strings": {},
+            "systemMode": rscpFindTag(req, "PVI_SYSTEM_MODE")[2],
+            "temperature": {
+                "max": rscpFindTag(
+                    rscpFindTag(req, "PVI_MAX_TEMPERATURE"), "PVI_VALUE"
+                )[2],
+                "min": rscpFindTag(
+                    rscpFindTag(req, "PVI_MIN_TEMPERATURE"), "PVI_VALUE"
+                )[2],
+                "values": [],
+            },
+            "type": rscpFindTag(req, "PVI_TYPE")[2],
+            "version": rscpFindTag(rscpFindTag(req, "PVI_VERSION"), "PVI_VERSION_MAIN")[
+                2
+            ],
+            "voltageMonitoring": {
+                "thresholdTop": rscpFindTag(
+                    voltageMonitoring, "PVI_VOLTAGE_MONITORING_THRESHOLD_TOP"
+                )[2],
+                "thresholdBottom": rscpFindTag(
+                    voltageMonitoring, "PVI_VOLTAGE_MONITORING_THRESHOLD_BOTTOM"
+                )[2],
+                "slopeUp": rscpFindTag(
+                    voltageMonitoring, "PVI_VOLTAGE_MONITORING_SLOPE_UP"
+                )[2],
+                "slopeDown": rscpFindTag(
+                    voltageMonitoring, "PVI_VOLTAGE_MONITORING_SLOPE_DOWN"
+                )[2],
+            },
+        }
+
+        temperatures = range(0, int(rscpFindTag(req, "PVI_TEMPERATURE_COUNT")[2]))
+        for temperature in temperatures:
+            req = self.sendRequest(
+                (
+                    "PVI_REQ_DATA",
+                    "Container",
+                    [
+                        ("PVI_INDEX", "Uint16", pviIndex),
+                        ("PVI_REQ_TEMPERATURE", "Uint16", temperature),
+                    ],
+                ),
+                keepAlive=True,
+            )
+            outObj["temperature"]["values"].append(
+                round(
+                    rscpFindTag(rscpFindTag(req, "PVI_TEMPERATURE"), "PVI_VALUE")[2], 2
+                )
+            )
+
+        if phase is None:
+            phases = range(0, maxPhaseCount)
+        elif isinstance(phase, list):
+            phases = phase
+        else:
+            phases = [phase]
+
+        for phase in phases:
+            req = self.sendRequest(
+                (
+                    "PVI_REQ_DATA",
+                    "Container",
+                    [
+                        ("PVI_INDEX", "Uint16", pviIndex),
+                        ("PVI_REQ_AC_POWER", "Uint16", phase),
+                        ("PVI_REQ_AC_VOLTAGE", "Uint16", phase),
+                        ("PVI_REQ_AC_CURRENT", "Uint16", phase),
+                        ("PVI_REQ_AC_APPARENTPOWER", "Uint16", phase),
+                        ("PVI_REQ_AC_REACTIVEPOWER", "Uint16", phase),
+                        ("PVI_REQ_AC_ENERGY_ALL", "Uint16", phase),
+                        ("PVI_REQ_AC_ENERGY_GRID_CONSUMPTION", "Uint16", phase),
+                    ],
+                ),
+                keepAlive=True,
+            )
+            phaseobj = {
+                "power": round(
+                    rscpFindTag(rscpFindTag(req, "PVI_AC_POWER"), "PVI_VALUE")[2], 2
+                ),
+                "voltage": round(
+                    rscpFindTag(rscpFindTag(req, "PVI_AC_VOLTAGE"), "PVI_VALUE")[2], 2
+                ),
+                "current": round(
+                    rscpFindTag(rscpFindTag(req, "PVI_AC_CURRENT"), "PVI_VALUE")[2], 2
+                ),
+                "apparentPower": round(
+                    rscpFindTag(rscpFindTag(req, "PVI_AC_APPARENTPOWER"), "PVI_VALUE")[
+                        2
+                    ],
+                    2,
+                ),
+                "reactivePower": round(
+                    rscpFindTag(rscpFindTag(req, "PVI_AC_REACTIVEPOWER"), "PVI_VALUE")[
+                        2
+                    ],
+                    2,
+                ),
+                "energyAll": round(
+                    rscpFindTag(rscpFindTag(req, "PVI_AC_ENERGY_ALL"), "PVI_VALUE")[2],
+                    2,
+                ),
+                "energyGridConsumption": round(
+                    rscpFindTag(
+                        rscpFindTag(req, "PVI_AC_ENERGY_GRID_CONSUMPTION"), "PVI_VALUE"
+                    )[2],
+                    2,
+                ),
+            }
+            outObj["phases"][str(phase)] = phaseobj
+
+        if string is None:
+            strings = range(0, usedStringCount)
+        elif isinstance(string, list):
+            strings = string
+        else:
+            strings = [string]
+
+        for string in strings:
+            req = self.sendRequest(
+                (
+                    "PVI_REQ_DATA",
+                    "Container",
+                    [
+                        ("PVI_INDEX", "Uint16", pviIndex),
+                        ("PVI_REQ_DC_POWER", "Uint16", string),
+                        ("PVI_REQ_DC_VOLTAGE", "Uint16", string),
+                        ("PVI_REQ_DC_CURRENT", "Uint16", string),
+                        ("PVI_REQ_DC_STRING_ENERGY_ALL", "Uint16", string),
+                    ],
+                ),
+                keepAlive=True
+                if string != strings[-1]
+                else keepAlive,  # last request should honor keepAlive
+            )
+            stringobj = {
+                "power": round(
+                    rscpFindTag(rscpFindTag(req, "PVI_DC_POWER"), "PVI_VALUE")[2], 2
+                ),
+                "voltage": round(
+                    rscpFindTag(rscpFindTag(req, "PVI_DC_VOLTAGE"), "PVI_VALUE")[2], 2
+                ),
+                "current": round(
+                    rscpFindTag(rscpFindTag(req, "PVI_DC_CURRENT"), "PVI_VALUE")[2], 2
+                ),
+                "energyAll": round(
+                    rscpFindTag(
+                        rscpFindTag(req, "PVI_DC_STRING_ENERGY_ALL"), "PVI_VALUE"
+                    )[2],
+                    2,
+                ),
+            }
+            outObj["strings"][str(string)] = stringobj
+        return outObj
+
+    def get_power_data(self, pmIndex=None, keepAlive=False):
+        """Polls the power meter data via rscp protocol locally.
+
+        Args:
+            pmIndex (Optional[int]): power meter index
+            keepAlive (Optional[bool]): True to keep connection alive
+
+        Returns:
+            dict: Dictionary containing the power data structured as follows::
+
+                {
+                    "activePhases": <active phases>,
+                    "energy": {
+                        "L1": <L1 energy>,
+                        "L2": <L2 energy>,
+                        "L3": <L3 energy>
+                    },
+                    "index": <pm index>,
+                    "maxPhasePower": <max phase power>,
+                    "mode": <mode>,
+                    "power": {
+                        "L1": <L1 power>,
+                        "L2": <L2 power>,
+                        "L3": <L3 power>
+                    },
+                    "type": <type>,
+                    "voltage": {
+                        "L1": <L1 voltage>,
+                        "L2": <L1 voltage>,
+                        "L3": <L1 voltage>
+                    }
+                }
+        """
+        if pmIndex is None:
+            pmIndex = self.pmIndex
+
+        res = self.sendRequest(
+            (
+                "PM_REQ_DATA",
+                "Container",
+                [
+                    ("PM_INDEX", "Uint16", pmIndex),
+                    ("PM_REQ_POWER_L1", "None", None),
+                    ("PM_REQ_POWER_L2", "None", None),
+                    ("PM_REQ_POWER_L3", "None", None),
+                    ("PM_REQ_VOLTAGE_L1", "None", None),
+                    ("PM_REQ_VOLTAGE_L2", "None", None),
+                    ("PM_REQ_VOLTAGE_L3", "None", None),
+                    ("PM_REQ_ENERGY_L1", "None", None),
+                    ("PM_REQ_ENERGY_L2", "None", None),
+                    ("PM_REQ_ENERGY_L3", "None", None),
+                    ("PM_REQ_MAX_PHASE_POWER", "None", None),
+                    ("PM_REQ_ACTIVE_PHASES", "None", None),
+                    ("PM_REQ_TYPE", "None", None),
+                    ("PM_REQ_MODE", "None", None),
                 ],
             ),
             keepAlive=keepAlive,
         )
 
-        deviceStateContainer = rscpFindTag(req, "PVI_DEVICE_STATE")
-
-        acApparentPower = round(
-            rscpFindTag(rscpFindTag(req, "PVI_AC_APPARENTPOWER"), "PVI_VALUE")[2], 2
-        )
-        acCurrent = round(
-            rscpFindTag(rscpFindTag(req, "PVI_AC_CURRENT"), "PVI_VALUE")[2], 2
-        )
-        acEnergyAll = round(
-            rscpFindTag(rscpFindTag(req, "PVI_AC_ENERGY_ALL"), "PVI_VALUE")[2], 2
-        )
-        acPower = round(
-            rscpFindTag(rscpFindTag(req, "PVI_AC_POWER"), "PVI_VALUE")[2], 2
-        )
-        acReactivePower = round(
-            rscpFindTag(rscpFindTag(req, "PVI_AC_REACTIVEPOWER"), "PVI_VALUE")[2], 2
-        )
-        acVoltage = round(
-            rscpFindTag(rscpFindTag(req, "PVI_AC_VOLTAGE"), "PVI_VALUE")[2], 2
-        )
-        dcCurrent = round(
-            rscpFindTag(rscpFindTag(req, "PVI_DC_CURRENT"), "PVI_VALUE")[2], 2
-        )
-        dcPower = round(
-            rscpFindTag(rscpFindTag(req, "PVI_DC_POWER"), "PVI_VALUE")[2], 2
-        )
-        dcVoltage = round(
-            rscpFindTag(rscpFindTag(req, "PVI_DC_VOLTAGE"), "PVI_VALUE")[2], 2
-        )
-        deviceConnected = rscpFindTag(deviceStateContainer, "PVI_DEVICE_CONNECTED")[2]
-        deviceInService = rscpFindTag(deviceStateContainer, "PVI_DEVICE_IN_SERVICE")[2]
-        deviceWorking = rscpFindTag(deviceStateContainer, "PVI_DEVICE_WORKING")[2]
-        lastError = rscpFindTag(req, "PVI_LAST_ERROR")[2]
-        temperature = round(
-            rscpFindTag(rscpFindTag(req, "PVI_TEMPERATURE"), "PVI_VALUE")[2], 2
-        )
+        activePhasesChar = rscpFindTag(res, "PM_ACTIVE_PHASES")[2]
+        activePhases = f"{activePhasesChar:03b}"
 
         outObj = {
-            "stringIndex": stringIndex,
-            "pviTracker": pviTracker,
-            "acApparentPower": acApparentPower,
-            "acCurrent": acCurrent,
-            "acEnergyAll": acEnergyAll,
-            "acPower": acPower,
-            "acReactivePower": acReactivePower,
-            "acVoltage": acVoltage,
-            "dcCurrent": dcCurrent,
-            "dcPower": dcPower,
-            "dcVoltage": dcVoltage,
-            "deviceConnected": deviceConnected,
-            "deviceInService": deviceInService,
-            "deviceWorking": deviceWorking,
-            "lastError": lastError,
-            "temperature": temperature,
+            "activePhases": activePhases,
+            "energy": {
+                "L1": rscpFindTag(res, "PM_ENERGY_L1")[2],
+                "L2": rscpFindTag(res, "PM_ENERGY_L2")[2],
+                "L3": rscpFindTag(res, "PM_ENERGY_L3")[2],
+            },
+            "index": pmIndex,
+            "maxPhasePower": rscpFindTag(res, "PM_MAX_PHASE_POWER")[2],
+            "mode": rscpFindTag(res, "PM_MODE")[2],
+            "power": {
+                "L1": rscpFindTag(res, "PM_POWER_L1")[2],
+                "L2": rscpFindTag(res, "PM_POWER_L2")[2],
+                "L3": rscpFindTag(res, "PM_POWER_L3")[2],
+            },
+            "type": rscpFindTag(res, "PM_TYPE")[2],
+            "voltage": {
+                "L1": round(rscpFindTag(res, "PM_VOLTAGE_L1")[2], 4),
+                "L2": round(rscpFindTag(res, "PM_VOLTAGE_L2")[2], 4),
+                "L3": round(rscpFindTag(res, "PM_VOLTAGE_L3")[2], 4),
+            },
         }
         return outObj
 
-    def get_power_data(self, keepAlive=False):
-        """Polls the inverter data via rscp protocol locally
+    def get_power_data_ext(self, pmIndexExt=None, keepAlive=False):
+        """Polls the external power meter data via rscp protocol locally.
+
+        Args:
+            pmIndex (Optional[int]): power meter index
+            keepAlive (Optional[bool]): True to keep connection alive
 
         Returns:
-            Dictionary containing the power data structured as follows:
+            dict: Dictionary containing the power data structured as follows::
+
                 {
-                    'maxPhasePower': max power of the device
-                    'power': {
-                        'L1': L1 power
-                        'L2': L2 power
-                        'L3': L3 power
+                    "activePhases": <active phases>,
+                    "energy": {
+                        "L1": <L1 energy>,
+                        "L2": <L2 energy>,
+                        "L3": <L3 energy>
+                    },
+                    "index": <pm index>,
+                    "maxPhasePower": <max phase power>,
+                    "mode": <mode>,
+                    "power": {
+                        "L1": <L1 power>,
+                        "L2": <L2 power>,
+                        "L3": <L3 power>
+                    },
+                    "type": <type>,
+                    "voltage": {
+                        "L1": <L1 voltage>,
+                        "L2": <L1 voltage>,
+                        "L3": <L1 voltage>
                     }
                 }
         """
-        res = self.sendRequest(
-            (
-                "PM_REQ_DATA",
-                "Container",
-                [
-                    ("PM_INDEX", "Uint16", self.pmIndex),
-                    ("PM_REQ_POWER_L1", "None", None),
-                    ("PM_REQ_POWER_L2", "None", None),
-                    ("PM_REQ_POWER_L3", "None", None),
-                    ("PM_REQ_MAX_PHASE_POWER", "None", None),
-                ],
-            )
-        )
-        powerL1 = rscpFindTag(res, "PM_POWER_L1")[2]
-        powerL2 = rscpFindTag(res, "PM_POWER_L2")[2]
-        powerL3 = rscpFindTag(res, "PM_POWER_L3")[2]
-        maxPhasePower = rscpFindTag(res, "PM_MAX_PHASE_POWER")[2]
+        if pmIndexExt is None:
+            pmIndexExt = self.pmIndexExt
 
-        outObj = {
-            "power": {"L1": powerL1, "L2": powerL2, "L3": powerL3},
-            "maxPhasePower": maxPhasePower,
-        }
-        return outObj
-
-    def get_power_data_ext(self, keepAlive=False):
-        """Polls the external inverter data via rscp protocol locally
-
-        Returns:
-            Dictionary containing the power data structured as follows:
-                {
-                    'maxPhasePower': max power of the device
-                    'power': {
-                        'L1': L1 power
-                        'L2': L2 power
-                        'L3': L3 power
-                    }
-                }
-        """
-        res = self.sendRequest(
-            (
-                "PM_REQ_DATA",
-                "Container",
-                [
-                    ("PM_INDEX", "Uint16", self.pmIndexExt),
-                    ("PM_REQ_POWER_L1", "None", None),
-                    ("PM_REQ_POWER_L2", "None", None),
-                    ("PM_REQ_POWER_L3", "None", None),
-                    ("PM_REQ_MAX_PHASE_POWER", "None", None),
-                ],
-            )
-        )
-        powerL1 = rscpFindTag(res, "PM_POWER_L1")[2]
-        powerL2 = rscpFindTag(res, "PM_POWER_L2")[2]
-        powerL3 = rscpFindTag(res, "PM_POWER_L3")[2]
-        maxPhasePower = rscpFindTag(res, "PM_MAX_PHASE_POWER")[2]
-
-        outObj = {
-            "power": {"L1": powerL1, "L2": powerL2, "L3": powerL3},
-            "maxPhasePower": maxPhasePower,
-        }
-        return outObj
+        return self.get_power_data(pmIndexExt, keepAlive)
 
     def get_power_settings(self, keepAlive=False):
-        """
-        Get Power Settings
-        Returns:
-            Dictionary containing the condensed status information structured as follows:
-           {
-            'discharge_start_power': minimum power requested to enable discharge
-            'maxChargePower': maximum charge power dependent on E3DC model
-            'maxDischargePower': maximum discharge power dependent on E3DC model
-            'powerSaveEnabled': status if power save is enabled
-            'powerLimitsUsed': status if power limites are enabled
-            'weatherForecastMode': Weather Forcast Mode
-            'weatherRegulatedChargeEnabled': status if weather regulated charge is enabled
-           }
-        """
+        """Polls the power settings via rscp protocol locally.
 
+        Args:
+            keepAlive (Optional[bool]): True to keep connection alive
+
+        Returns:
+            dict: Dictionary containing the power settings structured as follows::
+
+                {
+                    "discharge_start_power": <minimum power requested to enable discharge>,
+                    "maxChargePower": <maximum charge power dependent on E3DC model>,
+                    "maxDischargePower": <maximum discharge power dependent on E3DC model>,
+                    "powerSaveEnabled": <status if power save is enabled>,
+                    "powerLimitsUsed": <status if power limites are enabled>,
+                    "weatherForecastMode": <Weather Forcast Mode>,
+                    "weatherRegulatedChargeEnabled": <status if weather regulated charge is enabled>
+                }
+        """
         res = self.sendRequest(
             ("EMS_REQ_GET_POWER_SETTINGS", "None", None), keepAlive=keepAlive
         )
@@ -1298,19 +1740,20 @@ class E3DC:
         discharge_start=None,
         keepAlive=False,
     ):
-        """
-        Setting the SmartPower power limits
-        Input:
-            enable: True/False
-            max_charge: maximum charge power
-            max_discharge: maximum discharge power
-            discharge_start: power where discharged is started
+        """Setting the SmartPower power limits via rscp protocol locally.
+
+        Args:
+            enable (bool): True/False
+            max_charge (Optional[int]): maximum charge power
+            max_discharge (Optional[int]: maximum discharge power
+            discharge_start (Optional[int]: power where discharged is started
+            keepAlive (Optional[bool]): True to keep connection alive
+
         Returns:
             0 if success
             -1 if error
             1 if one value is nonoptimal
         """
-
         if max_charge is None:
             max_charge = self.maxBatChargePower
 
@@ -1355,10 +1798,12 @@ class E3DC:
         return return_code
 
     def set_powersave(self, enable, keepAlive=False):
-        """
-        Setting the SmartPower power save
-        Input:
-            enable: True/False
+        """Setting the SmartPower power save via rscp protocol locally.
+
+        Args:
+            enable (bool): True/False
+            keepAlive (Optional[bool]): True to keep connection alive
+
         Returns:
             0 if success
             -1 if error
@@ -1389,10 +1834,12 @@ class E3DC:
             return -1
 
     def set_weather_regulated_charge(self, enable, keepAlive=False):
-        """
-        Setting the SmartCharge weather regulated charge
-        Input:
-            enable: True/False
+        """Setting the SmartCharge weather regulated charge via rscp protocol locally.
+
+        Args:
+            enable (bool): True/False
+            keepAlive (Optional[bool]): True to keep connection alive
+
         Returns:
             0 if success
             -1 if error

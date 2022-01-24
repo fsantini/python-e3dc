@@ -7,10 +7,13 @@ BLOCK_SIZE = 32
 
 
 class ParameterError(Exception):
+    """Class for Parameter Error Exception."""
+
     pass
 
 
 def zeroPad_multiple(string, value):
+    """Zero padding string."""
     l = len(string)
     if l % value == 0:
         return string
@@ -19,6 +22,7 @@ def zeroPad_multiple(string, value):
 
 
 def truncate_multiple(string, value):
+    """Truncating sting."""
     l = len(string)
     if l % value == 0:
         return string
@@ -27,7 +31,14 @@ def truncate_multiple(string, value):
 
 
 class RSCPEncryptDecrypt:
+    """A class for encrypting and decrypting RSCP data."""
+
     def __init__(self, key):
+        """Constructor of a RSCP encryption and decryption class.
+
+        Args:
+            key (str): RSCP encryption key
+        """
         if len(key) > KEY_SIZE:
             raise ParameterError("Key must be <%d bytes" % (KEY_SIZE))
 
@@ -38,6 +49,7 @@ class RSCPEncryptDecrypt:
         self.oldDecrypt = b""
 
     def encrypt(self, plainText):
+        """Method to encryt plain text."""
         encryptor = RijndaelCbc(
             self.key,
             self.encryptIV,
@@ -49,6 +61,7 @@ class RSCPEncryptDecrypt:
         return encText
 
     def decrypt(self, encText, previouslyProcessedData=None):
+        """Method to decryt encrypted text."""
         if previouslyProcessedData is None:
             l = len(self.oldDecrypt)
             if l % BLOCK_SIZE == 0:
@@ -56,7 +69,6 @@ class RSCPEncryptDecrypt:
             else:
                 previouslyProcessedData = int(BLOCK_SIZE * math.floor(l / BLOCK_SIZE))
 
-        # print previouslyProcessedData
         # previouslyProcessedData was passed by the parent: it means that a frame was decoded and there was some data left. This does not include the padding zeros
         if previouslyProcessedData % BLOCK_SIZE != 0:
             previouslyProcessedData = int(
@@ -79,15 +91,3 @@ class RSCPEncryptDecrypt:
             block_size=BLOCK_SIZE,
         )
         return decryptor.decrypt(toDecrypt)
-
-
-if __name__ == "__main__":
-    ed = RSCPEncryptDecrypt(b"love")
-    enc = ed.encrypt(b"hello")
-    print(enc)
-    dec = ed.decrypt(enc)
-    print(dec)
-    enc2 = ed.encrypt(b"hello")
-    print(enc2)
-    dec2 = ed.decrypt(enc2)
-    print(dec2)

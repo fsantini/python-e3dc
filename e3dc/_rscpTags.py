@@ -812,9 +812,9 @@ rscpTags = {
     0x02840000: "PVI_DATA",
     0x02040000: "PVI_REQ_DATA",
     0x02040001: "PVI_INDEX",
-    0x02000009: "PVI_REQ_INVERTER_COUNT",
+    #    0x02000009: "PVI_REQ_INVERTER_COUNT",
     0x02000009: "PVI_REQ_TYPE",
-    0x02800009: "PVI_INVERTER_COUNT",
+    #    0x02800009: "PVI_INVERTER_COUNT",
     0x02800009: "PVI_TYPE",
     0x02040005: "PVI_VALUE",
     0x02FFFFFF: "PVI_GENERAL_ERROR",
@@ -2038,6 +2038,14 @@ rscpTags = {
 
 
 def getHexTag(tag_str):
+    """Get tag as hex.
+
+    Attributes:
+        tag_str (str): tag as string
+
+    Returns:
+        int: hex representation of the given tag_str
+    """
     for k, v in rscpTags.items():
         if v == tag_str:
             return k
@@ -2046,6 +2054,14 @@ def getHexTag(tag_str):
 
 
 def getTag(tag_hex):
+    """Get tag as hex.
+
+    Attributes:
+        tag_hex (int): tag as hex
+
+    Returns:
+        str: String representation of the given tag_hex
+    """
     try:
         return rscpTags[tag_hex]
     except (KeyError):
@@ -2087,6 +2103,14 @@ rscpErrorCodes = {
 
 
 def getHexDatatype(type_str):
+    """Get data type as hex.
+
+    Attributes:
+        type_str (str): type as string
+
+    Returns:
+        int: hex representation of the given type_str
+    """
     for k, v in rscpDataTypes.items():
         if v == type_str:
             return k
@@ -2094,8 +2118,24 @@ def getHexDatatype(type_str):
 
 
 def getDatatype(type_hex):
+    """Get data type as string.
+
+    Attributes:
+        type_hex (int): type as hex
+
+    Returns:
+        str: String representation of the given type_hex
+    """
     return rscpDataTypes[type_hex]
 
 
 def getErrorcode(error_hex):
+    """Get error code as string.
+
+    Attributes:
+        error_hex (int): error as hex
+
+    Returns:
+        str: String representation of the given error_hex
+    """
     return rscpErrorCodes[error_hex]
