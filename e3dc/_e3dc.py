@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Python class to connect to an E3/DC system through the internet portal
+# Python class to connect to an E3/DC system.
 #
 # Copyright 2017 Francesco Santini <francesco.santini@gmail.com>
 # Licensed under a MIT license. See LICENSE for details
@@ -59,7 +59,7 @@ class E3DC:
     _IDLE_TYPE = {"idleCharge": 0, "idleDischarge": 1}
 
     def __init__(self, connectType, **kwargs):
-        """Constructor of a E3DC object.
+        """Constructor of an E3DC object.
 
         Args:
             connectType: can be one of the following
@@ -74,6 +74,7 @@ class E3DC:
             key (str): encryption key as set in the E3DC settings - required for CONNECT_LOCAL
             serialNumber (str): the serial number of the system to monitor - required for CONNECT_WEB
             isPasswordMd5 (Optional[bool]): indicates whether the password is already md5 digest (recommended, default = True) - required for CONNECT_WEB
+            configuration (Optional[dict]): dict containing details of the E3DC configuration. {"pvis": [{"index": 0, "strings": [0,1], "phases": [0,1]}], "powermeters": [{"index": 0}], "batteries": [{"index": 0, "dcbs": [0, 1]}]}
         """
         self.connectType = connectType
         self.username = kwargs["username"]
@@ -98,8 +99,23 @@ class E3DC:
         self.maxBatChargePower = None
         self.maxBatDischargePower = None
         self.startDischargeDefault = None
-        self.pmIndex = None
+        self.powermeters = None
+        self.pvis = None
+        self.batteries = None
         self.pmIndexExt = None
+
+        if "configuration" in kwargs:
+            configuration = kwargs["configuration"]
+            if "pvis" in configuration and isinstance(configuration["pvis"], list):
+                self.pvis = configuration["pvis"]
+            if "powermeters" in configuration and isinstance(
+                configuration["powermeters"], list
+            ):
+                self.powermeters = configuration["powermeters"]
+            if "batteries" in configuration and isinstance(
+                configuration["batteries"], list
+            ):
+                self.batteries = configuration["batteries"]
 
         if connectType == self.CONNECT_LOCAL:
             self.ip = kwargs["ipAddress"]
@@ -126,36 +142,42 @@ class E3DC:
         self.get_system_info_static(keepAlive=True)
 
     def _set_serial(self, serial):
-        self.batIndex = 0
-        self.pmIndexExt = 1
+        self.batteries = self.batteries or [{"index": 0}]
+        self.pmIndexExt = 0
+
         if serial[0].isdigit():
             self.serialNumber = serial
         else:
             self.serialNumber = serial[4:]
             self.serialNumberPrefix = serial[:4]
+
         if self.serialNumber.startswith("4"):
             self.model = "S10E"
-            self.pmIndex = 0
+            self.powermeters = self.powermeters or [{"index": 0}]
+            self.pvis = self.pvis or [{"index": 0}]
             if not self.serialNumberPrefix:
                 self.serialNumberPrefix = "S10-"
         elif self.serialNumber.startswith("5"):
             self.model = "S10mini"
-            self.pmIndex = 6
+            self.powermeters = self.powermeters or [{"index": 6}]
+            self.pvis = self.pvis or [{"index": 0, "phases": [0]}]
             if not self.serialNumberPrefix:
                 self.serialNumberPrefix = "S10-"
         elif self.serialNumber.startswith("6"):
             self.model = "Quattroporte"
-            self.pmIndex = 6
+            self.powermeters = self.powermeters or [{"index": 6}]
+            self.pvis = self.pvis or [{"index": 0}]
             if not self.serialNumberPrefix:
                 self.serialNumberPrefix = "Q10-"
         elif self.serialNumber.startswith("7"):
             self.model = "Pro"
-            self.pmIndex = 6
+            self.powermeters = self.powermeters or [{"index": 0}]
+            self.pvis = self.pvis or [{"index": 0}]
             if not self.serialNumberPrefix:
                 self.serialNumberPrefix = "P10-"
         else:
             self.model = "NA"
-            self.pmIndex = 0
+            self.powermeters = self.powermeters or [{"index": 0}]
 
     def connect_web(self):
         """Connects to the E3DC portal and opens a session.
@@ -1004,12 +1026,12 @@ class E3DC:
         outObj = {k: SystemStatusBools[v] for k, v in outObj.items()}
         return outObj
 
-    def get_battery_data(self, batIndex=None, dcb=None, keepAlive=False):
-        """Polls the baterry data via rscp protocol locally.
+    def get_battery_data(self, batIndex=None, dcbs=None, keepAlive=False):
+        """Polls the battery data via rscp protocol locally.
 
         Args:
             batIndex (Optional[int]): battery index
-            dcb (Union[int, list]): dcb list
+            dcbs (Optional[list]): dcb list
             keepAlive (Optional[bool]): True to keep connection alive
 
         Returns:
@@ -1020,7 +1042,7 @@ class E3DC:
                     "chargeCycles": <charge cycles>,
                     "current": <current>,
                     "dcbCount": <dcb count>,
-                    "dcbs": {"0":
+                    "dcbs": {0:
                         {
                             "current": <current>,
                             "currentAvg30s": <current average 30s>,
@@ -1088,7 +1110,7 @@ class E3DC:
                 }
         """
         if batIndex is None:
-            batIndex = self.batIndex
+            batIndex = self.batteries[0]["index"]
 
         req = self.sendRequest(
             (
@@ -1184,12 +1206,8 @@ class E3DC:
             ),
         }
 
-        if dcb is None:
+        if dcbs is None:
             dcbs = range(0, dcbCount)
-        elif isinstance(dcb, list):
-            dcbs = dcb
-        else:
-            dcbs = [dcb]
 
         for dcb in dcbs:
             req = self.sendRequest(
@@ -1269,16 +1287,48 @@ class E3DC:
                 "voltages": voltages,
                 "warning": rscpFindTag(info, "BAT_DCB_WARNING")[2],
             }
-            outObj["dcbs"][str(dcb)] = dcbobj
+            outObj["dcbs"][dcb] = dcbobj
         return outObj
 
-    def get_pvi_data(self, pviIndex=0, string=None, phase=None, keepAlive=False):
+    def get_batteries_data(self, batteries=None, keepAlive=False):
+        """Polls the batteries data via rscp protocol locally.
+
+        Args:
+            batteries (Optional[dict]): batteries dict
+            keepAlive (Optional[bool]): True to keep connection alive
+
+        Returns:
+            list[dict]: Returns a list of batteries data
+        """
+        if batteries is None:
+            batteries = self.batteries
+
+        outObj = []
+
+        for battery in batteries:
+            if "dcbs" in battery:
+                dcbs = battery["dcbs"]
+            else:
+                dcbs = None
+            outObj.append(
+                self.get_battery_data(
+                    batIndex=battery["index"],
+                    dcbs=dcbs,
+                    keepAlive=True
+                    if battery["index"] != batteries[-1]["index"]
+                    else keepAlive,  # last request should honor keepAlive
+                )
+            )
+
+        return outObj
+
+    def get_pvi_data(self, pviIndex=None, strings=None, phases=None, keepAlive=False):
         """Polls the inverter data via rscp protocol locally.
 
         Args:
-            pviIndex (Optional[int]): pv inverter index
-            string (Union[int, list]): string list
-            phase (Union[int, list]): phase list
+            pviIndex (int): pv inverter index
+            strings (Optional[list]): string list
+            phases (Optional[list]): phase list
             keepAlive (Optional[bool]): True to keep connection alive
 
         Returns:
@@ -1305,7 +1355,7 @@ class E3DC:
                     "maxPhaseCount": <max phase count>,
                     "maxStringCount": <max string count>,
                     "onGrid": <on grid>,
-                    "phases": { "0":
+                    "phases": { 0:
                         {
                             "power": <power>,
                             "voltage": <voltage>,
@@ -1319,7 +1369,7 @@ class E3DC:
                     "powerMode": <power mode>,
                     "serialNumber": <serial number>,
                     "state": <state>,
-                    "strings": { "0":
+                    "strings": { 0:
                         {
                             "power": <power>,
                             "voltage": <voltage>,
@@ -1343,6 +1393,12 @@ class E3DC:
                     }
                 }
         """
+        if pviIndex is None:
+            pviIndex = self.pvis[0]["index"]
+            if phases is None and "phases" in self.pvis[0]:
+                print("sdölfsaöfjlkfj")
+                phases = self.pvis[0]["phases"]
+
         req = self.sendRequest(
             (
                 "PVI_REQ_DATA",
@@ -1459,12 +1515,8 @@ class E3DC:
                 )
             )
 
-        if phase is None:
+        if phases is None:
             phases = range(0, maxPhaseCount)
-        elif isinstance(phase, list):
-            phases = phase
-        else:
-            phases = [phase]
 
         for phase in phases:
             req = self.sendRequest(
@@ -1517,14 +1569,10 @@ class E3DC:
                     2,
                 ),
             }
-            outObj["phases"][str(phase)] = phaseobj
+            outObj["phases"][phase] = phaseobj
 
-        if string is None:
+        if strings is None:
             strings = range(0, usedStringCount)
-        elif isinstance(string, list):
-            strings = string
-        else:
-            strings = [string]
 
         for string in strings:
             req = self.sendRequest(
@@ -1560,10 +1608,49 @@ class E3DC:
                     2,
                 ),
             }
-            outObj["strings"][str(string)] = stringobj
+            outObj["strings"][string] = stringobj
         return outObj
 
-    def get_power_data(self, pmIndex=None, keepAlive=False):
+    def get_pvis_data(self, pvis=None, keepAlive=False):
+        """Polls the inverters data via rscp protocol locally.
+
+        Args:
+            pvis (Optional[dict]): pvis dict
+            keepAlive (Optional[bool]): True to keep connection alive
+
+        Returns:
+            list[dict]: Returns a list of pvi data
+        """
+        if pvis is None:
+            pvis = self.pvis
+
+        outObj = []
+
+        for pvi in pvis:
+            if "strings" in pvi:
+                strings = pvi["strings"]
+            else:
+                strings = None
+
+            if "phases" in pvi:
+                phases = pvi["phases"]
+            else:
+                phases = None
+
+            outObj.append(
+                self.get_pvi_data(
+                    pviIndex=pvi["index"],
+                    strings=strings,
+                    phases=phases,
+                    keepAlive=True
+                    if pvi["index"] != pvis[-1]["index"]
+                    else keepAlive,  # last request should honor keepAlive
+                )
+            )
+
+        return outObj
+
+    def get_powermeter_data(self, pmIndex=None, keepAlive=False):
         """Polls the power meter data via rscp protocol locally.
 
         Args:
@@ -1597,7 +1684,7 @@ class E3DC:
                 }
         """
         if pmIndex is None:
-            pmIndex = self.pmIndex
+            pmIndex = self.powermeters[0]["index"]
 
         res = self.sendRequest(
             (
@@ -1650,43 +1737,36 @@ class E3DC:
         }
         return outObj
 
-    def get_power_data_ext(self, pmIndexExt=None, keepAlive=False):
-        """Polls the external power meter data via rscp protocol locally.
+    def get_powermeters_data(self, powermeters=None, keepAlive=False):
+        """Polls the powermeters data via rscp protocol locally.
 
         Args:
-            pmIndex (Optional[int]): power meter index
+            powermeters (Optional[dict]): powermeters dict
             keepAlive (Optional[bool]): True to keep connection alive
 
         Returns:
-            dict: Dictionary containing the power data structured as follows::
-
-                {
-                    "activePhases": <active phases>,
-                    "energy": {
-                        "L1": <L1 energy>,
-                        "L2": <L2 energy>,
-                        "L3": <L3 energy>
-                    },
-                    "index": <pm index>,
-                    "maxPhasePower": <max phase power>,
-                    "mode": <mode>,
-                    "power": {
-                        "L1": <L1 power>,
-                        "L2": <L2 power>,
-                        "L3": <L3 power>
-                    },
-                    "type": <type>,
-                    "voltage": {
-                        "L1": <L1 voltage>,
-                        "L2": <L1 voltage>,
-                        "L3": <L1 voltage>
-                    }
-                }
+            list[dict]: Returns a list of powermeters data
         """
-        if pmIndexExt is None:
-            pmIndexExt = self.pmIndexExt
+        if powermeters is None:
+            powermeters = self.powermeters
 
-        return self.get_power_data(pmIndexExt, keepAlive)
+        outObj = []
+
+        for powermeter in powermeters:
+            outObj.append(
+                self.get_powermeter_data(
+                    pmIndex=powermeter["index"],
+                    keepAlive=True
+                    if powermeter["index"] != powermeters[-1]["index"]
+                    else keepAlive,  # last request should honor keepAlive
+                )
+            )
+
+        return outObj
+
+    def get_power_data(self, pmIndex=None, keepAlive=False):
+        """DEPRECATED: Please use get_powermeter_data() instead."""
+        return self.get_powermeter_data(pmIndex=pmIndex, keepAlive=keepAlive)
 
     def get_power_settings(self, keepAlive=False):
         """Polls the power settings via rscp protocol locally.
