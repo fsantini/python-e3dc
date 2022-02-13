@@ -35,7 +35,17 @@ packFmtDict_VarSize = {
 
 
 def rscpFindTag(decodedMsg, tag):
-    """Finds a submessage with a specific tag."""
+    """Finds a submessage with a specific tag.
+
+    Args:
+    decodedMsg (list): the decoded message
+    tag (str): the RSCP Tag string to search for
+
+    Returns:
+        list: the found tag
+    """
+    if decodedMsg is None:
+        return None
     if decodedMsg[0] == tag:
         return decodedMsg
     if isinstance(decodedMsg[2], list):
@@ -43,6 +53,23 @@ def rscpFindTag(decodedMsg, tag):
             msgValue = rscpFindTag(msg, tag)
             if msgValue is not None:
                 return msgValue
+    return None
+
+
+def rscpFindTagIndex(decodedMsg, tag, index=2):
+    """Finds a submessage with a specific tag and extracts an index.
+
+    Args:
+    decodedMsg (list): the decoded message
+    tag (str): the RSCP Tag string to search for
+    index (Optional[int]): the index of the found tag to return. Default is 2, the value of the Tag.
+
+    Returns:
+        the content of the configured index for the tag.
+    """
+    tag = rscpFindTag(decodedMsg, tag)
+    if tag is not None:
+        return tag[index]
     return None
 
 
