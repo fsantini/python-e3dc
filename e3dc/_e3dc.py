@@ -74,7 +74,7 @@ class E3DC:
             key (str): encryption key as set in the E3DC settings - required for CONNECT_LOCAL
             serialNumber (str): the serial number of the system to monitor - required for CONNECT_WEB
             isPasswordMd5 (Optional[bool]): indicates whether the password is already md5 digest (recommended, default = True) - required for CONNECT_WEB
-            configuration (Optional[dict]): dict containing details of the E3DC configuration. {"pvis": [{"index": 0, "strings": [0,1], "phases": [0,1]}], "powermeters": [{"index": 0}], "batteries": [{"index": 0, "dcbs": [0, 1]}]}
+            configuration (Optional[dict]): dict containing details of the E3DC configuration. {"pvis": [{"index": 0, "strings": 2, "phases": 3}], "powermeters": [{"index": 0}], "batteries": [{"index": 0, "dcbs": 1}]}
         """
         self.connectType = connectType
         self.username = kwargs["username"]
@@ -1330,7 +1330,7 @@ class E3DC:
 
         for battery in batteries:
             if "dcbs" in battery:
-                dcbs = battery["dcbs"]
+                dcbs = range(0, battery["dcbs"])
             else:
                 dcbs = None
             outObj.append(
@@ -1419,7 +1419,7 @@ class E3DC:
         if pviIndex is None:
             pviIndex = self.pvis[0]["index"]
             if phases is None and "phases" in self.pvis[0]:
-                phases = self.pvis[0]["phases"]
+                phases = range(0, self.pvis[0]["phases"])
 
         req = self.sendRequest(
             (
@@ -1653,12 +1653,12 @@ class E3DC:
 
         for pvi in pvis:
             if "strings" in pvi:
-                strings = pvi["strings"]
+                strings = range(0, pvi["strings"])
             else:
                 strings = None
 
             if "phases" in pvi:
-                phases = pvi["phases"]
+                phases = range(0, pvi["phases"])
             else:
                 phases = None
 
