@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Python class to connect to an E3/DC system through the internet portal
+# Python class to connect to an E3/DC system.
 #
 # Copyright 2017 Francesco Santini <francesco.santini@gmail.com>
 # Licensed under a MIT license. See LICENSE for details
@@ -41,15 +41,24 @@ REMOTE_ADDRESS = "wss://s10.e3dc.com/ws/"
 
 
 class SocketNotReady(Exception):
+    """Class for Socket Not Ready Exception."""
+
     pass
 
 
 class RequestTimeoutError(Exception):
+    """Class for Request Timeout Error Exception."""
+
     pass
 
 
 def calcTimeZone():
-    # calculate time zone
+    """Method to calculate time zone.
+
+    Returns:
+        str: timezone string
+        int: UTC diff
+    """
     localtz = tzlocal.get_localzone()
     naiveNow = datetime.datetime.now()
     utcDiff = localtz.utcoffset(naiveNow)  # this is a timedelta
@@ -60,17 +69,24 @@ def calcTimeZone():
 
 
 def timestampEncode(ts):
+    """Method to encode timestamp.
+
+    Args:
+        ts (time): timestamp
+
+    """
     sec = float(int(ts))
     ms = int((ts - sec) * 1000)
     return struct.pack("<dI", sec, ms)
 
 
 class E3DC_RSCP_web:
+    """A class describing an E3DC system connection using RSCP protocol over web."""
 
     TIMEOUT = 10  # timeout in sec
 
     def __init__(self, username, password, serialNumberWithPrefix, isPasswordMd5=True):
-        """Constructor of a E3DC_RSCP object (does not connect)
+        """Constructor of an E3DC RSCP web object.
 
         Args:
             username (string): the user name to the E3DC portal
@@ -89,6 +105,7 @@ class E3DC_RSCP_web:
         self.reset()
 
     def reset(self):
+        """Method to reset E3DC rscp web instance."""
         self.ws = None
         self.conId = None
         self.authLevel = None
@@ -100,6 +117,7 @@ class E3DC_RSCP_web:
         self.requestResult = None
 
     def buildVirtualConn(self):
+        """Method to create Virtual Connection."""
         virtualConn = rscpLib.rscpFrame(
             rscpLib.rscpEncode(
                 "SERVER_REQ_NEW_VIRTUAL_CONNECTION",
@@ -118,6 +136,7 @@ class E3DC_RSCP_web:
         self.ws.send(virtualConn, websocket.ABNF.OPCODE_BINARY)
 
     def respondToINFORequest(self, decoded):
+        """Create Response to INFO request."""
         TIMEZONE_STR, utcDiffS = calcTimeZone()
         tag = decoded[0]
         # print(tag)
@@ -165,6 +184,7 @@ class E3DC_RSCP_web:
         return None  # this is no standard request
 
     def registerConnectionHandler(self, decodedMsg):
+        """Registering Connection Handler."""
         if self.conId is None:
             self.conId = rscpLib.rscpFindTag(decodedMsg, "SERVER_CONNECTION_ID")[2]
             self.authLevel = rscpLib.rscpFindTag(decodedMsg, "SERVER_AUTH_LEVEL")[2]
@@ -185,6 +205,7 @@ class E3DC_RSCP_web:
         self.ws.send(reply, websocket.ABNF.OPCODE_BINARY)
 
     def on_message(self, message):
+        """Method to handle a received message."""
         # print "Received message", message
         if len(message) == 0:
             return
@@ -210,9 +231,9 @@ class E3DC_RSCP_web:
             response = b""
             self.responseCallbackCalled = False
             while len(data) > 0:
-                decoded, l = rscpLib.rscpDecode(data)
+                decoded, size = rscpLib.rscpDecode(data)
                 # print "Inner frame chunk decoded", decoded
-                data = data[l:]
+                data = data[size:]
                 responseChunk = self.respondToINFORequest(decoded)
                 if responseChunk is None:
                     # this is not a standard request: call the registered callback
@@ -249,27 +270,26 @@ class E3DC_RSCP_web:
     def _defaultRequestCallback(self, msg):
         self.requestResult = msg
 
-    # send a request and wait for a response
     def sendRequest(self, message):
+        """Send a request and wait for a response."""
         return self._sendRequest_internal(
             rscpLib.rscpFrame(rscpLib.rscpEncode(message)), None, True
         )
 
     def sendCommand(self, message):
+        """Send a command."""
         return self._sendRequest_internal(
             rscpLib.rscpFrame(rscpLib.rscpEncode(message)), None, False
         )
 
     def _sendRequest_internal(self, innerFrame, callback=None, synchronous=False):
-        """
-        sendRequest(self, innerFrame, dataType=None, content=None):
+        """Internal send request method.
 
-        This can be called in two ways:
-        sendRequest(<RSCP encoded frame>, [callback], [synchronous])
-        sendRequest(<tuple>, [callback], [synchronous])
-
-        If synchronous == True, the method waits for a response (i.e. exits after calling callback).
-        If synchronous == True and callback = None, the method returns the (last) response message
+        Args:
+            innerFrame (Union[tuple, <RSCP encoded frame>]): inner frame
+            callback (str): callback method
+            synchronous (bool): If True, the method waits for a response (i.e. exits after calling callback).
+                If True and callback = None, the method returns the (last) response message
         """
         if not self.isConnected:
             raise SocketNotReady
@@ -315,6 +335,7 @@ class E3DC_RSCP_web:
                 return self.requestResult
 
     def connect(self):
+        """Connect to E3DC system."""
         websocket.enableTrace(False)
         if self.ws is not None:
             self.ws.close()
@@ -338,9 +359,15 @@ class E3DC_RSCP_web:
             raise RequestTimeoutError
 
     def disconnect(self):
+        """Disconnect from E3DC system."""
         if self.ws is not None:
             self.ws.close()
         self.reset()
 
     def isConnected(self):
+        """Validate connection status.
+
+        Returns:
+            bool: true if connected
+        """
         return self.virtConId is not None

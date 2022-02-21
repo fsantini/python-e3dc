@@ -7,27 +7,38 @@ BLOCK_SIZE = 32
 
 
 class ParameterError(Exception):
+    """Class for Parameter Error Exception."""
+
     pass
 
 
 def zeroPad_multiple(string, value):
-    l = len(string)
-    if l % value == 0:
+    """Zero padding string."""
+    length = len(string)
+    if length % value == 0:
         return string
-    newL = int(value * math.ceil(float(l) / value))
+    newL = int(value * math.ceil(float(length) / value))
     return string.ljust(newL, b"\x00")
 
 
 def truncate_multiple(string, value):
-    l = len(string)
-    if l % value == 0:
+    """Truncating sting."""
+    length = len(string)
+    if length % value == 0:
         return string
-    newL = int(value * math.floor(float(l) / value))
+    newL = int(value * math.floor(float(length) / value))
     return string[:newL]
 
 
 class RSCPEncryptDecrypt:
+    """A class for encrypting and decrypting RSCP data."""
+
     def __init__(self, key):
+        """Constructor of a RSCP encryption and decryption class.
+
+        Args:
+            key (str): RSCP encryption key
+        """
         if len(key) > KEY_SIZE:
             raise ParameterError("Key must be <%d bytes" % (KEY_SIZE))
 
@@ -38,6 +49,7 @@ class RSCPEncryptDecrypt:
         self.oldDecrypt = b""
 
     def encrypt(self, plainText):
+        """Method to encryt plain text."""
         encryptor = RijndaelCbc(
             self.key,
             self.encryptIV,
@@ -49,14 +61,16 @@ class RSCPEncryptDecrypt:
         return encText
 
     def decrypt(self, encText, previouslyProcessedData=None):
+        """Method to decryt encrypted text."""
         if previouslyProcessedData is None:
-            l = len(self.oldDecrypt)
-            if l % BLOCK_SIZE == 0:
-                previouslyProcessedData = l
+            length = len(self.oldDecrypt)
+            if length % BLOCK_SIZE == 0:
+                previouslyProcessedData = length
             else:
-                previouslyProcessedData = int(BLOCK_SIZE * math.floor(l / BLOCK_SIZE))
+                previouslyProcessedData = int(
+                    BLOCK_SIZE * math.floor(length / BLOCK_SIZE)
+                )
 
-        # print previouslyProcessedData
         # previouslyProcessedData was passed by the parent: it means that a frame was decoded and there was some data left. This does not include the padding zeros
         if previouslyProcessedData % BLOCK_SIZE != 0:
             previouslyProcessedData = int(
@@ -79,15 +93,3 @@ class RSCPEncryptDecrypt:
             block_size=BLOCK_SIZE,
         )
         return decryptor.decrypt(toDecrypt)
-
-
-if __name__ == "__main__":
-    ed = RSCPEncryptDecrypt(b"love")
-    enc = ed.encrypt(b"hello")
-    print(enc)
-    dec = ed.decrypt(enc)
-    print(dec)
-    enc2 = ed.encrypt(b"hello")
-    print(enc2)
-    dec2 = ed.decrypt(enc2)
-    print(dec2)

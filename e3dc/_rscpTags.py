@@ -230,10 +230,10 @@ rscpTags = {
     0x01040010: "EMS_PARAM_DERATE_POWER_VALUE_L1",
     0x01040011: "EMS_PARAM_DERATE_POWER_VALUE_L2",
     0x01040012: "EMS_PARAM_DERATE_POWER_VALUE_L3",
-    0x01040013: "EMS_PARAM_REGULATOR_MODE",
+    # 0x01040013: "EMS_PARAM_REGULATOR_MODE",
     0x01040013: "EMS_PARAM_REMOTE_CONTROL_ACTIVE",
     0x01040115: "EMS_PARAM_DEACTIVATE_SURPLUS_ACTOR",
-    0x01040014: "EMS_PARAM_REGULATOR_STRATEGY",
+    # 0x01040014: "EMS_PARAM_REGULATOR_STRATEGY",
     0x01040014: "EMS_PARAM_TIME_TO_RETRY",
     0x01040016: "EMS_PARAM_INDEX",
     0x01040017: "EMS_PARAM_WALLBOX_SETPOINT_L1",
@@ -706,9 +706,9 @@ rscpTags = {
     0x04000027: "DCDC_REQ_SET_PARAMETER",
     0x04000028: "DCDC_REQ_SET_PID_DEBUG",
     0x04000029: "DCDC_REQ_GET_PID_DEBUG",
-    0x04000029: "DCDC_REQ_COPY_RING_BUFFER",
+    # 0x04000029: "DCDC_REQ_COPY_RING_BUFFER",
     0x04000030: "DCDC_REQ_PID_DEBUG_DATA",
-    0x04000030: "DCDC_REQ_RING_BUFFER",
+    # 0x04000030: "DCDC_REQ_RING_BUFFER",
     0x04000071: "DCDC_REQ_SET_POWER",
     0x04000072: "DCDC_REQ_SET_IDLE",
     0x04000073: "DCDC_REQ_HANDLE_ERRORS",
@@ -759,9 +759,9 @@ rscpTags = {
     0x04800026: "DCDC_GET_PARAMETER",
     0x04800027: "DCDC_SET_PARAMETER",
     0x04800029: "DCDC_GET_PID_DEBUG",
-    0x04800029: "DCDC_COPY_RING_BUFFER",
+    # 0x04800029: "DCDC_COPY_RING_BUFFER",
     0x04800030: "DCDC_PID_DEBUG_DATA",
-    0x04800030: "DCDC_RING_BUFFER",
+    # 0x04800030: "DCDC_RING_BUFFER",
     0x04800071: "DCDC_SET_POWER",
     0x04800072: "DCDC_SET_IDLE",
     0x04800073: "DCDC_HANDLE_ERRORS",
@@ -812,9 +812,9 @@ rscpTags = {
     0x02840000: "PVI_DATA",
     0x02040000: "PVI_REQ_DATA",
     0x02040001: "PVI_INDEX",
-    0x02000009: "PVI_REQ_INVERTER_COUNT",
+    #    0x02000009: "PVI_REQ_INVERTER_COUNT",
     0x02000009: "PVI_REQ_TYPE",
-    0x02800009: "PVI_INVERTER_COUNT",
+    #    0x02800009: "PVI_INVERTER_COUNT",
     0x02800009: "PVI_TYPE",
     0x02040005: "PVI_VALUE",
     0x02FFFFFF: "PVI_GENERAL_ERROR",
@@ -1847,9 +1847,9 @@ rscpTags = {
     0x1C400079: "QPI_PARAM_CONF_STATE",
     0x1C400080: "QPI_PARAM_ACTIVATED",
     0x1C400081: "QPI_PARAM_INVERTER_GROUP",
-    0x1C400109: "QPI_PARAM_COUNT_DETAIL",
+    # 0x1C400109: "QPI_PARAM_COUNT_DETAIL",
     0x1C400109: "QPI_PARAM_INVERTER_STORED_SI_GROUP",
-    0x1C400110: "QPI_PARAM_SW_SVN",
+    # 0x1C400110: "QPI_PARAM_SW_SVN",
     0x1C400110: "QPI_PARAM_INVERTER_EP_LINE",
     0x1C400083: "QPI_PARAM_DEBUG_SM",
     0x1C400084: "QPI_PARAM_DEBUG_ACTUAL_REG",
@@ -2038,6 +2038,14 @@ rscpTags = {
 
 
 def getHexTag(tag_str):
+    """Get tag as hex.
+
+    Attributes:
+        tag_str (str): tag as string
+
+    Returns:
+        int: hex representation of the given tag_str
+    """
     for k, v in rscpTags.items():
         if v == tag_str:
             return k
@@ -2046,6 +2054,14 @@ def getHexTag(tag_str):
 
 
 def getTag(tag_hex):
+    """Get tag as hex.
+
+    Attributes:
+        tag_hex (int): tag as hex
+
+    Returns:
+        str: String representation of the given tag_hex
+    """
     try:
         return rscpTags[tag_hex]
     except (KeyError):
@@ -2087,6 +2103,14 @@ rscpErrorCodes = {
 
 
 def getHexDatatype(type_str):
+    """Get data type as hex.
+
+    Attributes:
+        type_str (str): type as string
+
+    Returns:
+        int: hex representation of the given type_str
+    """
     for k, v in rscpDataTypes.items():
         if v == type_str:
             return k
@@ -2094,8 +2118,24 @@ def getHexDatatype(type_str):
 
 
 def getDatatype(type_hex):
+    """Get data type as string.
+
+    Attributes:
+        type_hex (int): type as hex
+
+    Returns:
+        str: String representation of the given type_hex
+    """
     return rscpDataTypes[type_hex]
 
 
 def getErrorcode(error_hex):
+    """Get error code as string.
+
+    Attributes:
+        error_hex (int): error as hex
+
+    Returns:
+        str: String representation of the given error_hex
+    """
     return rscpErrorCodes[error_hex]
