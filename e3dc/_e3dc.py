@@ -160,7 +160,7 @@ class E3DC:
         elif self.serialNumber.startswith("5"):
             self.model = "S10mini"
             self.powermeters = self.powermeters or [{"index": 6}]
-            self.pvis = self.pvis or [{"index": 0, "phases": [0]}]
+            self.pvis = self.pvis or [{"index": 0, "phases": 1}]
             if not self.serialNumberPrefix:
                 self.serialNumberPrefix = "S10-"
         elif self.serialNumber.startswith("6"):
