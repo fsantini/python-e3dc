@@ -34,7 +34,7 @@ This package can be installed from pip:
 There is a great variety of E3/DC implementation configurations, that can't automatically be detected. For example the `index` of the root power meter can be either `0` or `6`, depending how the system was installed. It is also possible to not only have one power meter or inverter.
 This library assumes, that there is one inverter installed and the root power meter has an index of `6` for S10 mini and `0` for other systems.
 
-For any other conigurations, there is an optional `configuration` object that can be used to alter the defaults:
+For any other configurations, there is an optional `configuration` object that can be used to alter the defaults:
 
 ```
 {
@@ -128,7 +128,7 @@ Poll returns a dictionary like the following:
 
 ### Note: The RSCP interface
 
-The communication to an E3/DC system has to be implementes via a rather complicated protocol, called by E3/DC RSCP. This protocol is binary and based on websockets. The documentation provided by E3/DC is limited and outdated . It can be found in the E3/DC download portal.
+The communication to an E3/DC system has to be implemented via a rather complicated protocol, called by E3/DC RSCP. This protocol is binary and based on websockets. The documentation provided by E3/DC is limited and outdated. It can be found in the E3/DC download portal.
 
 If keepAlive is false, the websocket connection is closed after the command. This makes sense because these requests are not meant to be made as often as the status requests, however, if keepAlive is True, the connection is left open and kept alive in the background in a separate thread.
 
@@ -157,7 +157,7 @@ print(e3dc.poll_switches())
 
 ## Known limitations
 
-One limitation of the package concerns the implemented RSCP methods. At the moment, only switch status requests and setting of on/off switches is implemented. I also lack the hardware to test different configurations. However, the RSCP protocol is (to my knowledge) fully implemented and it should be easy to extend the requests to other cases.
+One limitation of the package concerns the implemented RSCP methods. This project also lacks the hardware to test different configurations. However, the RSCP protocol is fully implemented and it should be easy to extend the requests to other usecases.
 
 ## Projects using this library
 
