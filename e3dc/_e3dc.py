@@ -834,18 +834,25 @@ class E3DC:
                     "solarProduction": <power production>,
                 }
         """
+
+        if startDate is None:
+            startDate = datetime.date.today()
+
         if "YEAR" == timespan:
             requestDate = startDate.replace(day=1, month=1)
             span = 365 * 24 * 60 * 60
-        if "MONTH" == timespan:
+            requestDateInfo = requestDate.strftime("%Y")
+        elif "MONTH" == timespan:
             requestDate = startDate.replace(day=1)
             num_days = monthrange(requestDate.year, requestDate.month)[1]
             span = num_days * 24 * 60 * 60
-        if "DAY" == timespan:
+            requestDateInfo = requestDate.strftime("%Y-%m")
+        elif "DAY" == timespan:
             requestDate = startDate
             span = 24 * 60 * 60
+            requestDateInfo = requestDate.strftime("%Y-%m-%d")
 
-        requestDate = int(time.mktime(requestDate.timetuple()))
+        requestDateTimestamp = int(time.mktime(requestDate.timetuple()))
 
         if span == 0:
             return None
@@ -855,7 +862,7 @@ class E3DC:
                 "DB_REQ_HISTORY_DATA_DAY",
                 "Container",
                 [
-                    ("DB_REQ_HISTORY_TIME_START", "Uint64", requestDate),
+                    ("DB_REQ_HISTORY_TIME_START", "Uint64", requestDateTimestamp),
                     ("DB_REQ_HISTORY_TIME_INTERVAL", "Uint64", span),
                     ("DB_REQ_HISTORY_TIME_SPAN", "Uint64", span),
                 ],
@@ -875,6 +882,8 @@ class E3DC:
             "grid_power_out": rscpFindTagIndex(response[2][0], "DB_GRID_POWER_OUT"),
             "stateOfCharge": rscpFindTagIndex(response[2][0], "DB_BAT_CHARGE_LEVEL"),
             "solarProduction": rscpFindTagIndex(response[2][0], "DB_DC_POWER"),
+            "requestTimespan": timespan,
+            "requestDate": requestDateInfo
         }
         return outObj
 
