@@ -916,7 +916,7 @@ class E3DC:
 
         data = self.get_db_data_timestamp(
             timestampStart=requestDateTimestamp,
-            timespanSeconds= span
+            timespanSeconds=span
         )
         if data is not None:
             data["requestDateInfo"] = requestDateInfo
