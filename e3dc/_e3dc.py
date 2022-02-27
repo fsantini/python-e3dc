@@ -11,6 +11,8 @@ import time
 import uuid
 
 import dateutil.parser
+from calendar import monthrange
+
 import requests
 
 from ._e3dc_rscp_local import (
@@ -832,22 +834,18 @@ class E3DC:
                     "solarProduction": <power production>,
                 }
         """
-        span: int = 0
-        if startDate is None:
-            startDate = datetime.date.today()
-        requestDate: int = int(time.mktime(startDate.timetuple()))
-
         if "YEAR" == timespan:
-            spanDate = startDate.replace(year=startDate.year + 1)
-            span = int(time.mktime(spanDate.timetuple()) - requestDate)
+            requestDate = startDate.replace(day=1, month=1)
+            span = 365 * 24 * 60 * 60
         if "MONTH" == timespan:
-            if 12 == startDate.month:
-                spanDate = startDate.replace(month=1, year=startDate.year + 1)
-            else:
-                spanDate = startDate.replace(month=startDate.month + 1)
-            span = int(time.mktime(spanDate.timetuple()) - requestDate)
+            requestDate = startDate.replace(day=1)
+            num_days = monthrange(requestDate.year, requestDate.month)[1]
+            span = num_days * 24 * 60 * 60
         if "DAY" == timespan:
+            requestDate = startDate
             span = 24 * 60 * 60
+
+        requestDate = int(time.mktime(requestDate.timetuple()))
 
         if span == 0:
             return None
