@@ -9,12 +9,11 @@ import hashlib
 import json
 import time
 import uuid
+from calendar import monthrange
 
 import dateutil.parser
-
 import requests
 
-from calendar import monthrange
 from ._e3dc_rscp_local import (
     E3DC_RSCP_local,
     RSCPAuthenticationError,
