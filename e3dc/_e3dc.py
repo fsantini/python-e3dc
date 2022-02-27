@@ -11,10 +11,10 @@ import time
 import uuid
 
 import dateutil.parser
-from calendar import monthrange
 
 import requests
 
+from calendar import monthrange
 from ._e3dc_rscp_local import (
     E3DC_RSCP_local,
     RSCPAuthenticationError,
