@@ -863,7 +863,7 @@ class E3DC:
             "stateOfCharge": rscpFindTagIndex(response[2][0], "DB_BAT_CHARGE_LEVEL"),
             "solarProduction": rscpFindTagIndex(response[2][0], "DB_DC_POWER"),
             "requestTimespan": timespanSeconds,
-            "requestTimestamp": timestampStart
+            "requestTimestamp": timestampStart,
         }
         return outObj
 
@@ -914,12 +914,11 @@ class E3DC:
         requestDateTimestamp = int(time.mktime(requestDate.timetuple()))
 
         data = self.get_db_data_timestamp(
-            timestampStart=requestDateTimestamp,
-            timespanSeconds=span
+            timestampStart=requestDateTimestamp, timespanSeconds=span
         )
         if data is not None:
             data["requestDateInfo"] = requestDateInfo
-        
+
         return data
 
     def get_system_info_static(self, keepAlive=False):
