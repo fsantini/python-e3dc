@@ -9,6 +9,7 @@ import hashlib
 import json
 import time
 import uuid
+from calendar import monthrange
 
 import dateutil.parser
 import requests
@@ -807,14 +808,14 @@ class E3DC:
             return False
         return True
 
-    def get_db_data(
-        self, startDate: datetime.date = None, timespan: str = "DAY", keepAlive=False
+    def get_db_data_timestamp(
+        self, startTimestamp: int, timespanSeconds: int, keepAlive=False
     ):
         """Reads DB data and summed up values for the given timespan via rscp protocol locally.
 
         Args:
-            startDate (datetime.date): start date for timespan, default today
-            timespan (str): string specifying the time span ["DAY", "MONTH", "YEAR"]
+            startTimestamp (int): UNIX timestampt from where the db data should be collected
+            timespanSeconds (int): number of seconds for which the data should be collected
             keepAlive (Optional[bool]): True to keep connection alive
 
         Returns:
@@ -828,28 +829,13 @@ class E3DC:
                     "consumption": <self consumed power>,
                     "grid_power_in": <power taken from the grid>,
                     "grid_power_out": <power into the grid>,
+                    "startTimestamp": <timestamp from which db data is fetched of>,
                     "stateOfCharge": <battery charge level in %>,
                     "solarProduction": <power production>,
+                    "timespanSeconds": <timespan in seconds of which db data is collected>
                 }
         """
-        span: int = 0
-        if startDate is None:
-            startDate = datetime.date.today()
-        requestDate: int = int(time.mktime(startDate.timetuple()))
-
-        if "YEAR" == timespan:
-            spanDate = startDate.replace(year=startDate.year + 1)
-            span = int(time.mktime(spanDate.timetuple()) - requestDate)
-        if "MONTH" == timespan:
-            if 12 == startDate.month:
-                spanDate = startDate.replace(month=1, year=startDate.year + 1)
-            else:
-                spanDate = startDate.replace(month=startDate.month + 1)
-            span = int(time.mktime(spanDate.timetuple()) - requestDate)
-        if "DAY" == timespan:
-            span = 24 * 60 * 60
-
-        if span == 0:
+        if timespanSeconds == 0:
             return None
 
         response = self.sendRequest(
@@ -857,9 +843,9 @@ class E3DC:
                 "DB_REQ_HISTORY_DATA_DAY",
                 "Container",
                 [
-                    ("DB_REQ_HISTORY_TIME_START", "Uint64", requestDate),
-                    ("DB_REQ_HISTORY_TIME_INTERVAL", "Uint64", span),
-                    ("DB_REQ_HISTORY_TIME_SPAN", "Uint64", span),
+                    ("DB_REQ_HISTORY_TIME_START", "Uint64", startTimestamp),
+                    ("DB_REQ_HISTORY_TIME_INTERVAL", "Uint64", timespanSeconds),
+                    ("DB_REQ_HISTORY_TIME_SPAN", "Uint64", timespanSeconds),
                 ],
             ),
             keepAlive=keepAlive,
@@ -875,9 +861,68 @@ class E3DC:
             "consumption": rscpFindTagIndex(response[2][0], "DB_CONSUMPTION"),
             "grid_power_in": rscpFindTagIndex(response[2][0], "DB_GRID_POWER_IN"),
             "grid_power_out": rscpFindTagIndex(response[2][0], "DB_GRID_POWER_OUT"),
+            "startTimestamp": startTimestamp,
             "stateOfCharge": rscpFindTagIndex(response[2][0], "DB_BAT_CHARGE_LEVEL"),
             "solarProduction": rscpFindTagIndex(response[2][0], "DB_DC_POWER"),
+            "timespanSeconds": timespanSeconds,
         }
+
+        return outObj
+
+    def get_db_data(
+        self, startDate: datetime.date = None, timespan: str = "DAY", keepAlive=False
+    ):
+        """Reads DB data and summed up values for the given timespan via rscp protocol locally.
+
+        Args:
+            startDate (datetime.date): start date for timespan, default today. Depending on timespan given,
+                the startDate is automatically adjusted to the first of the month or the year
+            timespan (str): string specifying the time span ["DAY", "MONTH", "YEAR"]
+            keepAlive (Optional[bool]): True to keep connection alive
+
+        Returns:
+            dict: Dictionary containing the stored db information structured as follows::
+
+                {
+                    "autarky": <autarky in the period in %>,
+                    "bat_power_in": <power entering battery, charging>,
+                    "bat_power_out": <power leavinb battery, discharging>,
+                    "consumed_production": <power directly consumed in %>,
+                    "consumption": <self consumed power>,
+                    "grid_power_in": <power taken from the grid>,
+                    "grid_power_out": <power into the grid>,
+                    "startDate": <date from which db data is fetched of>,
+                    "stateOfCharge": <battery charge level in %>,
+                    "solarProduction": <power production>,
+                    "timespan": <timespan of which db data is collected>,
+                    "timespanSeconds": <timespan in seconds of which db data is collected>
+                }
+        """
+        if startDate is None:
+            startDate = datetime.date.today()
+
+        if "YEAR" == timespan:
+            requestDate = startDate.replace(day=1, month=1)
+            span = 365 * 24 * 60 * 60
+        elif "MONTH" == timespan:
+            requestDate = startDate.replace(day=1)
+            num_days = monthrange(requestDate.year, requestDate.month)[1]
+            span = num_days * 24 * 60 * 60
+        elif "DAY" == timespan:
+            requestDate = startDate
+            span = 24 * 60 * 60
+
+        startTimestamp = int(time.mktime(requestDate.timetuple()))
+
+        outObj = self.get_db_data_timestamp(
+            startTimestamp=startTimestamp, timespanSeconds=span, keepAlive=keepAlive
+        )
+        if outObj is not None:
+            del outObj["startTimestamp"]
+            outObj["startDate"] = requestDate
+            outObj["timespan"] = timespan
+            outObj = {k: v for k, v in sorted(outObj.items())}
+
         return outObj
 
     def get_system_info_static(self, keepAlive=False):
