@@ -725,7 +725,8 @@ class E3DC:
                                                             + str(idlePeriod["day"])
                                                             + " in "
                                                             + idle_type
-                                                            + " is not between 00:00 and 23:59"
+                                                            + " is not between 00:00"
+                                                            " and 23:59"
                                                         )
                                 if (
                                     idlePeriod["start"][0] * 60 + idlePeriod["start"][1]
@@ -866,8 +867,8 @@ class E3DC:
             "solarProduction": rscpFindTagIndex(response[2][0], "DB_DC_POWER"),
             "timespanSeconds": timespanSeconds,
         }
-        
-        return {k:v for k,v in sorted(outObj.items())}
+
+        return {k: v for k, v in sorted(outObj.items())}
 
     def get_db_data(
         self, startDate: datetime.date = None, timespan: str = "DAY", keepAlive=False
@@ -922,7 +923,7 @@ class E3DC:
             outObj["startDate"] = requestDate
             outObj["timespan"] = timespan
 
-        return {k:v for k,v in sorted(outObj.items())}
+        return {k: v for k, v in sorted(outObj.items())}
 
     def get_system_info_static(self, keepAlive=False):
         """Polls the static system info via rscp protocol locally.

@@ -100,8 +100,8 @@ def rscpEncode(tagStr, typeStr=None, data=None):
     if type(data) is str:
         data = data.encode("utf-8")
 
-    packFmt = (
-        "<IBH"  # format of header: little-endian, Uint32 tag, Uint8 type, Uint16 length
+    packFmt = (  # format of header: little-endian, Uint32 tag, Uint8 type, Uint16 length
+        "<IBH"
     )
     headerLen = struct.calcsize(packFmt)
 
@@ -196,8 +196,8 @@ def rscpFrameDecode(frameData, returnFrameLen=False):
 
 def rscpDecode(data):
     """Decodes RSCP data."""
-    headerFmt = (
-        "<IBH"  # format of header: little-endian, Uint32 tag, Uint8 type, Uint16 length
+    headerFmt = (  # format of header: little-endian, Uint32 tag, Uint8 type, Uint16 length
+        "<IBH"
     )
     headerSize = struct.calcsize(headerFmt)
 
