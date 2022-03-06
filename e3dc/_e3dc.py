@@ -893,7 +893,8 @@ class E3DC:
                     "startDate": <date from which db data is fetched of>,
                     "stateOfCharge": <battery charge level in %>,
                     "solarProduction": <power production>,
-                    "timespan": <timespan of which db data is collected>
+                    "timespan": <timespan of which db data is collected>,
+                    "timespanSeconds": <timespan in seconds of which db data is collected>
                 }
         """
         if startDate is None:
