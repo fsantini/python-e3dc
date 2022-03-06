@@ -1132,7 +1132,7 @@ class E3DC:
         """
         return self.__wallbox_set_extern(4, 1, keepAlive)
 
-    def __wallbox_set_extern(self, index:int, value:int, keepAlive=False):
+    def __wallbox_set_extern(self, index: int, value: int, keepAlive=False):
         barry = bytearray([0, 0, 0, 0, 0, 0])
         barry[index] = value
         self.sendRequest(
@@ -1153,7 +1153,6 @@ class E3DC:
             ),
             keepAlive=keepAlive,
         )
-
 
     def get_battery_data(self, batIndex=None, dcbs=None, keepAlive=False):
         """Polls the battery data via rscp protocol locally.
