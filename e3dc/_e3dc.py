@@ -1168,7 +1168,8 @@ class E3DC:
         """Sets the sun mode of the wallbox via rscp protocol locally.
 
         Args:
-            active (bool): True to activate sun mode, otherwise false
+            active (bool): True to activate sun mode, otherwise false,
+            wallbox_index (Optional[int]): index of the requested wallbox,
             keepAlive (Optional[bool]): True to keep connection alive
         """
         return self.__wallbox_set_extern(
@@ -1180,6 +1181,7 @@ class E3DC:
 
         Args:
             on (bool): True to activate the Schuko, otherwise false
+            wallbox_index (Optional[int]): index of the requested wallbox,
             keepAlive (Optional[bool]): True to keep connection alive
         """
         return self.__wallbox_set_extern(5, 1 if on else 0, wallbox_index, keepAlive)
@@ -1188,6 +1190,7 @@ class E3DC:
         """Toggles charging of the wallbox via rscp protocol locally.
 
         Args:
+            wallbox_index (Optional[int]): index of the requested wallbox,
             keepAlive (Optional[bool]): True to keep connection alive
         """
         return self.__wallbox_set_extern(4, 1, wallbox_index, keepAlive)
