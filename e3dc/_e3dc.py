@@ -809,12 +809,12 @@ class E3DC:
         return True
 
     def get_db_data_timestamp(
-        self, timestampStart: int, timespanSeconds: int, keepAlive=False
+        self, startTimestamp: int, timespanSeconds: int, keepAlive=False
     ):
         """Reads DB data and summed up values for the given timespan via rscp protocol locally.
 
         Args:
-            timestampStart (int): UNIX timestampt from where the db data should be collected
+            startTimestamp (int): UNIX timestampt from where the db data should be collected
             timespanSeconds (int): number of seconds for which the data should be collected
             keepAlive (Optional[bool]): True to keep connection alive
 
@@ -829,11 +829,12 @@ class E3DC:
                     "consumption": <self consumed power>,
                     "grid_power_in": <power taken from the grid>,
                     "grid_power_out": <power into the grid>,
+                    "startTimestamp": <timestamp from which db data is fetched of>,
                     "stateOfCharge": <battery charge level in %>,
                     "solarProduction": <power production>,
+                    "timespanSeconds": <timespan in seconds of which db data is collected>
                 }
         """
-
         if timespanSeconds == 0:
             return None
 
@@ -842,7 +843,7 @@ class E3DC:
                 "DB_REQ_HISTORY_DATA_DAY",
                 "Container",
                 [
-                    ("DB_REQ_HISTORY_TIME_START", "Uint64", timestampStart),
+                    ("DB_REQ_HISTORY_TIME_START", "Uint64", startTimestamp),
                     ("DB_REQ_HISTORY_TIME_INTERVAL", "Uint64", timespanSeconds),
                     ("DB_REQ_HISTORY_TIME_SPAN", "Uint64", timespanSeconds),
                 ],
@@ -860,10 +861,10 @@ class E3DC:
             "consumption": rscpFindTagIndex(response[2][0], "DB_CONSUMPTION"),
             "grid_power_in": rscpFindTagIndex(response[2][0], "DB_GRID_POWER_IN"),
             "grid_power_out": rscpFindTagIndex(response[2][0], "DB_GRID_POWER_OUT"),
+            "startTimestamp": startTimestamp,
             "stateOfCharge": rscpFindTagIndex(response[2][0], "DB_BAT_CHARGE_LEVEL"),
             "solarProduction": rscpFindTagIndex(response[2][0], "DB_DC_POWER"),
-            "requestTimespan": timespanSeconds,
-            "requestTimestamp": timestampStart,
+            "timespanSeconds": timespanSeconds,
         }
         return outObj
 
@@ -889,35 +890,35 @@ class E3DC:
                     "consumption": <self consumed power>,
                     "grid_power_in": <power taken from the grid>,
                     "grid_power_out": <power into the grid>,
+                    "startDate": <date from which db data is fetched of>,
                     "stateOfCharge": <battery charge level in %>,
                     "solarProduction": <power production>,
+                    "timespan": <timespan of which db data is collected>
                 }
         """
-
         if startDate is None:
             startDate = datetime.date.today()
 
         if "YEAR" == timespan:
             requestDate = startDate.replace(day=1, month=1)
             span = 365 * 24 * 60 * 60
-            requestDateInfo = requestDate.strftime("%Y")
         elif "MONTH" == timespan:
             requestDate = startDate.replace(day=1)
             num_days = monthrange(requestDate.year, requestDate.month)[1]
             span = num_days * 24 * 60 * 60
-            requestDateInfo = requestDate.strftime("%Y-%m")
         elif "DAY" == timespan:
             requestDate = startDate
             span = 24 * 60 * 60
-            requestDateInfo = requestDate.strftime("%Y-%m-%d")
 
-        requestDateTimestamp = int(time.mktime(requestDate.timetuple()))
+        startTimestamp = int(time.mktime(requestDate.timetuple()))
 
         data = self.get_db_data_timestamp(
-            timestampStart=requestDateTimestamp, timespanSeconds=span
+            startTimestamp=startTimestamp, timespanSeconds=span, keepAlive=keepAlive
         )
         if data is not None:
-            data["requestDateInfo"] = requestDateInfo
+            del data["startTimestamp"]
+            data["startDate"] = requestDate
+            data["timespan"] = timespan
 
         return data
 
