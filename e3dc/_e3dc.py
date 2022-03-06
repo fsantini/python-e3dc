@@ -922,7 +922,9 @@ class E3DC:
             del outObj["startTimestamp"]
             outObj["startDate"] = requestDate
             outObj["timespan"] = timespan
-            return {k: v for k, v in sorted(outObj.items())}
+            outObj = {k: v for k, v in sorted(outObj.items())}
+
+        return outObj
 
     def get_system_info_static(self, keepAlive=False):
         """Polls the static system info via rscp protocol locally.
