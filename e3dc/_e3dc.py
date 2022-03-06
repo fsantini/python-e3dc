@@ -725,7 +725,8 @@ class E3DC:
                                                             + str(idlePeriod["day"])
                                                             + " in "
                                                             + idle_type
-                                                            + " is not between 00:00 and 23:59"
+                                                            + " is not between 00:00"
+                                                            " and 23:59"
                                                         )
                                 if (
                                     idlePeriod["start"][0] * 60 + idlePeriod["start"][1]
@@ -1052,10 +1053,10 @@ class E3DC:
                     ("WB_REQ_EXTERN_DATA_SUN", "None", None),
                     ("WB_REQ_EXTERN_DATA_NET", "None", None),
                     ("WB_REQ_PARAM_1", "None", None),
-                    ("WB_REQ_APP_SOFTWARE", "None", None)
+                    ("WB_REQ_APP_SOFTWARE", "None", None),
                 ],
             ),
-            keepAlive=True
+            keepAlive=True,
         )
 
         outObj = {
@@ -1063,7 +1064,7 @@ class E3DC:
             "energyAll": rscpFindTagIndex(req, "WB_ENERGY_ALL"),
             "energySolar": rscpFindTagIndex(req, "WB_ENERGY_SOLAR"),
             "soc": rscpFindTagIndex(req, "WB_SOC"),
-            "appSoftware": rscpFindTagIndex(req, "WB_APP_SOFTWARE")
+            "appSoftware": rscpFindTagIndex(req, "WB_APP_SOFTWARE"),
         }
 
         extern_data_alg = rscpFindTag(req, "WB_EXTERN_DATA_ALG")
@@ -1078,73 +1079,82 @@ class E3DC:
 
         extern_data_sun = rscpFindTag(req, "WB_EXTERN_DATA_SUN")
         if extern_data_sun is not None:
-          extern_data = rscpFindTagIndex(extern_data_sun, "WB_EXTERN_DATA")
-          outObj["sun"] = struct.unpack("h", extern_data[0:2])[0]
+            extern_data = rscpFindTagIndex(extern_data_sun, "WB_EXTERN_DATA")
+            outObj["sun"] = struct.unpack("h", extern_data[0:2])[0]
 
         extern_data_net = rscpFindTag(req, "WB_EXTERN_DATA_NET")
         if extern_data_net is not None:
-          extern_data = rscpFindTagIndex(extern_data_net, "WB_EXTERN_DATA")
-          outObj["net"] = struct.unpack("h", extern_data[0:2])[0]
+            extern_data = rscpFindTagIndex(extern_data_net, "WB_EXTERN_DATA")
+            outObj["net"] = struct.unpack("h", extern_data[0:2])[0]
 
         rsp_param_1 = rscpFindTag(req, "WB_RSP_PARAM_1")
         if rsp_param_1 is not None:
             extern_data = rscpFindTagIndex(rsp_param_1, "WB_EXTERN_DATA")
             outObj["maxChargeCurrent"] = extern_data[2]
-        
+
         return outObj
 
     def wallbox_set_sunmode(self, active: bool):
-        barry = bytearray([1 if active else 2,0,0,0,0,0])
+        barry = bytearray([1 if active else 2, 0, 0, 0, 0, 0])
         req = self.sendRequest(
             (
                 "WB_REQ_DATA",
                 "Container",
                 [
                     ("WB_INDEX", "UChar8", 0),
-                    ("WB_REQ_SET_EXTERN", "Container",
-                    [
-                        ("WB_EXTERN_DATA","ByteArray",barry),
-                        ("WB_EXTERN_DATA_LEN", "UChar8", 6),
-                    ])
+                    (
+                        "WB_REQ_SET_EXTERN",
+                        "Container",
+                        [
+                            ("WB_EXTERN_DATA", "ByteArray", barry),
+                            ("WB_EXTERN_DATA_LEN", "UChar8", 6),
+                        ],
+                    ),
                 ],
             ),
-            keepAlive=True
+            keepAlive=True,
         )
 
     def wallbox_set_schuko(self, on: bool):
-        barry = bytearray([0,0,0,0,0,1 if on else 0])
+        barry = bytearray([0, 0, 0, 0, 0, 1 if on else 0])
         req = self.sendRequest(
             (
                 "WB_REQ_DATA",
                 "Container",
                 [
                     ("WB_INDEX", "UChar8", 0),
-                    ("WB_REQ_SET_EXTERN", "Container",
-                    [
-                        ("WB_EXTERN_DATA","ByteArray",barry),
-                        ("WB_EXTERN_DATA_LEN", "UChar8", 6),
-                    ])
+                    (
+                        "WB_REQ_SET_EXTERN",
+                        "Container",
+                        [
+                            ("WB_EXTERN_DATA", "ByteArray", barry),
+                            ("WB_EXTERN_DATA_LEN", "UChar8", 6),
+                        ],
+                    ),
                 ],
             ),
-            keepAlive=True
+            keepAlive=True,
         )
 
     def wallbox_toggle(self):
-        barry = bytearray([0,0,0,0,1,0])
+        barry = bytearray([0, 0, 0, 0, 1, 0])
         req = self.sendRequest(
             (
                 "WB_REQ_DATA",
                 "Container",
                 [
                     ("WB_INDEX", "UChar8", 0),
-                    ("WB_REQ_SET_EXTERN", "Container",
-                    [
-                        ("WB_EXTERN_DATA","ByteArray",barry),
-                        ("WB_EXTERN_DATA_LEN", "UChar8", 6),
-                    ])
+                    (
+                        "WB_REQ_SET_EXTERN",
+                        "Container",
+                        [
+                            ("WB_EXTERN_DATA", "ByteArray", barry),
+                            ("WB_EXTERN_DATA_LEN", "UChar8", 6),
+                        ],
+                    ),
                 ],
             ),
-            keepAlive=True
+            keepAlive=True,
         )
 
     def get_battery_data(self, batIndex=None, dcbs=None, keepAlive=False):
