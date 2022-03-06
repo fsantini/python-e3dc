@@ -1039,7 +1039,19 @@ class E3DC:
         outObj = {k: SystemStatusBools[v] for k, v in outObj.items()}
         return outObj
 
-    def get_wallbox_data(self):
+    def get_wallbox_data(self, keepAlive=False):
+        """Polls the wallbox status via rscp protocol locally.
+
+        Args:
+            keepAlive (Optional[bool]): True to keep connection alive
+
+        Returns:
+            dict: Dictionary containing the wallbox status structured as follows::
+
+                {
+                    TODO!!!
+                }
+        """
         req = self.sendRequest(
             (
                 "WB_REQ_DATA",
@@ -1056,7 +1068,7 @@ class E3DC:
                     ("WB_REQ_APP_SOFTWARE", "None", None),
                 ],
             ),
-            keepAlive=True,
+            keepAlive=keepAlive,
         )
 
         outObj = {
@@ -1094,7 +1106,13 @@ class E3DC:
 
         return outObj
 
-    def wallbox_set_sunmode(self, active: bool):
+    def wallbox_set_sunmode(self, active: bool, keepAlive=False):
+        """Sets the sun mode of the wallbox via rscp protocol locally.
+
+        Args:
+            active (bool): True to activate sun mode, otherwise false
+            keepAlive (Optional[bool]): True to keep connection alive
+        """
         barry = bytearray([1 if active else 2, 0, 0, 0, 0, 0])
         req = self.sendRequest(
             (
@@ -1115,9 +1133,15 @@ class E3DC:
             keepAlive=True,
         )
 
-    def wallbox_set_schuko(self, on: bool):
+    def wallbox_set_schuko(self, on: bool, keepAlive=False):
+        """Sets the Schuko of the wallbox via rscp protocol locally.
+
+        Args:
+            active (bool): True to activate the Schuko, otherwise false
+            keepAlive (Optional[bool]): True to keep connection alive
+        """
         barry = bytearray([0, 0, 0, 0, 0, 1 if on else 0])
-        req = self.sendRequest(
+        self.sendRequest(
             (
                 "WB_REQ_DATA",
                 "Container",
@@ -1133,12 +1157,17 @@ class E3DC:
                     ),
                 ],
             ),
-            keepAlive=True,
+            keepAlive=keepAlive,
         )
 
-    def wallbox_toggle(self):
+    def wallbox_toggle(self, keepAlive=False):
+        """Toggles charging of the wallbox via rscp protocol locally.
+
+        Args:
+            keepAlive (Optional[bool]): True to keep connection alive
+        """
         barry = bytearray([0, 0, 0, 0, 1, 0])
-        req = self.sendRequest(
+        self.sendRequest(
             (
                 "WB_REQ_DATA",
                 "Container",
@@ -1154,7 +1183,7 @@ class E3DC:
                     ),
                 ],
             ),
-            keepAlive=True,
+            keepAlive=keepAlive,
         )
 
     def get_battery_data(self, batIndex=None, dcbs=None, keepAlive=False):
