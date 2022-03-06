@@ -1111,6 +1111,24 @@ class E3DC:
             keepAlive=True
         )
 
+    def wallbox_set_schuko(self, on: bool):
+        barry = bytearray([0,0,0,0,0,1 if on else 0])
+        req = self.sendRequest(
+            (
+                "WB_REQ_DATA",
+                "Container",
+                [
+                    ("WB_INDEX", "UChar8", 0),
+                    ("WB_REQ_SET_EXTERN", "Container",
+                    [
+                        ("WB_EXTERN_DATA","ByteArray",barry),
+                        ("WB_EXTERN_DATA_LEN", "UChar8", 6),
+                    ])
+                ],
+            ),
+            keepAlive=True
+        )
+
     def wallbox_toggle(self):
         barry = bytearray([0,0,0,0,1,0])
         req = self.sendRequest(
