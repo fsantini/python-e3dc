@@ -1160,6 +1160,34 @@ class E3DC:
             keepAlive=keepAlive,
         )
 
+    def wallbox_set_charging(self, active:bool, keepAlive=False):
+        """Toggles charging of the wallbox via rscp protocol locally.
+
+        Args:
+            keepAlive (Optional[bool]): True to keep connection alive
+        """
+        barry_on = bytearray([0, 0, 0, 0, 1, 0])
+        barry_off = bytearray([0, 0, 0, 1, 0, 0])
+        res = self.sendRequest(
+            (
+                "WB_REQ_DATA",
+                "Container",
+                [
+                    ("WB_INDEX", "UChar8", 0),
+                    (
+                        "WB_REQ_SET_EXTERN",
+                        "Container",
+                        [
+                            ("WB_EXTERN_DATA", "ByteArray", barry_on if active else barry_off),
+                            ("WB_EXTERN_DATA_LEN", "UChar8", 6),
+                        ],
+                    ),
+                ],
+            ),
+            keepAlive=keepAlive,
+        )
+        print(res)
+
     def wallbox_toggle(self, keepAlive=False):
         """Toggles charging of the wallbox via rscp protocol locally.
 
