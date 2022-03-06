@@ -1083,11 +1083,11 @@ class E3DC:
         outObj = {k: SystemStatusBools[v] for k, v in outObj.items()}
         return outObj
 
-    def get_wallbox_data(self, wallbox_index=0, keepAlive=False):
+    def get_wallbox_data(self, wbIndex=0, keepAlive=False):
         """Polls the wallbox status via rscp protocol locally.
 
         Args:
-            wallbox_index (Optional[int]): Index of the wallbox to poll data for
+            wbIndex (Optional[int]): Index of the wallbox to poll data for
             keepAlive (Optional[bool]): True to keep connection alive
 
         Returns:
@@ -1101,12 +1101,12 @@ class E3DC:
                     "consumptionSun": <power currently consumed by the wallbox, provided by the solar panels in watts>,
                     "energyAll": <total consumed energy this month in watthours>,
                     "energySolar": <consumed solar energy this month in watthours>,
+                    "index": <index of the requested wallbox>,
                     "maxChargeCurrent": <configured maximum charge current in A>,
                     "phases": <number of phases used for charging>,
                     "schukoOn": <true if the connected schuko of the wallbox is on, otherwise false>,
                     "soc": <state of charge>,
-                    "sunModeOn": <true if sun-only-mode is active, false if mixed mode is active>,
-                    "wallboxIndex": <index of the requested wallbox>
+                    "sunModeOn": <true if sun-only-mode is active, false if mixed mode is active>
                 }
         """
         req = self.sendRequest(
@@ -1114,7 +1114,7 @@ class E3DC:
                 "WB_REQ_DATA",
                 "Container",
                 [
-                    ("WB_INDEX", "UChar8", wallbox_index),
+                    ("WB_INDEX", "UChar8", wbIndex),
                     ("WB_REQ_ENERGY_ALL", "None", None),
                     ("WB_REQ_ENERGY_SOLAR", "None", None),
                     ("WB_REQ_SOC", "None", None),
@@ -1129,7 +1129,7 @@ class E3DC:
         )
 
         outObj = {
-            "wallboxIndex": rscpFindTagIndex(req, "WB_INDEX"),
+            "index": rscpFindTagIndex(req, "WB_INDEX"),
             "energyAll": rscpFindTagIndex(req, "WB_ENERGY_ALL"),
             "energySolar": rscpFindTagIndex(req, "WB_ENERGY_SOLAR"),
             "soc": rscpFindTagIndex(req, "WB_SOC"),
@@ -1164,40 +1164,36 @@ class E3DC:
         outObj = {k: v for k, v in sorted(outObj.items())}
         return outObj
 
-    def set_wallbox_sunmode(self, active: bool, wallbox_index=0, keepAlive=False):
+    def set_wallbox_sunmode(self, enable: bool, wbIndex=0, keepAlive=False):
         """Sets the sun mode of the wallbox via rscp protocol locally.
 
         Args:
-            active (bool): True to activate sun mode, otherwise false,
-            wallbox_index (Optional[int]): index of the requested wallbox,
+            enable (bool): True to enable sun mode, otherwise false,
+            wbIndex (Optional[int]): index of the requested wallbox,
             keepAlive (Optional[bool]): True to keep connection alive
         """
-        return self.__wallbox_set_extern(
-            0, 1 if active else 2, wallbox_index, keepAlive
-        )
+        return self.__wallbox_set_extern(0, 1 if enable else 2, wbIndex, keepAlive)
 
-    def set_wallbox_schuko(self, on: bool, wallbox_index=0, keepAlive=False):
+    def set_wallbox_schuko(self, on: bool, wbIndex=0, keepAlive=False):
         """Sets the Schuko of the wallbox via rscp protocol locally.
 
         Args:
             on (bool): True to activate the Schuko, otherwise false
-            wallbox_index (Optional[int]): index of the requested wallbox,
+            wbIndex (Optional[int]): index of the requested wallbox,
             keepAlive (Optional[bool]): True to keep connection alive
         """
-        return self.__wallbox_set_extern(5, 1 if on else 0, wallbox_index, keepAlive)
+        return self.__wallbox_set_extern(5, 1 if on else 0, wbIndex, keepAlive)
 
-    def toggle_wallbox_charging(self, wallbox_index=0, keepAlive=False):
+    def toggle_wallbox_charging(self, wbIndex=0, keepAlive=False):
         """Toggles charging of the wallbox via rscp protocol locally.
 
         Args:
-            wallbox_index (Optional[int]): index of the requested wallbox,
+            wbIndex (Optional[int]): index of the requested wallbox,
             keepAlive (Optional[bool]): True to keep connection alive
         """
-        return self.__wallbox_set_extern(4, 1, wallbox_index, keepAlive)
+        return self.__wallbox_set_extern(4, 1, wbIndex, keepAlive)
 
-    def __wallbox_set_extern(
-        self, index: int, value: int, wallbox_index, keepAlive=False
-    ):
+    def __wallbox_set_extern(self, index: int, value: int, wbIndex, keepAlive=False):
         barry = bytearray([0, 0, 0, 0, 0, 0])
         barry[index] = value
         self.sendRequest(
@@ -1205,7 +1201,7 @@ class E3DC:
                 "WB_REQ_DATA",
                 "Container",
                 [
-                    ("WB_INDEX", "UChar8", wallbox_index),
+                    ("WB_INDEX", "UChar8", wbIndex),
                     (
                         "WB_REQ_SET_EXTERN",
                         "Container",
