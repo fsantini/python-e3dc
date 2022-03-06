@@ -866,7 +866,8 @@ class E3DC:
             "solarProduction": rscpFindTagIndex(response[2][0], "DB_DC_POWER"),
             "timespanSeconds": timespanSeconds,
         }
-        return outObj
+        
+        return {k:v for k,v in sorted(outObj.items())}
 
     def get_db_data(
         self, startDate: datetime.date = None, timespan: str = "DAY", keepAlive=False
@@ -913,15 +914,15 @@ class E3DC:
 
         startTimestamp = int(time.mktime(requestDate.timetuple()))
 
-        data = self.get_db_data_timestamp(
+        outObj = self.get_db_data_timestamp(
             startTimestamp=startTimestamp, timespanSeconds=span, keepAlive=keepAlive
         )
-        if data is not None:
-            del data["startTimestamp"]
-            data["startDate"] = requestDate
-            data["timespan"] = timespan
+        if outObj is not None:
+            del outObj["startTimestamp"]
+            outObj["startDate"] = requestDate
+            outObj["timespan"] = timespan
 
-        return data
+        return {k:v for k,v in sorted(outObj.items())}
 
     def get_system_info_static(self, keepAlive=False):
         """Polls the static system info via rscp protocol locally.
