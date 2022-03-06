@@ -1114,7 +1114,7 @@ class E3DC:
             keepAlive (Optional[bool]): True to keep connection alive
         """
         barry = bytearray([1 if active else 2, 0, 0, 0, 0, 0])
-        req = self.sendRequest(
+        self.sendRequest(
             (
                 "WB_REQ_DATA",
                 "Container",
@@ -1137,7 +1137,7 @@ class E3DC:
         """Sets the Schuko of the wallbox via rscp protocol locally.
 
         Args:
-            active (bool): True to activate the Schuko, otherwise false
+            on (bool): True to activate the Schuko, otherwise false
             keepAlive (Optional[bool]): True to keep connection alive
         """
         barry = bytearray([0, 0, 0, 0, 0, 1 if on else 0])
