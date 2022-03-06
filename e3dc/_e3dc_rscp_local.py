@@ -58,6 +58,8 @@ class E3DC_RSCP_local:
 
     def _receive(self):
         data = self.socket.recv(BUFFER_SIZE)
+        if len(data) == 0:
+            return None
         decData = rscpDecode(self.encdec.decrypt(data))[0]
         return decData
 
@@ -85,6 +87,8 @@ class E3DC_RSCP_local:
             self.disconnect()
             raise CommunicationError
 
+        if receive is None:
+            raise RSCPAuthenticationError
         if receive[1] == "Error":
             self.disconnect()
             if receive[2] == "RSCP_ERR_ACCESS_DENIED":
