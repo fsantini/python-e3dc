@@ -9,6 +9,7 @@ import hashlib
 import json
 import time
 import uuid
+import struct
 
 import dateutil.parser
 import requests
@@ -1036,6 +1037,63 @@ class E3DC:
         }
         outObj = {k: SystemStatusBools[v] for k, v in outObj.items()}
         return outObj
+
+    def get_wallbox_data(self):
+        req = self.sendRequest(
+            (
+                "WB_REQ_DATA",
+                "Container",
+                [
+                    ("WB_INDEX", "UChar8", 0),
+                    ("WB_REQ_ENERGY_ALL", "None", None),
+                    ("WB_REQ_ENERGY_SOLAR", "None", None),
+                    ("WB_REQ_SOC", "None", None),
+                    ("WB_REQ_EXTERN_DATA_ALG", "None", None),
+                    ("WB_REQ_EXTERN_DATA_SUN", "None", None),
+                    ("WB_REQ_EXTERN_DATA_NET", "None", None),
+                    ("WB_REQ_PARAM_1", "None", None),
+                    ("WB_REQ_APP_SOFTWARE", "None", None)
+                ],
+            ),
+            keepAlive=True
+        )
+
+        outObj = {
+            "wallboxIndex": rscpFindTagIndex(req, "WB_INDEX"),
+            "energyAll": rscpFindTagIndex(req, "WB_ENERGY_ALL"),
+            "energySolar": rscpFindTagIndex(req, "WB_ENERGY_SOLAR"),
+            "soc": rscpFindTagIndex(req, "WB_SOC"),
+        }
+
+        extern_data_sun = rscpFindTag(req, "WB_EXTERN_DATA_SUN")
+        if extern_data_sun is not None:
+          extern_data = rscpFindTagIndex(extern_data_sun, "WB_EXTERN_DATA")
+          outObj["sun"] = struct.unpack("h", extern_data[0:2])[0]
+
+        extern_data_net = rscpFindTag(req, "WB_EXTERN_DATA_NET")
+        if extern_data_net is not None:
+          extern_data = rscpFindTagIndex(extern_data_net, "WB_EXTERN_DATA")
+          outObj["net"] = struct.unpack("h", extern_data[0:2])[0]
+        
+        return outObj
+
+    def wallbox_toggle(self):
+        barry = bytearray([0,0,0,0,1,0])
+        req = self.sendRequest(
+            (
+                "WB_REQ_DATA",
+                "Container",
+                [
+                    ("WB_INDEX", "UChar8", 0),
+                    ("WB_REQ_SET_EXTERN", "Container",
+                    [
+                        ("WB_EXTERN_DATA","ByteArray",barry),
+                        ("WB_EXTERN_DATA_LEN", "UChar8", 6),
+                    ])
+                ],
+            ),
+            keepAlive=True
+        )
 
     def get_battery_data(self, batIndex=None, dcbs=None, keepAlive=False):
         """Polls the battery data via rscp protocol locally.
