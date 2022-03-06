@@ -725,8 +725,7 @@ class E3DC:
                                                             + str(idlePeriod["day"])
                                                             + " in "
                                                             + idle_type
-                                                            + " is not between 00:00"
-                                                            " and 23:59"
+                                                            + " is not between 00:00 and 23:59"
                                                         )
                                 if (
                                     idlePeriod["start"][0] * 60 + idlePeriod["start"][1]
