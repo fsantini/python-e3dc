@@ -1063,7 +1063,18 @@ class E3DC:
             "energyAll": rscpFindTagIndex(req, "WB_ENERGY_ALL"),
             "energySolar": rscpFindTagIndex(req, "WB_ENERGY_SOLAR"),
             "soc": rscpFindTagIndex(req, "WB_SOC"),
+            "appSoftware": rscpFindTagIndex(req, "WB_APP_SOFTWARE")
         }
+
+        extern_data_alg = rscpFindTag(req, "WB_EXTERN_DATA_ALG")
+        if extern_data_alg is not None:
+            extern_data = rscpFindTagIndex(extern_data_alg, "WB_EXTERN_DATA")
+            status_byte = extern_data[2]
+            outObj["sunModeOn"] = (status_byte & 128) == 128
+            outObj["chargingCanceled"] = (status_byte & 64) == 64
+            outObj["chargingActive"] = (status_byte & 32) == 32
+            outObj["phases"] = extern_data[1]
+            outObj["schukoOn"] = extern_data[5] != 0
 
         extern_data_sun = rscpFindTag(req, "WB_EXTERN_DATA_SUN")
         if extern_data_sun is not None:
@@ -1074,8 +1085,31 @@ class E3DC:
         if extern_data_net is not None:
           extern_data = rscpFindTagIndex(extern_data_net, "WB_EXTERN_DATA")
           outObj["net"] = struct.unpack("h", extern_data[0:2])[0]
+
+        rsp_param_1 = rscpFindTag(req, "WB_RSP_PARAM_1")
+        if rsp_param_1 is not None:
+            extern_data = rscpFindTagIndex(rsp_param_1, "WB_EXTERN_DATA")
+            outObj["maxChargeCurrent"] = extern_data[2]
         
         return outObj
+
+    def wallbox_set_sunmode(self, active: bool):
+        barry = bytearray([1 if active else 2,0,0,0,0,0])
+        req = self.sendRequest(
+            (
+                "WB_REQ_DATA",
+                "Container",
+                [
+                    ("WB_INDEX", "UChar8", 0),
+                    ("WB_REQ_SET_EXTERN", "Container",
+                    [
+                        ("WB_EXTERN_DATA","ByteArray",barry),
+                        ("WB_EXTERN_DATA_LEN", "UChar8", 6),
+                    ])
+                ],
+            ),
+            keepAlive=True
+        )
 
     def wallbox_toggle(self):
         barry = bytearray([0,0,0,0,1,0])
