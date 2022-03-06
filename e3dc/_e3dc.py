@@ -7,9 +7,9 @@
 import datetime
 import hashlib
 import json
+import struct
 import time
 import uuid
-import struct
 
 import dateutil.parser
 import requests
