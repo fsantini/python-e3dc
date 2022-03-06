@@ -868,7 +868,7 @@ class E3DC:
             "timespanSeconds": timespanSeconds,
         }
 
-        return {k: v for k, v in sorted(outObj.items())}
+        return outObj
 
     def get_db_data(
         self, startDate: datetime.date = None, timespan: str = "DAY", keepAlive=False
@@ -922,8 +922,7 @@ class E3DC:
             del outObj["startTimestamp"]
             outObj["startDate"] = requestDate
             outObj["timespan"] = timespan
-
-        return {k: v for k, v in sorted(outObj.items())}
+            return {k: v for k, v in sorted(outObj.items())}
 
     def get_system_info_static(self, keepAlive=False):
         """Polls the static system info via rscp protocol locally.
