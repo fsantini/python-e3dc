@@ -1184,6 +1184,48 @@ class E3DC:
         """
         return self.__wallbox_set_extern(5, 1 if on else 0, wbIndex, keepAlive)
 
+    def set_wallbox_max_charge_current(
+        self, max_charge_current: int, wbIndex=0, keepAlive=False
+    ):
+        """Sets the maximum charge current of the wallbox via rscp protocol locally.
+
+        Args:
+            max_charge_current (int): maximum allowed charge current in A
+            wbIndex (Optional[int]): index of the requested wallbox,
+            keepAlive (Optional[bool]): True to keep connection alive
+        """
+        barry = bytearray([0, 0, max_charge_current, 0, 0, 0])
+        return self.sendRequest(
+            (
+                "WB_REQ_DATA",
+                "Container",
+                [
+                    ("WB_INDEX", "UChar8", wbIndex),
+                    (
+                        "WB_REQ_SET_PARAM_1",
+                        "Container",
+                        [
+                            ("WB_EXTERN_DATA", "ByteArray", barry),
+                            ("WB_EXTERN_DATA_LEN", "UChar8", 6),
+                        ],
+                    ),
+                ],
+            ),
+            keepAlive=keepAlive,
+        )
+
+    def set_wallbox_phases(self, phases: int, wbIndex=0, keepAlive=False):
+        """Sets the number of phases used for charging on the wallbox via rscp protocol locally.
+
+        Args:
+            phases (int): number of phases used, valid values are 1 or 3
+            wbIndex (Optional[int]): index of the requested wallbox,
+            keepAlive (Optional[bool]): True to keep connection alive
+        """
+        if phases not in [1, 3]:
+            raise Exception("Invalid phase given, valid values are 1 or 3")
+        return self.__wallbox_set_extern(3, phases, wbIndex, keepAlive)
+
     def toggle_wallbox_charging(self, wbIndex=0, keepAlive=False):
         """Toggles charging of the wallbox via rscp protocol locally.
 
