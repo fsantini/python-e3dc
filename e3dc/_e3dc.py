@@ -152,14 +152,20 @@ class E3DC:
             self.serialNumber = serial[4:]
             self.serialNumberPrefix = serial[:4]
 
-        if self.serialNumber.startswith("4"):
+        if self.serialNumber.startswith("4") or self.serialNumber.startswith("72"):
             self.model = "S10E"
             self.powermeters = self.powermeters or [{"index": 0}]
             self.pvis = self.pvis or [{"index": 0}]
             if not self.serialNumberPrefix:
                 self.serialNumberPrefix = "S10-"
+        if self.serialNumber.startswith("74"):
+            self.model = "S10E_Compact"
+            self.powermeters = self.powermeters or [{"index": 0}]
+            self.pvis = self.pvis or [{"index": 0}]
+            if not self.serialNumberPrefix:
+                self.serialNumberPrefix = "S10-"
         elif self.serialNumber.startswith("5"):
-            self.model = "S10mini"
+            self.model = "S10_Mini"
             self.powermeters = self.powermeters or [{"index": 6}]
             self.pvis = self.pvis or [{"index": 0, "phases": 1}]
             if not self.serialNumberPrefix:
@@ -170,15 +176,28 @@ class E3DC:
             self.pvis = self.pvis or [{"index": 0}]
             if not self.serialNumberPrefix:
                 self.serialNumberPrefix = "Q10-"
-        elif self.serialNumber.startswith("7"):
-            self.model = "Pro"
+        elif self.serialNumber.startswith("70"):
+            self.model = "S10E_Pro"
             self.powermeters = self.powermeters or [{"index": 0}]
             self.pvis = self.pvis or [{"index": 0}]
             if not self.serialNumberPrefix:
                 self.serialNumberPrefix = "P10-"
+        elif self.serialNumber.startswith("75"):
+            self.model = "S10E_Pro_Compact"
+            self.powermeters = self.powermeters or [{"index": 0}]
+            self.pvis = self.pvis or [{"index": 0}]
+            if not self.serialNumberPrefix:
+                self.serialNumberPrefix = "P10-"
+        elif self.serialNumber.startswith("8"):
+            self.model = "S10X"
+            self.powermeters = self.powermeters or [{"index": 0}]
+            self.pvis = self.pvis or [{"index": 0}]
+            if not self.serialNumberPrefix:
+                self.serialNumberPrefix = "H20-"
         else:
             self.model = "NA"
             self.powermeters = self.powermeters or [{"index": 0}]
+            self.pvis = self.pvis or [{"index": 0}]
 
     def connect_web(self):
         """Connects to the E3DC portal and opens a session.
