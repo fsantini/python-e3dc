@@ -1100,7 +1100,8 @@ class E3DC:
                     "consumptionNet": <power currently consumed by the wallbox, provided by the grid in watts>,
                     "consumptionSun": <power currently consumed by the wallbox, provided by the solar panels in watts>,
                     "energyAll": <total consumed energy this month in watthours>,
-                    "energySolar": <consumed solar energy this month in watthours>,
+                    "energySun": <consumed solar energy this month in watthours>,
+                    "energyNet": <consumed net energy this month in watthours>,
                     "index": <index of the requested wallbox>,
                     "maxChargeCurrent": <configured maximum charge current in A>,
                     "phases": <number of phases used for charging>,
@@ -1115,13 +1116,9 @@ class E3DC:
                 "Container",
                 [
                     ("WB_INDEX", "UChar8", wbIndex),
-                    ("WB_REQ_ENERGY_ALL", "None", None),
-                    ("WB_REQ_ENERGY_SOLAR", "None", None),
-                    ("WB_REQ_SOC", "None", None),
                     ("WB_REQ_EXTERN_DATA_ALG", "None", None),
                     ("WB_REQ_EXTERN_DATA_SUN", "None", None),
                     ("WB_REQ_EXTERN_DATA_NET", "None", None),
-                    ("WB_REQ_PARAM_1", "None", None),
                     ("WB_REQ_APP_SOFTWARE", "None", None),
                 ],
             ),
@@ -1130,9 +1127,6 @@ class E3DC:
 
         outObj = {
             "index": rscpFindTagIndex(req, "WB_INDEX"),
-            "energyAll": rscpFindTagIndex(req, "WB_ENERGY_ALL"),
-            "energySolar": rscpFindTagIndex(req, "WB_ENERGY_SOLAR"),
-            "soc": rscpFindTagIndex(req, "WB_SOC"),
             "appSoftware": rscpFindTagIndex(req, "WB_APP_SOFTWARE"),
         }
 
@@ -1145,23 +1139,25 @@ class E3DC:
             outObj["chargingActive"] = (status_byte & 32) != 0
             outObj["plugLocked"] = (status_byte & 16) != 0
             outObj["plugged"] = (status_byte & 8) != 0
+            outObj["soc"] = extern_data[0]
             outObj["phases"] = extern_data[1]
+            outObj["maxChargeCurrent"] = extern_data[3]
             outObj["schukoOn"] = extern_data[5] != 0
 
         extern_data_sun = rscpFindTag(req, "WB_EXTERN_DATA_SUN")
         if extern_data_sun is not None:
             extern_data = rscpFindTagIndex(extern_data_sun, "WB_EXTERN_DATA")
             outObj["consumptionSun"] = struct.unpack("h", extern_data[0:2])[0]
+            outObj["energySun"] = struct.unpack("i", extern_data[2:6])[0]
 
         extern_data_net = rscpFindTag(req, "WB_EXTERN_DATA_NET")
         if extern_data_net is not None:
             extern_data = rscpFindTagIndex(extern_data_net, "WB_EXTERN_DATA")
             outObj["consumptionNet"] = struct.unpack("h", extern_data[0:2])[0]
+            outObj["energyNet"] = struct.unpack("i", extern_data[2:6])[0]
 
-        rsp_param_1 = rscpFindTag(req, "WB_RSP_PARAM_1")
-        if rsp_param_1 is not None:
-            extern_data = rscpFindTagIndex(rsp_param_1, "WB_EXTERN_DATA")
-            outObj["maxChargeCurrent"] = extern_data[2]
+        if "energySun" in outObj and "energyNet" in outObj:
+            outObj["energyAll"] = outObj["energyNet"] + outObj["energySun"]
 
         outObj = {k: v for k, v in sorted(outObj.items())}
         return outObj
