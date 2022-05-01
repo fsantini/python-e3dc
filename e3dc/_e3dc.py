@@ -1140,9 +1140,11 @@ class E3DC:
         if extern_data_alg is not None:
             extern_data = rscpFindTagIndex(extern_data_alg, "WB_EXTERN_DATA")
             status_byte = extern_data[2]
-            outObj["sunModeOn"] = (status_byte & 128) == 128
-            outObj["chargingCanceled"] = (status_byte & 64) == 64
-            outObj["chargingActive"] = (status_byte & 32) == 32
+            outObj["sunModeOn"] = (status_byte & 128) != 0
+            outObj["chargingCanceled"] = (status_byte & 64) != 0
+            outObj["chargingActive"] = (status_byte & 32) != 0
+            outObj["plugLocked"] = (status_byte & 16) != 0
+            outObj["plugged"] = (status_byte & 8) != 0
             outObj["phases"] = extern_data[1]
             outObj["schukoOn"] = extern_data[5] != 0
 
