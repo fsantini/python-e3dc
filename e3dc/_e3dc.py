@@ -1100,9 +1100,10 @@ class E3DC:
                     "consumptionNet": <power currently consumed by the wallbox, provided by the grid in watts>,
                     "consumptionSun": <power currently consumed by the wallbox, provided by the solar panels in watts>,
                     "energyAll": <total consumed energy this month in watthours>,
-                    "energySun": <consumed solar energy this month in watthours>,
                     "energyNet": <consumed net energy this month in watthours>,
+                    "energySun": <consumed solar energy this month in watthours>,
                     "index": <index of the requested wallbox>,
+                    "keyState": <state of the key switch at the wallbox>,
                     "maxChargeCurrent": <configured maximum charge current in A>,
                     "phases": <number of phases used for charging>,
                     "schukoOn": <true if the connected schuko of the wallbox is on, otherwise false>,
@@ -1120,6 +1121,7 @@ class E3DC:
                     ("WB_REQ_EXTERN_DATA_SUN", "None", None),
                     ("WB_REQ_EXTERN_DATA_NET", "None", None),
                     ("WB_REQ_APP_SOFTWARE", "None", None),
+                    ("WB_REQ_KEY_STATE", "None", None),
                 ],
             ),
             keepAlive=keepAlive,
@@ -1158,6 +1160,10 @@ class E3DC:
 
         if "energySun" in outObj and "energyNet" in outObj:
             outObj["energyAll"] = outObj["energyNet"] + outObj["energySun"]
+
+        key_state = rscpFindTag(req, "WB_KEY_STATE")
+        if key_state is not None:
+            outObj["keyState"] = rscpFindTagIndex(key_state, "WB_KEY_STATE")
 
         outObj = {k: v for k, v in sorted(outObj.items())}
         return outObj
