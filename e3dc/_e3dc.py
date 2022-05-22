@@ -144,7 +144,7 @@ class E3DC:
 
     def _set_serial(self, serial):
         self.batteries = self.batteries or [{"index": 0}]
-        self.pmIndexExt = 0
+        self.pmIndexExt = 1
 
         if serial[0].isdigit():
             self.serialNumber = serial
