@@ -31,7 +31,7 @@ This package can be installed from pip:
 
 ### Configuration
 
-There is a great variety of E3/DC implementation configurations, that can't automatically be detected. For example the `index` of the root power meter can be either `0` or `6`, depending how the system was installed. It is also possible to not only have one power meter or inverter.
+There is a great variety of E3/DC implementation configurations, that can't automatically be detected. For example the `index` of the root power meter can be either `0` or `6`, depending how the system was installed. Additional power meter can have an ID of `1-4` and there might be also multiple inverter.
 This library assumes, that there is one inverter installed and the root power meter has an index of `6` for S10 mini and `0` for other systems.
 
 For any other configurations, there is an optional `configuration` object that can be used to alter the defaults:
@@ -157,7 +157,7 @@ print(e3dc.poll_switches())
 
 ## Known limitations
 
-One limitation of the package concerns the implemented RSCP methods. This project also lacks the hardware to test different configurations. However, the RSCP protocol is fully implemented and it should be easy to extend the requests to other usecases.
+One limitation of the package concerns the implemented RSCP methods. This project also lacks the hardware to test different configurations. However, the RSCP protocol is fully implemented and it should be easy to extend the requests to other use cases.
 
 ## Projects using this library
 
