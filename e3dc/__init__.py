@@ -9,7 +9,6 @@ from ._e3dc import E3DC, AuthenticationError, PollError
 from ._e3dc_rscp_local import CommunicationError, RSCPAuthenticationError
 from ._e3dc_rscp_web import RequestTimeoutError, SocketNotReady
 from ._rscpLib import FrameError
-
 from ._rscpLib import set_debug as set_rscp_debug
 
 __all__ = [
