@@ -989,6 +989,10 @@ class E3DC:
                 self.maxBatDischargePower = rscpFindTagIndex(
                     item, "EMS_SYS_SPEC_VALUE_INT"
                 )
+            elif rscpFindTagIndex(item, "EMS_SYS_SPEC_NAME") == "startDischargeDefault":
+                self.startDischargeDefault = rscpFindTagIndex(
+                    item, "EMS_SYS_SPEC_VALUE_INT"
+                )
 
         # EMS_REQ_SPECIFICATION_VALUES
 

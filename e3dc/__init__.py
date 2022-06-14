@@ -10,6 +10,8 @@ from ._e3dc_rscp_local import CommunicationError, RSCPAuthenticationError
 from ._e3dc_rscp_web import RequestTimeoutError, SocketNotReady
 from ._rscpLib import FrameError
 
+from ._rscpLib import set_debug as set_rscp_debug
+
 __all__ = [
     "E3DC",
     "AuthenticationError",
@@ -19,5 +21,6 @@ __all__ = [
     "RequestTimeoutError",
     "SocketNotReady",
     "FrameError",
+    "set_rscp_debug",
 ]
-__version__ = "0.7.1"
+__version__ = "0.7.2"
