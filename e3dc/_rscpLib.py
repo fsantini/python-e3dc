@@ -11,19 +11,19 @@ import zlib
 
 from . import _rscpTags as rscpTags
 
-DEBUG_DICT = {'print_rscp': False}
+DEBUG_DICT = {"print_rscp": False}
 
 
 def set_debug(debug):
     """Turns debug on/off.
-    
+
     Args:
         debug (bool): the status
-        
+
     Returns:
         Nothing
     """
-    DEBUG_DICT['print_rscp'] = debug
+    DEBUG_DICT["print_rscp"] = debug
 
 
 packFmtDict_FixedSize = {
@@ -111,8 +111,8 @@ def rscpEncode(tagStr, typeStr=None, data=None):
 
     tagHex = rscpTags.getHexTag(tagStr)
     typeHex = rscpTags.getHexDatatype(typeStr)
-    
-    if DEBUG_DICT['print_rscp']:
+
+    if DEBUG_DICT["print_rscp"]:
         print(">", tagStr, typeStr, data)
 
     if type(data) is str:
@@ -267,7 +267,7 @@ def rscpDecode(data):
         # ignore none utf-8 bytes
         val = val.decode("utf-8", "ignore")
 
-    if DEBUG_DICT['print_rscp']:
-        print('<', strTag, strType, val)
+    if DEBUG_DICT["print_rscp"]:
+        print("<", strTag, strType, val)
 
     return (strTag, strType, val), headerSize + struct.calcsize(fmt)
