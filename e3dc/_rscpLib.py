@@ -15,11 +15,10 @@ DEBUG_DICT = {'print_rscp': False}
 
 
 def set_debug(debug):
-    """
-    Turns debug on/off
+    """Turns debug on/off.
     
-    Paramters:
-        debug (bool)
+    Args:
+        debug (bool): the status
         
     Returns:
         Nothing
