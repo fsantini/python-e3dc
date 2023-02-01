@@ -2064,7 +2064,7 @@ def getTag(tag_hex):
     """
     try:
         return rscpTags[tag_hex]
-    except (KeyError):
+    except KeyError:
         return hex(tag_hex)
 
 
