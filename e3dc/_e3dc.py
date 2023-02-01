@@ -17,6 +17,7 @@ import requests
 from ._e3dc_rscp_local import (
     E3DC_RSCP_local,
     RSCPAuthenticationError,
+    RSCPKeyError,
     RSCPNotAvailableError,
 )
 from ._e3dc_rscp_web import E3DC_RSCP_web
@@ -505,6 +506,8 @@ class E3DC:
                 raise AuthenticationError()
             except RSCPNotAvailableError:
                 raise NotAvailableError()
+            except RSCPKeyError:
+                raise
             except Exception:
                 retry += 1
                 if retry > retries:

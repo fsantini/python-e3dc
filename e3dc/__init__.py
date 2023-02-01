@@ -6,7 +6,7 @@ Licensed under a MIT license. See LICENSE for details.
 """
 
 from ._e3dc import E3DC, AuthenticationError, PollError
-from ._e3dc_rscp_local import CommunicationError, RSCPAuthenticationError
+from ._e3dc_rscp_local import CommunicationError, RSCPAuthenticationError, RSCPKeyError
 from ._e3dc_rscp_web import RequestTimeoutError, SocketNotReady
 from ._rscpLib import FrameError
 
@@ -16,6 +16,7 @@ __all__ = [
     "PollError",
     "CommunicationError",
     "RSCPAuthenticationError",
+    "RSCPKeyError",
     "RequestTimeoutError",
     "SocketNotReady",
     "FrameError",

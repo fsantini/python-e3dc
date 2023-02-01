@@ -25,6 +25,12 @@ class RSCPNotAvailableError(Exception):
     pass
 
 
+class RSCPKeyError(Exception):
+    """Class for RSCP Encryption Key Error Exception."""
+
+    pass
+
+
 class CommunicationError(Exception):
     """Class for Communication Error Exception."""
 
@@ -88,7 +94,8 @@ class E3DC_RSCP_local:
             raise CommunicationError
 
         if receive is None:
-            raise RSCPAuthenticationError
+            raise RSCPKeyError
+
         if receive[1] == "Error":
             self.disconnect()
             if receive[2] == "RSCP_ERR_ACCESS_DENIED":
