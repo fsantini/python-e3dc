@@ -25,6 +25,12 @@ class RSCPNotAvailableError(Exception):
     pass
 
 
+class RSCPKeyError(Exception):
+    """Class for RSCP Encryption Key Error Exception."""
+
+    pass
+
+
 class CommunicationError(Exception):
     """Class for Communication Error Exception."""
 
@@ -58,6 +64,8 @@ class E3DC_RSCP_local:
 
     def _receive(self):
         data = self.socket.recv(BUFFER_SIZE)
+        if len(data) == 0:
+            return None
         decData = rscpDecode(self.encdec.decrypt(data))[0]
         return decData
 
@@ -84,6 +92,9 @@ class E3DC_RSCP_local:
         except:
             self.disconnect()
             raise CommunicationError
+
+        if receive is None:
+            raise RSCPKeyError
 
         if receive[1] == "Error":
             self.disconnect()
