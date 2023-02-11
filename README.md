@@ -3,6 +3,7 @@
 [![PyPI version](https://badge.fury.io/py/pye3dc.svg)](https://badge.fury.io/py/pye3dc)
 [![GitHub license](https://img.shields.io/github/license/fsantini/python-e3dc)](https://github.com/fsantini/python-e3dc/blob/master/LICENSE)
 [![Codestyle](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+[![Documentation Status](https://readthedocs.org/projects/python-e3dc/badge/?version=latest)](https://python-e3dc.readthedocs.io/en/latest/?badge=latest)
 
 **NOTE: With Release 0.6.0 at least Python 3.7 is required**
 
@@ -124,7 +125,7 @@ Poll returns a dictionary like the following:
 * `set_powersave()`
 * `set_weather_regulated_charge()`
 
-> A documentation for these methods is not yet generated. Please have a look at the docstrings in  `_e3dc.py` for details.
+See the full documentation on [ReadTheDocs](https://python-e3dc.readthedocs.io/en/latest/)
 
 ### Note: The RSCP interface
 
