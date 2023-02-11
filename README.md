@@ -170,7 +170,3 @@ One limitation of the package concerns the implemented RSCP methods. This projec
 * note the E3/DC system you tested with and implementation details
 * pull request checks will enforce code styling (black, flake8, isort)
 * consider adding yourself to `AUTHORS`
-
-## Copyright notice
-
-The Rijndael algorithm comes from the python-cryptoplus package by Philippe Teuwen (https://github.com/doegox/python-cryptoplus) and distributed under a MIT license.

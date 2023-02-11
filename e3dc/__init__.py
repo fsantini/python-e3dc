@@ -1,7 +1,7 @@
 """E3DC Library for Python.
 
 Python class to connect to an E3/DC system.
-Copyright 2017 Francesco Santini <francesco.santini@gmail.com>.
+Copyright 2017-2023 Francesco Santini <francesco.santini@gmail.com> and collaborators. See AUTHORS file for full copyright.
 Licensed under a MIT license. See LICENSE for details.
 """
 
