@@ -159,7 +159,7 @@ class E3DC:
             self.pvis = self.pvis or [{"index": 0}]
             if not self.serialNumberPrefix:
                 self.serialNumberPrefix = "S10-"
-        if self.serialNumber.startswith("74"):
+        elif self.serialNumber.startswith("74"):
             self.model = "S10E_Compact"
             self.powermeters = self.powermeters or [{"index": 0}]
             self.pvis = self.pvis or [{"index": 0}]
