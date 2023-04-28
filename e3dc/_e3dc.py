@@ -2018,27 +2018,34 @@ class E3DC:
             0 if success
             -1 if error
         """
-        if enable:
-            res = self.sendRequest(
-                (
-                    "EMS_REQ_SET_POWER_SETTINGS",
-                    "Container",
-                    [("EMS_WEATHER_REGULATED_CHARGE_ENABLED", "UChar8", 1)],
-                ),
-                keepAlive=keepAlive,
-            )
-        else:
-            res = self.sendRequest(
-                (
-                    "EMS_REQ_SET_POWER_SETTINGS",
-                    "Container",
-                    [("EMS_WEATHER_REGULATED_CHARGE_ENABLED", "UChar8", 0)],
-                ),
-                keepAlive=keepAlive,
-            )
+        # Safely cast this to the boolean we need.
+        newVal: bool = enable != 0
+        res = self.sendRequest(
+            (
+                "EMS_REQ_SET_POWER_SETTINGS",
+                "Container",
+                [("EMS_WEATHER_REGULATED_CHARGE_ENABLED", "UChar8", newVal)],
+            ),
+            keepAlive=keepAlive,
+        )
 
-        # validate return code for EMS_RES_WEATHER_REGULATED_CHARGE_ENABLED is 0
-        if res[2][0][2] == 0:
+        # Returns the new value of EMS_RES_WEATHER_REGULATED_CHARGE_ENABLED, we need
+        # to validate this against the desired value, the object looks like this:
+        # [ "EMS_SET_POWER_SETTINGS",
+        #   "Container",
+        #   [
+        #       ["EMS_RES_WEATHER_REGULATED_CHARGE_ENABLED", "Char8", 0]
+        #   ]
+        # ]
+        # Unfortunately, various E3DC hardware is slightly inconsistent when it comes
+        # down to reporting results, we normalize this accordingly. Some E3DCs return
+        # 1 for enabled, others -1, thus we check for zero/nonzero. With this, we'll
+        # check if we did arraive at the right value.
+
+        retval: bool = (
+            rscpFindTagIndex(res, "EMS_RES_WEATHER_REGULATED_CHARGE_ENABLED") != 0
+        )
+        if retval == newVal:
             return 0
         else:
             return -1
