@@ -1984,27 +1984,26 @@ class E3DC:
             0 if success
             -1 if error
         """
-        if enable:
-            res = self.sendRequest(
-                (
-                    "EMS_REQ_SET_POWER_SETTINGS",
-                    "Container",
-                    [("EMS_POWERSAVE_ENABLED", "UChar8", 1)],
-                ),
-                keepAlive=keepAlive,
-            )
-        else:
-            res = self.sendRequest(
-                (
-                    "EMS_REQ_SET_POWER_SETTINGS",
-                    "Container",
-                    [("EMS_POWERSAVE_ENABLED", "UChar8", 0)],
-                ),
-                keepAlive=keepAlive,
-            )
-
-        # validate return code for EMS_RES_POWERSAVE_ENABLED is 0
-        if res[2][0][2] == 0:
+        newValue: int = (1 if enable else 0)
+        res = self.sendRequest(
+            (
+                "EMS_REQ_SET_POWER_SETTINGS",
+                "Container",
+                [("EMS_POWERSAVE_ENABLED", "UChar8", newValue)],
+            ),
+            keepAlive=keepAlive,
+        )
+        # Returns the new value of EMS_REQ_SET_POWER_SETTINGS, we need
+        # to validate this against the desired value, the object looks like this:
+        # [ "EMS_SET_POWER_SETTINGS", 
+        #   "Container", 
+        #   [
+        #       ["EMS_POWERSAVE_ENABLED", "Char8", 0]
+        #   ]
+        # ]
+        
+        # validate new value
+        if rscpFindTagIndex(res, "EMS_POWERSAVE_ENABLED") == newValue:
             return 0
         else:
             return -1
