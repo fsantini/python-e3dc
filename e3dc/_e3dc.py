@@ -1995,8 +1995,8 @@ class E3DC:
         )
         # Returns the new value of EMS_REQ_SET_POWER_SETTINGS, we need
         # to validate this against the desired value, the object looks like this:
-        # [ "EMS_SET_POWER_SETTINGS", 
-        #   "Container", 
+        # [ "EMS_SET_POWER_SETTINGS",
+        #   "Container",
         #   [
         #       ["EMS_POWERSAVE_ENABLED", "Char8", 0]
         #   ]
