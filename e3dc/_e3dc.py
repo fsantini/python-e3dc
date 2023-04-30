@@ -1984,7 +1984,7 @@ class E3DC:
             0 if success
             -1 if error
         """
-        newValue: int = (1 if enable else 0)
+        newValue: int = 1 if enable else 0
         res = self.sendRequest(
             (
                 "EMS_REQ_SET_POWER_SETTINGS",
@@ -2001,7 +2001,7 @@ class E3DC:
         #       ["EMS_POWERSAVE_ENABLED", "Char8", 0]
         #   ]
         # ]
-        
+
         # validate new value
         if rscpFindTagIndex(res, "EMS_POWERSAVE_ENABLED") == newValue:
             return 0
