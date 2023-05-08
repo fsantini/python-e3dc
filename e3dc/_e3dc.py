@@ -1984,7 +1984,6 @@ class E3DC:
             0 if success
             -1 if error
         """
-
         res = self.sendRequest(
             (
                 "EMS_REQ_SET_POWER_SETTINGS",
