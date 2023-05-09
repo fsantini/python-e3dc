@@ -14,7 +14,9 @@ from ._rscpLib import set_debug as set_rscp_debug
 __all__ = [
     "E3DC",
     "AuthenticationError",
+    "NotAvailableError",
     "PollError",
+    "SendError",
     "CommunicationError",
     "RSCPAuthenticationError",
     "RSCPKeyError",

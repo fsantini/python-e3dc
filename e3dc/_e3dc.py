@@ -159,7 +159,7 @@ class E3DC:
             self.pvis = self.pvis or [{"index": 0}]
             if not self.serialNumberPrefix:
                 self.serialNumberPrefix = "S10-"
-        if self.serialNumber.startswith("74"):
+        elif self.serialNumber.startswith("74"):
             self.model = "S10E_Compact"
             self.powermeters = self.powermeters or [{"index": 0}]
             self.pvis = self.pvis or [{"index": 0}]
@@ -1984,27 +1984,25 @@ class E3DC:
             0 if success
             -1 if error
         """
-        if enable:
-            res = self.sendRequest(
-                (
-                    "EMS_REQ_SET_POWER_SETTINGS",
-                    "Container",
-                    [("EMS_POWERSAVE_ENABLED", "UChar8", 1)],
-                ),
-                keepAlive=keepAlive,
-            )
-        else:
-            res = self.sendRequest(
-                (
-                    "EMS_REQ_SET_POWER_SETTINGS",
-                    "Container",
-                    [("EMS_POWERSAVE_ENABLED", "UChar8", 0)],
-                ),
-                keepAlive=keepAlive,
-            )
+        res = self.sendRequest(
+            (
+                "EMS_REQ_SET_POWER_SETTINGS",
+                "Container",
+                [("EMS_POWERSAVE_ENABLED", "UChar8", int(enable))],
+            ),
+            keepAlive=keepAlive,
+        )
 
-        # validate return code for EMS_RES_POWERSAVE_ENABLED is 0
-        if res[2][0][2] == 0:
+        # Returns value of EMS_REQ_SET_POWER_SETTINGS, we get a success flag here,
+        # that we normalize and push outside.
+        # [ "EMS_SET_POWER_SETTINGS",
+        #   "Container",
+        #   [
+        #       ["EMS_RES_POWERSAVE_ENABLED", "Char8", 0]
+        #   ]
+        # ]
+
+        if rscpFindTagIndex(res, "EMS_RES_POWERSAVE_ENABLED") == 0:
             return 0
         else:
             return -1
