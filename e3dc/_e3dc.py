@@ -1807,31 +1807,34 @@ class E3DC:
         )
 
         activePhasesChar = rscpFindTagIndex(res, "PM_ACTIVE_PHASES")
-        activePhases = f"{activePhasesChar:03b}"
+        if activePhasesChar != None:
+            activePhases = f"{activePhasesChar:03b}"
 
-        outObj = {
-            "activePhases": activePhases,
-            "energy": {
-                "L1": rscpFindTagIndex(res, "PM_ENERGY_L1"),
-                "L2": rscpFindTagIndex(res, "PM_ENERGY_L2"),
-                "L3": rscpFindTagIndex(res, "PM_ENERGY_L3"),
-            },
-            "index": pmIndex,
-            "maxPhasePower": rscpFindTagIndex(res, "PM_MAX_PHASE_POWER"),
-            "mode": rscpFindTagIndex(res, "PM_MODE"),
-            "power": {
-                "L1": rscpFindTagIndex(res, "PM_POWER_L1"),
-                "L2": rscpFindTagIndex(res, "PM_POWER_L2"),
-                "L3": rscpFindTagIndex(res, "PM_POWER_L3"),
-            },
-            "type": rscpFindTagIndex(res, "PM_TYPE"),
-            "voltage": {
-                "L1": round(rscpFindTagIndex(res, "PM_VOLTAGE_L1"), 4),
-                "L2": round(rscpFindTagIndex(res, "PM_VOLTAGE_L2"), 4),
-                "L3": round(rscpFindTagIndex(res, "PM_VOLTAGE_L3"), 4),
-            },
-        }
-        return outObj
+            outObj = {
+                "activePhases": activePhases,
+                "energy": {
+                    "L1": rscpFindTagIndex(res, "PM_ENERGY_L1"),
+                    "L2": rscpFindTagIndex(res, "PM_ENERGY_L2"),
+                    "L3": rscpFindTagIndex(res, "PM_ENERGY_L3"),
+                },
+                "index": pmIndex,
+                "maxPhasePower": rscpFindTagIndex(res, "PM_MAX_PHASE_POWER"),
+                "mode": rscpFindTagIndex(res, "PM_MODE"),
+                "power": {
+                    "L1": rscpFindTagIndex(res, "PM_POWER_L1"),
+                    "L2": rscpFindTagIndex(res, "PM_POWER_L2"),
+                    "L3": rscpFindTagIndex(res, "PM_POWER_L3"),
+                },
+                "type": rscpFindTagIndex(res, "PM_TYPE"),
+                "voltage": {
+                    "L1": round(rscpFindTagIndex(res, "PM_VOLTAGE_L1"), 4),
+                    "L2": round(rscpFindTagIndex(res, "PM_VOLTAGE_L2"), 4),
+                    "L3": round(rscpFindTagIndex(res, "PM_VOLTAGE_L3"), 4),
+                },
+            }
+            return outObj
+        else:
+            return None
 
     def get_powermeters_data(self, powermeters=None, keepAlive=False):
         """Polls the powermeters data via rscp protocol locally.
@@ -1849,14 +1852,14 @@ class E3DC:
         outObj = []
 
         for powermeter in powermeters:
-            outObj.append(
-                self.get_powermeter_data(
+            powermeter_data = self.get_powermeter_data(
                     pmIndex=powermeter["index"],
                     keepAlive=True
                     if powermeter["index"] != powermeters[-1]["index"]
                     else keepAlive,  # last request should honor keepAlive
                 )
-            )
+            if powermeter_data != None:
+                outObj.append(powermeter_data)
 
         return outObj
 
