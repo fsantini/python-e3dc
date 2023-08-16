@@ -1746,6 +1746,47 @@ class E3DC:
 
         return outObj
 
+    def get_powermeters(self, keepAlive=False):
+        """Scans for installed power meters via rscp protocol locally.
+
+        Args:
+            keepAlive (Optional[bool]): True to keep connection alive
+
+        Returns:
+            dict: Dictionary containing the found powermeters as follows.::
+
+                "powermeters": [
+                    {'index': 0, 'type': 1},
+                    {'index': 1, 'type': 4}
+                ]
+                 
+        """
+        outObj = []
+        for pmIndex in range(8): # max 8 powermeters according to E3DC spec
+            res = self.sendRequest(
+                (
+                    "PM_REQ_DATA",
+                    "Container",
+                    [
+                        ("PM_INDEX", "Uint16", pmIndex),
+                        ("PM_REQ_TYPE", "None", None),
+                    ],
+                ),
+                keepAlive=keepAlive,
+            )
+
+            pmType = rscpFindTagIndex(res, "PM_TYPE")
+
+            if pmType != None:            
+                outObj.append(
+                    {
+                        "index": pmIndex,
+                        "type": pmType
+                    }
+                )
+            
+        return outObj
+
     def get_powermeter_data(self, pmIndex=None, keepAlive=False):
         """Polls the power meter data via rscp protocol locally.
 
