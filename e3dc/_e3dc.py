@@ -22,6 +22,7 @@ from ._e3dc_rscp_local import (
 )
 from ._e3dc_rscp_web import E3DC_RSCP_web
 from ._rscpLib import rscpFindTag, rscpFindTagIndex
+from ._rscpTags import getPowermeterType
 
 REMOTE_ADDRESS = "https://s10.e3dc.com/s10/phpcmd/cmd.php"
 REQUEST_INTERVAL_SEC = 10  # minimum interval between requests
@@ -1760,19 +1761,6 @@ class E3DC:
                     {'index': 1, 'type': 4, 'typeName': 'PM_TYPE_ADDITIONAL_CONSUMPTION'}
                 ]
         """
-        pmTypeNames = (
-            {  # Source: https://github.com/spali/go-rscp/blob/master/rscp/tag.go#L561
-                0: "PM_TYPE_UNDEFINED",
-                1: "PM_TYPE_ROOT",
-                2: "PM_TYPE_ADDITIONAL",
-                3: "PM_TYPE_ADDITIONAL_PRODUCTION",
-                4: "PM_TYPE_ADDITIONAL_CONSUMPTION",
-                5: "PM_TYPE_FARM",
-                6: "PM_TYPE_UNUSED",
-                7: "PM_TYPE_WALLBOX",
-                8: "PM_TYPE_FARM_ADDITIONAL",
-            }
-        )
 
         outObj = []
         for pmIndex in range(8):  # max 8 powermeters according to E3DC spec
@@ -1792,7 +1780,7 @@ class E3DC:
 
             if pmType is not None:
                 outObj.append(
-                    {"index": pmIndex, "type": pmType, "typeName": pmTypeNames[pmType]}
+                    {"index": pmIndex, "type": pmType, "typeName": getPowermeterType(pmType)}
                 )
 
         return outObj
