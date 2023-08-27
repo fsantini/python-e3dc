@@ -271,4 +271,3 @@ def rscpDecode(data):
         print("<", strTag, strType, val)
 
     return (strTag, strType, val), headerSize + struct.calcsize(fmt)
-
