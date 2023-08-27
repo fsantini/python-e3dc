@@ -1748,6 +1748,7 @@ class E3DC:
 
     def get_powermeters(self, keepAlive=False):
         """Scans for installed power meters via rscp protocol locally.
+        
         Args:
             keepAlive (Optional[bool]): True to keep connection alive
 
