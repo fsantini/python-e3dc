@@ -1756,11 +1756,11 @@ class E3DC:
             dict: Dictionary containing the found powermeters as follows.::
 
                 "powermeters": [
-                    {'index': 0, 'type': 1, 'typeName': PM_TYPE_UNDEFINED},
-                    {'index': 1, 'type': 4, 'typeName': PM_TYPE_ADDITIONAL_CONSUMPTION}
+                    {'index': 0, 'type': 1, 'typeName': 'PM_TYPE_ROOT'},
+                    {'index': 1, 'type': 4, 'typeName': 'PM_TYPE_ADDITIONAL_CONSUMPTION'}
                 ]
         """
-        pmTypeNames = {
+        pmTypeNames = {  # Source: https://github.com/spali/go-rscp/blob/master/rscp/tag.go#L561
             0: "PM_TYPE_UNDEFINED",
             1: "PM_TYPE_ROOT",
             2: "PM_TYPE_ADDITIONAL",
