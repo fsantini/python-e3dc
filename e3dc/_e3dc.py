@@ -1760,17 +1760,19 @@ class E3DC:
                     {'index': 1, 'type': 4, 'typeName': 'PM_TYPE_ADDITIONAL_CONSUMPTION'}
                 ]
         """
-        pmTypeNames = {  # Source: https://github.com/spali/go-rscp/blob/master/rscp/tag.go#L561
-            0: "PM_TYPE_UNDEFINED",
-            1: "PM_TYPE_ROOT",
-            2: "PM_TYPE_ADDITIONAL",
-            3: "PM_TYPE_ADDITIONAL_PRODUCTION",
-            4: "PM_TYPE_ADDITIONAL_CONSUMPTION",
-            5: "PM_TYPE_FARM",
-            6: "PM_TYPE_UNUSED",
-            7: "PM_TYPE_WALLBOX",
-            8: "PM_TYPE_FARM_ADDITIONAL",
-        }
+        pmTypeNames = (
+            {  # Source: https://github.com/spali/go-rscp/blob/master/rscp/tag.go#L561
+                0: "PM_TYPE_UNDEFINED",
+                1: "PM_TYPE_ROOT",
+                2: "PM_TYPE_ADDITIONAL",
+                3: "PM_TYPE_ADDITIONAL_PRODUCTION",
+                4: "PM_TYPE_ADDITIONAL_CONSUMPTION",
+                5: "PM_TYPE_FARM",
+                6: "PM_TYPE_UNUSED",
+                7: "PM_TYPE_WALLBOX",
+                8: "PM_TYPE_FARM_ADDITIONAL",
+            }
+        )
 
         outObj = []
         for pmIndex in range(8):  # max 8 powermeters according to E3DC spec
