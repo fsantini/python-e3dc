@@ -1779,7 +1779,11 @@ class E3DC:
 
             if pmType is not None:
                 outObj.append(
-                    {"index": pmIndex, "type": pmType, "typeName": getPowermeterType(pmType)}
+                    {
+                        "index": pmIndex,
+                        "type": pmType,
+                        "typeName": getPowermeterType(pmType),
+                    }
                 )
 
         return outObj
