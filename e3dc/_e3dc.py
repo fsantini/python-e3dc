@@ -1748,7 +1748,7 @@ class E3DC:
 
     def get_powermeters(self, keepAlive=False):
         """Scans for installed power meters via rscp protocol locally.
-        
+
         Args:
             keepAlive (Optional[bool]): True to keep connection alive
 
@@ -1760,7 +1760,6 @@ class E3DC:
                     {'index': 1, 'type': 4, 'typeName': PM_TYPE_ADDITIONAL_CONSUMPTION}
                 ]
         """
-
         pmTypeNames = {
             0: "PM_TYPE_UNDEFINED",
             1: "PM_TYPE_ROOT",
