@@ -1769,7 +1769,7 @@ class E3DC:
             5: "PM_TYPE_FARM",
             6: "PM_TYPE_UNUSED",
             7: "PM_TYPE_WALLBOX",
-            8: "PM_TYPE_FARM_ADDITIONAL"
+            8: "PM_TYPE_FARM_ADDITIONAL",
         }
 
         outObj = []
@@ -1790,13 +1790,9 @@ class E3DC:
 
             if pmType is not None:
                 outObj.append(
-                    {
-                        "index": pmIndex,
-                        "type": pmType,
-                        "typeName": pmTypeNames[pmType]
-                    }
+                    {"index": pmIndex, "type": pmType, "typeName": pmTypeNames[pmType]}
                 )
-            
+
         return outObj
 
     def get_powermeter_data(self, pmIndex=None, keepAlive=False):
