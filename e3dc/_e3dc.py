@@ -1761,7 +1761,6 @@ class E3DC:
                     {'index': 1, 'type': 4, 'typeName': 'PM_TYPE_ADDITIONAL_CONSUMPTION'}
                 ]
         """
-
         outObj = []
         for pmIndex in range(8):  # max 8 powermeters according to E3DC spec
             res = self.sendRequest(
