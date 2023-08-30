@@ -1763,7 +1763,9 @@ class E3DC:
         """
         maxPowermeters = 8
         outObj = []
-        for pmIndex in range(maxPowermeters):  # max 8 powermeters according to E3DC spec
+        for pmIndex in range(
+            maxPowermeters
+        ):  # max 8 powermeters according to E3DC spec
             res = self.sendRequest(
                 (
                     "PM_REQ_DATA",
