@@ -1773,7 +1773,7 @@ class E3DC:
                         ("PM_REQ_TYPE", "None", None),
                     ],
                 ),
-                keepAlive = True if pmIndex < (maxPowermeters -1) else keepAlive,
+                keepAlive=True if pmIndex < (maxPowermeters -1) else keepAlive,
             )
 
             pmType = rscpFindTagIndex(res, "PM_TYPE")
