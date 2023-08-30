@@ -1761,8 +1761,9 @@ class E3DC:
                     {'index': 1, 'type': 4, 'typeName': 'PM_TYPE_ADDITIONAL_CONSUMPTION'}
                 ]
         """
+        maxPowermeters = 8
         outObj = []
-        for pmIndex in range(8):  # max 8 powermeters according to E3DC spec
+        for pmIndex in range(maxPowermeters):  # max 8 powermeters according to E3DC spec
             res = self.sendRequest(
                 (
                     "PM_REQ_DATA",
@@ -1772,7 +1773,7 @@ class E3DC:
                         ("PM_REQ_TYPE", "None", None),
                     ],
                 ),
-                keepAlive=keepAlive,
+                keepAlive = True if pmIndex < (maxPowermeters -1) else keepAlive,
             )
 
             pmType = rscpFindTagIndex(res, "PM_TYPE")
