@@ -2101,6 +2101,18 @@ rscpErrorCodes = {
     0xFFFFFFFF: "UNEXPECTED ERROR",  # happens for example in get_db_data if time and span is invalid (not available)
 }
 
+powermeterTypes = {
+    0x00: "PM_TYPE_UNDEFINED",
+    0x01: "PM_TYPE_ROOT",
+    0x02: "PM_TYPE_ADDITIONAL",
+    0x03: "PM_TYPE_ADDITIONAL_PRODUCTION",
+    0x04: "PM_TYPE_ADDITIONAL_CONSUMPTION",
+    0x05: "PM_TYPE_FARM",
+    0x06: "PM_TYPE_UNUSED",
+    0x07: "PM_TYPE_WALLBOX",
+    0x08: "PM_TYPE_FARM_ADDITIONAL",
+}
+
 
 def getHexDatatype(type_str):
     """Get data type as hex.
@@ -2139,3 +2151,15 @@ def getErrorcode(error_hex):
         str: String representation of the given error_hex
     """
     return rscpErrorCodes[error_hex]
+
+
+def getPowermeterType(powermetertype_hex):
+    """Get powermeter type as string.
+
+    Attributes:
+        powermeterType_hex (int): type of the powermeter as hex
+
+    Returns:
+        str: String representation of the given powermeterType_hex
+    """
+    return powermeterTypes[powermetertype_hex]

@@ -22,6 +22,7 @@ from ._e3dc_rscp_local import (
 )
 from ._e3dc_rscp_web import E3DC_RSCP_web
 from ._rscpLib import rscpFindTag, rscpFindTagIndex
+from ._rscpTags import getPowermeterType
 
 REMOTE_ADDRESS = "https://s10.e3dc.com/s10/phpcmd/cmd.php"
 REQUEST_INTERVAL_SEC = 10  # minimum interval between requests
@@ -1743,6 +1744,50 @@ class E3DC:
                     else keepAlive,  # last request should honor keepAlive
                 )
             )
+
+        return outObj
+
+    def get_powermeters(self, keepAlive=False):
+        """Scans for installed power meters via rscp protocol locally.
+
+        Args:
+            keepAlive (Optional[bool]): True to keep connection alive
+
+        Returns:
+            dict: Dictionary containing the found powermeters as follows.::
+
+                "powermeters": [
+                    {'index': 0, 'type': 1, 'typeName': 'PM_TYPE_ROOT'},
+                    {'index': 1, 'type': 4, 'typeName': 'PM_TYPE_ADDITIONAL_CONSUMPTION'}
+                ]
+        """
+        maxPowermeters = 8
+        outObj = []
+        for pmIndex in range(
+            maxPowermeters
+        ):  # max 8 powermeters according to E3DC spec
+            res = self.sendRequest(
+                (
+                    "PM_REQ_DATA",
+                    "Container",
+                    [
+                        ("PM_INDEX", "Uint16", pmIndex),
+                        ("PM_REQ_TYPE", "None", None),
+                    ],
+                ),
+                keepAlive=True if pmIndex < (maxPowermeters - 1) else keepAlive,
+            )
+
+            pmType = rscpFindTagIndex(res, "PM_TYPE")
+
+            if pmType is not None:
+                outObj.append(
+                    {
+                        "index": pmIndex,
+                        "type": pmType,
+                        "typeName": getPowermeterType(pmType),
+                    }
+                )
 
         return outObj
 
