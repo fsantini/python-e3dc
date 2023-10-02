@@ -8,6 +8,7 @@ import socket
 
 from ._RSCPEncryptDecrypt import RSCPEncryptDecrypt
 from ._rscpLib import rscpDecode, rscpEncode, rscpFrame
+from ._rscpTags import RscpTag, RscpType
 
 PORT = 5033
 BUFFER_SIZE = 1024 * 32
@@ -122,11 +123,11 @@ class E3DC_RSCP_local:
 
         self.sendRequest(
             (
-                "RSCP_REQ_AUTHENTICATION",
-                "Container",
+                RscpTag.RSCP_REQ_AUTHENTICATION,
+                RscpType.Container,
                 [
-                    ("RSCP_AUTHENTICATION_USER", "CString", self.username),
-                    ("RSCP_AUTHENTICATION_PASSWORD", "CString", self.password),
+                    (RscpTag.RSCP_AUTHENTICATION_USER, RscpType.CString, self.username),
+                    (RscpTag.RSCP_AUTHENTICATION_PASSWORD, RscpType.CString, self.password),
                 ],
             )
         )

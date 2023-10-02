@@ -9,7 +9,15 @@ import struct
 import time
 import zlib
 
-from . import _rscpTags as rscpTags
+from ._rscpTags import (
+    RscpType,
+    getStrDatatype,
+    getStrTag,
+    getHexTag,
+    getHexDatatype,
+    getDatatype,
+    getErrorcode,
+)
 
 DEBUG_DICT = {"print_rscp": False}
 
@@ -27,25 +35,25 @@ def set_debug(debug):
 
 
 packFmtDict_FixedSize = {
-    "Bool": "?",
-    "Char8": "b",
-    "UChar8": "B",
-    "Int16": "h",
-    "Uint16": "H",
-    "Int32": "i",
-    "Uint32": "I",
-    "Int64": "q",
-    "Uint64": "Q",
-    "Float32": "f",
-    "Double64": "d",
+    RscpType.Bool: "?",
+    RscpType.Char8: "b",
+    RscpType.UChar8: "B",
+    RscpType.Int16: "h",
+    RscpType.Uint16: "H",
+    RscpType.Int32: "i",
+    RscpType.Uint32: "I",
+    RscpType.Int64: "q",
+    RscpType.Uint64: "Q",
+    RscpType.Float32: "f",
+    RscpType.Double64: "d",
 }
 
 packFmtDict_VarSize = {
-    "Bitfield": "s",
-    "CString": "s",
-    "Container": "s",
-    "ByteArray": "s",
-    "Error": "s",
+    RscpType.Bitfield: "s",
+    RscpType.CString: "s",
+    RscpType.Container: "s",
+    RscpType.ByteArray: "s",
+    RscpType.Error: "s",
 }
 
 
@@ -54,14 +62,20 @@ def rscpFindTag(decodedMsg, tag):
 
     Args:
     decodedMsg (list): the decoded message
-    tag (str): the RSCP Tag string to search for
+    tag (RscpTag): the RSCP Tag to search for
 
     Returns:
         list: the found tag
     """
+    try:
+        tagStr = getStrTag(tag)
+    except KeyError:
+        # Tag is unknown to this library
+        return None
+
     if decodedMsg is None:
         return None
-    if decodedMsg[0] == tag:
+    if decodedMsg[0] == tagStr:
         return decodedMsg
     if isinstance(decodedMsg[2], list):
         for msg in decodedMsg[2]:
@@ -76,15 +90,15 @@ def rscpFindTagIndex(decodedMsg, tag, index=2):
 
     Args:
     decodedMsg (list): the decoded message
-    tag (str): the RSCP Tag string to search for
+    tag (RscpTag): the RSCP Tag to search for
     index (Optional[int]): the index of the found tag to return. Default is 2, the value of the Tag.
 
     Returns:
         the content of the configured index for the tag.
     """
-    tag = rscpFindTag(decodedMsg, tag)
-    if tag is not None:
-        return tag[index]
+    res = rscpFindTag(decodedMsg, tag)
+    if res is not None:
+        return res[index]
     return None
 
 
@@ -105,17 +119,17 @@ def rscpEncode(tagStr, typeStr=None, data=None):
         typeStr = tagStr[1]
         data = tagStr[2]
         tagStr = tagStr[0]
-    else:
-        if typeStr is None:
-            raise TypeError("Second argument must not be none if first is not a tuple")
-
-    tagHex = rscpTags.getHexTag(tagStr)
-    typeHex = rscpTags.getHexDatatype(typeStr)
+    elif typeStr is None:
+        raise TypeError("Second argument must not be none if first is not a tuple")
+    
+    tagHex = getHexTag(tagStr)
+    typeHex = getHexDatatype(typeStr)
+    type_ = getDatatype(typeStr)
 
     if DEBUG_DICT["print_rscp"]:
         print(">", tagStr, typeStr, data)
 
-    if type(data) is str:
+    if isinstance(data, str):
         data = data.encode("utf-8")
 
     packFmt = (
@@ -123,11 +137,9 @@ def rscpEncode(tagStr, typeStr=None, data=None):
     )
     headerLen = struct.calcsize(packFmt)
 
-    if typeStr == "None":  # special case: no content
+    if type_ == RscpType.NoneType:  # special case: no content
         return struct.pack(packFmt, tagHex, typeHex, 0)
-    elif (
-        typeStr == "Timestamp"
-    ):  # timestamp has a special format, divided into 32 bit integers
+    elif type_ == RscpType.Timestamp:  # timestamp has a special format, divided into 32 bit integers
         ts = int(data / 1000)  # this is int64
         ms = (data - ts * 1000) * 1e6  # ms are multiplied by 10^6
 
@@ -138,7 +150,7 @@ def rscpEncode(tagStr, typeStr=None, data=None):
         length = struct.calcsize(packFmt) - headerLen
 
         return struct.pack(packFmt, tagHex, typeHex, length, hiword, loword, ms)
-    elif typeStr == "Container":
+    elif type_ == RscpType.Container:
         if isinstance(data, list):
             newData = b""
             for dataChunk in data:
@@ -146,11 +158,11 @@ def rscpEncode(tagStr, typeStr=None, data=None):
                     dataChunk[0], dataChunk[1], dataChunk[2]
                 )  # transform each dataChunk into byte array
             data = newData
-            packFmt += str(len(data)) + packFmtDict_VarSize[typeStr]
-    elif typeStr in packFmtDict_FixedSize:
-        packFmt += packFmtDict_FixedSize[typeStr]
-    elif typeStr in packFmtDict_VarSize:
-        packFmt += str(len(data)) + packFmtDict_VarSize[typeStr]
+            packFmt += str(len(data)) + packFmtDict_VarSize[type_]
+    elif type_ in packFmtDict_FixedSize:
+        packFmt += packFmtDict_FixedSize[type_]
+    elif type_ in packFmtDict_VarSize:
+        packFmt += str(len(data)) + packFmtDict_VarSize[type_]
 
     length = struct.calcsize(packFmt) - headerLen
     return struct.pack(packFmt, tagHex, typeHex, length, data)
@@ -231,10 +243,11 @@ def rscpDecode(data):
         headerFmt, data[: struct.calcsize(headerFmt)]
     )
     # print (hex(hexTag), hex(hexType), length, data[struct.calcsize(headerFmt):])
-    strTag = rscpTags.getTag(hexTag)
-    strType = rscpTags.getDatatype(hexType)
+    strTag = getStrTag(hexTag)
+    strType = getStrDatatype(hexType)
+    type_ = getDatatype(hexType)
 
-    if strType == "Container":
+    if type_ == RscpType.Container:
         # this is a container: parse the inside
         dataList = []
         curByte = headerSize
@@ -243,7 +256,7 @@ def rscpDecode(data):
             curByte += usedLength
             dataList.append(innerData)
         return (strTag, strType, dataList), curByte
-    elif strType == "Timestamp":
+    elif type_ == RscpType.Timestamp:
         fmt = "<iii"
         hiword, loword, ms = struct.unpack(
             fmt, data[headerSize : headerSize + struct.calcsize(fmt)]
@@ -251,18 +264,18 @@ def rscpDecode(data):
         # t = float((hiword << 32) + loword) + (float(ms)*1e-9) # this should work, but doesn't
         t = float(hiword + loword) + (float(ms) * 1e-9)  # this seems to be correct
         return (strTag, strType, t), headerSize + struct.calcsize(fmt)
-    elif strType == "None":
+    elif type_ == RscpType.NoneType:
         return (strTag, strType, None), headerSize
-    elif strType in packFmtDict_FixedSize:
-        fmt = "<" + packFmtDict_FixedSize[strType]
-    elif strType in packFmtDict_VarSize:
-        fmt = "<" + str(length) + packFmtDict_VarSize[strType]
+    elif type_ in packFmtDict_FixedSize:
+        fmt = "<" + packFmtDict_FixedSize[type_]
+    elif type_ in packFmtDict_VarSize:
+        fmt = "<" + str(length) + packFmtDict_VarSize[type_]
 
     val = struct.unpack(fmt, data[headerSize : headerSize + struct.calcsize(fmt)])[0]
 
-    if strType == "Error":
-        val = rscpTags.getErrorcode(int.from_bytes(val, "little"))
-    elif isinstance(val, bytes) and strType == "CString":
+    if type_ == RscpType.Error:
+        val = getErrorcode(int.from_bytes(val, "little"))
+    elif isinstance(val, bytes) and type_ == RscpType.CString:
         # return string instead of bytes
         # ignore none utf-8 bytes
         val = val.decode("utf-8", "ignore")
