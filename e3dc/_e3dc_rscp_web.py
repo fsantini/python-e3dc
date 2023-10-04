@@ -13,8 +13,8 @@ import time
 import tzlocal
 import websocket
 
-from ._rscpTags import RscpTag, RscpType
 from . import _rscpLib as rscpLib
+from ._rscpTags import RscpTag, RscpType
 
 """
  The connection works the following way: (> outgoing, < incoming)

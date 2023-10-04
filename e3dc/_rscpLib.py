@@ -11,12 +11,12 @@ import zlib
 
 from ._rscpTags import (
     RscpType,
-    getStrDatatype,
-    getStrTag,
-    getHexTag,
-    getHexDatatype,
     getDatatype,
     getErrorcode,
+    getHexDatatype,
+    getHexTag,
+    getStrDatatype,
+    getStrTag,
 )
 
 DEBUG_DICT = {"print_rscp": False}
