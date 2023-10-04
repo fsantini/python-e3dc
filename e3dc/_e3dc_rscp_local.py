@@ -127,7 +127,11 @@ class E3DC_RSCP_local:
                 RscpType.Container,
                 [
                     (RscpTag.RSCP_AUTHENTICATION_USER, RscpType.CString, self.username),
-                    (RscpTag.RSCP_AUTHENTICATION_PASSWORD, RscpType.CString, self.password),
+                    (
+                        RscpTag.RSCP_AUTHENTICATION_PASSWORD,
+                        RscpType.CString,
+                        self.password,
+                    ),
                 ],
             )
         )

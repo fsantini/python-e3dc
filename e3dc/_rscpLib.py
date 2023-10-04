@@ -121,7 +121,7 @@ def rscpEncode(tagStr, typeStr=None, data=None):
         tagStr = tagStr[0]
     elif typeStr is None:
         raise TypeError("Second argument must not be none if first is not a tuple")
-    
+
     tagHex = getHexTag(tagStr)
     typeHex = getHexDatatype(typeStr)
     type_ = getDatatype(typeStr)
@@ -139,7 +139,9 @@ def rscpEncode(tagStr, typeStr=None, data=None):
 
     if type_ == RscpType.NoneType:  # special case: no content
         return struct.pack(packFmt, tagHex, typeHex, 0)
-    elif type_ == RscpType.Timestamp:  # timestamp has a special format, divided into 32 bit integers
+    elif (
+        type_ == RscpType.Timestamp
+    ):  # timestamp has a special format, divided into 32 bit integers
         ts = int(data / 1000)  # this is int64
         ms = (data - ts * 1000) * 1e6  # ms are multiplied by 10^6
 

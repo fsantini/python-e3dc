@@ -159,15 +159,11 @@ class E3DC_RSCP_web:
                 RscpTag.INFO_SUBNET_MASK, RscpType.CString, "0.0.0.0"
             )
         elif tag == RscpTag.INFO_REQ_GATEWAY:
-            return rscpLib.rscpEncode(
-                RscpTag.INFO_GATEWAY, RscpType.CString, "0.0.0.0"
-            )
+            return rscpLib.rscpEncode(RscpTag.INFO_GATEWAY, RscpType.CString, "0.0.0.0")
         elif tag == RscpTag.INFO_REQ_DNS:
             return rscpLib.rscpEncode(RscpTag.INFO_DNS, RscpType.CString, "0.0.0.0")
         elif tag == RscpTag.INFO_REQ_DHCP_STATUS:
-            return rscpLib.rscpEncode(
-                RscpTag.INFO_DHCP_STATUS, RscpType.Bool, "false"
-            )
+            return rscpLib.rscpEncode(RscpTag.INFO_DHCP_STATUS, RscpType.Bool, "false")
         elif tag == RscpTag.INFO_REQ_TIME:
             return rscpLib.rscpEncode(
                 RscpTag.INFO_TIME, RscpType.ByteArray, timestampEncode(time.time())
