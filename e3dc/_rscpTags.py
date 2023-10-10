@@ -3592,17 +3592,18 @@ class RscpType(Enum):
     Error = 0xFF
 
 
-rscpErrorCodes = {
-    0x01: "RSCP_ERR_NOT_HANDLED",
-    0x02: "RSCP_ERR_ACCESS_DENIED",
-    0x03: "RSCP_ERR_FORMAT",
-    0x04: "RSCP_ERR_AGAIN",
-    0x05: "RSCP_ERR_OUT_OF_BOUNDS",
-    0x06: "RSCP_ERR_NOT_AVAILABLE",
-    0x07: "RSCP_ERR_UNKNOWN_TAG",
-    0x08: "RSCP_ERR_ALREADY_IN_USE",
-    0xFFFFFFFF: "UNEXPECTED ERROR",  # happens for example in get_db_data if time and span is invalid (not available)
-}
+class RscpError(Enum):
+    RSCP_ERR_NOT_HANDLED = 0x01
+    RSCP_ERR_ACCESS_DENIED = 0x02
+    RSCP_ERR_FORMAT = 0x03
+    RSCP_ERR_AGAIN = 0x04
+    RSCP_ERR_OUT_OF_BOUNDS = 0x05
+    RSCP_ERR_NOT_AVAILABLE = 0x06
+    RSCP_ERR_UNKNOWN_TAG = 0x07
+    RSCP_ERR_ALREADY_IN_USE = 0x08
+    UNKNOWN = 0xFFFFFFFF
+    """Catch all for unexpected errors. Happens for example in get_db_data if time and span is invalid (not available)."""
+
 
 powermeterTypes = {
     0x00: "PM_TYPE_UNDEFINED",
@@ -3754,16 +3755,25 @@ def getStrRscpType(rscptype: int | str | RscpType) -> str:
     return rscptype.name
 
 
-def getErrorcode(error_hex):
-    """Get error code as string.
+def getStrRscpError(errorcode: int | str | RscpError) -> str:
+    """
+    Convert an error code to its string name representation in RscpError enumeration.
 
-    Attributes:
-        error_hex (int): error as hex
+    Args:
+        errorcode (int | str | RscpError): The error code to be converted.
+            - If int, it's assumed to be the error code value.
+            - If str, it's assumed to be the error code name.
+            - If RscpError, it's error code name is used.
 
     Returns:
-        str: String representation of the given error_hex
+        str: The name of the error code as a string.
     """
-    return rscpErrorCodes[error_hex]
+    if isinstance(errorcode, int):
+        errorcode = RscpError(errorcode)
+    elif isinstance(errorcode, str):
+        errorcode = RscpError[errorcode]
+
+    return errorcode.name
 
 
 def getPowermeterType(powermetertype_hex):

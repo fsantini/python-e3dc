@@ -7,8 +7,9 @@
 # Requirements (just for this script):
 # pip install jsbeautifier
 
-import jsbeautifier
 import re
+
+import jsbeautifier
 
 TOOLS_DIR = "tools/"
 INPUT_SCRIPT_FILE = "rscpLibV0.9.3.min.js"
