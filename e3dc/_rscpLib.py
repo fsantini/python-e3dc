@@ -11,12 +11,12 @@ import zlib
 
 from ._rscpTags import (
     RscpType,
-    getDatatype,
+    getRscpType,
     getErrorcode,
-    getHexDatatype,
-    getHexTag,
-    getStrDatatype,
-    getStrTag,
+    getHexRscpType,
+    getHexRscpTag,
+    getStrRscpType,
+    getStrRscpTag,
 )
 
 DEBUG_DICT = {"print_rscp": False}
@@ -68,7 +68,7 @@ def rscpFindTag(decodedMsg, tag):
         list: the found tag
     """
     try:
-        tagStr = getStrTag(tag)
+        tagStr = getStrRscpTag(tag)
     except KeyError:
         # Tag is unknown to this library
         return None
@@ -122,9 +122,9 @@ def rscpEncode(tagStr, typeStr=None, data=None):
     elif typeStr is None:
         raise TypeError("Second argument must not be none if first is not a tuple")
 
-    tagHex = getHexTag(tagStr)
-    typeHex = getHexDatatype(typeStr)
-    type_ = getDatatype(typeStr)
+    tagHex = getHexRscpTag(tagStr)
+    typeHex = getHexRscpType(typeStr)
+    type_ = getRscpType(typeStr)
 
     if DEBUG_DICT["print_rscp"]:
         print(">", tagStr, typeStr, data)
@@ -245,9 +245,9 @@ def rscpDecode(data):
         headerFmt, data[: struct.calcsize(headerFmt)]
     )
     # print (hex(hexTag), hex(hexType), length, data[struct.calcsize(headerFmt):])
-    strTag = getStrTag(hexTag)
-    strType = getStrDatatype(hexType)
-    type_ = getDatatype(hexType)
+    strTag = getStrRscpTag(hexTag)
+    strType = getStrRscpType(hexType)
+    type_ = getRscpType(hexType)
 
     if type_ == RscpType.Container:
         # this is a container: parse the inside

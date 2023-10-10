@@ -3617,7 +3617,7 @@ powermeterTypes = {
 }
 
 
-def getTag(tag: int | str | RscpTag) -> RscpTag:
+def getRscpTag(tag: int | str | RscpTag) -> RscpTag:
     """Get tag as RscpTag."""
     if isinstance(tag, int):
         tag = RscpTag(tag)
@@ -3627,7 +3627,7 @@ def getTag(tag: int | str | RscpTag) -> RscpTag:
     return tag
 
 
-def getHexTag(tag: int | str | RscpTag) -> int:
+def getHexRscpTag(tag: int | str | RscpTag) -> int:
     """Get tag as hex."""
     if isinstance(tag, int):
         tag = RscpTag(tag)
@@ -3637,7 +3637,7 @@ def getHexTag(tag: int | str | RscpTag) -> int:
     return tag.value
 
 
-def getStrTag(tag: int | str | RscpTag) -> str:
+def getStrRscpTag(tag: int | str | RscpTag) -> str:
     """Get tag as string."""
     if isinstance(tag, int):
         tag = RscpTag(tag)
@@ -3647,45 +3647,45 @@ def getStrTag(tag: int | str | RscpTag) -> str:
     return tag.name
 
 
-def getDatatype(type_: int | str | RscpType) -> RscpType:
+def getRscpType(rscptype: int | str | RscpType) -> RscpType:
     """Get datatype as RscpType."""
-    if isinstance(type_, int):
-        type_ = RscpType(type_)
-    elif isinstance(type_, str):
-        if type_ == "None":
-            type_ = RscpType.NoneType
+    if isinstance(rscptype, int):
+        rscptype = RscpType(rscptype)
+    elif isinstance(rscptype, str):
+        if rscptype == "None":
+            rscptype = RscpType.NoneType
         else:
-            type_ = RscpType[type_]
+            rscptype = RscpType[rscptype]
 
-    return type_
+    return rscptype
 
 
-def getHexDatatype(type_: int | str | RscpType) -> int:
+def getHexRscpType(rscptype: int | str | RscpType) -> int:
     """Get datatype as hex."""
-    if isinstance(type_, int):
-        type_ = RscpType(type_)
-    elif isinstance(type_, str):
-        if type_ == "None":
-            type_ = RscpType.NoneType
+    if isinstance(rscptype, int):
+        rscptype = RscpType(rscptype)
+    elif isinstance(rscptype, str):
+        if rscptype == "None":
+            rscptype = RscpType.NoneType
         else:
-            type_ = RscpType[type_]
+            rscptype = RscpType[rscptype]
 
-    return type_.value
+    return rscptype.value
 
 
-def getStrDatatype(type_: int | str | RscpType) -> str:
+def getStrRscpType(rscptype: int | str | RscpType) -> str:
     """Get datatype as string."""
-    if isinstance(type_, int):
-        type_ = RscpType(type_)
-    elif isinstance(type_, str):
-        if type_ == "None":
-            type_ = RscpType.NoneType
+    if isinstance(rscptype, int):
+        rscptype = RscpType(rscptype)
+    elif isinstance(rscptype, str):
+        if rscptype == "None":
+            rscptype = RscpType.NoneType
         else:
-            type_ = RscpType[type_]
+            rscptype = RscpType[rscptype]
 
     if RscpType == RscpType.NoneType:
         return "None"
-    return type_.name
+    return rscptype.name
 
 
 def getErrorcode(error_hex):
