@@ -3618,7 +3618,18 @@ powermeterTypes = {
 
 
 def getRscpTag(tag: int | str | RscpTag) -> RscpTag:
-    """Get tag as RscpTag."""
+    """
+    Convert a tag to its RscpTag enumeration equivalent.
+
+    Args:
+        tag (int | str | RscpTag): The tag to be converted.
+            - If int, it's assumed to be the tag value.
+            - If str, it's assumed to be the tag name.
+            - If RscpTag, it is returned as is.
+
+    Returns:
+        RscpTag: The corresponding RscpTag enumeration object.
+    """
     if isinstance(tag, int):
         tag = RscpTag(tag)
     elif isinstance(tag, str):
@@ -3628,7 +3639,18 @@ def getRscpTag(tag: int | str | RscpTag) -> RscpTag:
 
 
 def getHexRscpTag(tag: int | str | RscpTag) -> int:
-    """Get tag as hex."""
+    """
+    Convert a tag to its hexadecimal value representation.
+
+    Args:
+        tag (int | str | RscpTag): The tag to be converted.
+            - If int, it's assumed to be the tag value.
+            - If str, it's assumed to be the tag name.
+            - If RscpTag, it's tag value is used.
+
+    Returns:
+        int: The hexadecimal value of the tag.
+    """
     if isinstance(tag, int):
         tag = RscpTag(tag)
     elif isinstance(tag, str):
@@ -3638,7 +3660,18 @@ def getHexRscpTag(tag: int | str | RscpTag) -> int:
 
 
 def getStrRscpTag(tag: int | str | RscpTag) -> str:
-    """Get tag as string."""
+    """
+    Convert a tag to its string name representation.
+
+    Args:
+        tag (int | str | RscpTag): The tag to be converted.
+            - If int, it's assumed to be the tag value.
+            - If str, it's assumed to be the tag name.
+            - If RscpTag, it's tag name is used.
+
+    Returns:
+        str: The name of the tag as a string.
+    """
     if isinstance(tag, int):
         tag = RscpTag(tag)
     elif isinstance(tag, str):
@@ -3648,7 +3681,18 @@ def getStrRscpTag(tag: int | str | RscpTag) -> str:
 
 
 def getRscpType(rscptype: int | str | RscpType) -> RscpType:
-    """Get datatype as RscpType."""
+    """
+    Convert a datatype to its RscpType enumeration equivalent.
+
+    Args:
+        rscptype (int | str | RscpType): The datatype to be converted.
+            - If int, it's assumed to be the datatype value.
+            - If str, it's assumed to be the datatype name.
+            - If RscpType, it is returned as is.
+
+    Returns:
+        RscpType: The corresponding RscpType enumeration object.
+    """
     if isinstance(rscptype, int):
         rscptype = RscpType(rscptype)
     elif isinstance(rscptype, str):
@@ -3661,7 +3705,18 @@ def getRscpType(rscptype: int | str | RscpType) -> RscpType:
 
 
 def getHexRscpType(rscptype: int | str | RscpType) -> int:
-    """Get datatype as hex."""
+    """
+    Convert a datatype to its hexadecimal value representation.
+
+    Args:
+        rscptype (int | str | RscpType): The datatype to be converted.
+            - If int, it's assumed to be the datatype value.
+            - If str, it's assumed to be the datatype name.
+            - If RscpType, it's datatype value is used.
+
+    Returns:
+        int: The hexadecimal value of the datatype.
+    """
     if isinstance(rscptype, int):
         rscptype = RscpType(rscptype)
     elif isinstance(rscptype, str):
@@ -3674,7 +3729,18 @@ def getHexRscpType(rscptype: int | str | RscpType) -> int:
 
 
 def getStrRscpType(rscptype: int | str | RscpType) -> str:
-    """Get datatype as string."""
+    """
+    Convert a datatype to its string name representation.
+
+    Args:
+        rscptype (int | str | RscpType): The datatype to be converted.
+            - If int, it's assumed to be the datatype value.
+            - If str, it's assumed to be the datatype name.
+            - If RscpType, it's datatype name is used.
+
+    Returns:
+        str: The name of the datatype as a string.
+    """
     if isinstance(rscptype, int):
         rscptype = RscpType(rscptype)
     elif isinstance(rscptype, str):
