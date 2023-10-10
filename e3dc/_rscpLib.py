@@ -11,12 +11,12 @@ import zlib
 
 from ._rscpTags import (
     RscpType,
-    getErrorcode,
-    getHexRscpTag,
-    getHexRscpType,
     getRscpType,
-    getStrRscpTag,
+    getStrRscpError,
+    getHexRscpType,
+    getHexRscpTag,
     getStrRscpType,
+    getStrRscpTag,
 )
 
 DEBUG_DICT = {"print_rscp": False}
@@ -276,7 +276,7 @@ def rscpDecode(data):
     val = struct.unpack(fmt, data[headerSize : headerSize + struct.calcsize(fmt)])[0]
 
     if type_ == RscpType.Error:
-        val = getErrorcode(int.from_bytes(val, "little"))
+        val = getStrRscpError(int.from_bytes(val, "little"))
     elif isinstance(val, bytes) and type_ == RscpType.CString:
         # return string instead of bytes
         # ignore none utf-8 bytes

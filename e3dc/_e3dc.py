@@ -22,7 +22,7 @@ from ._e3dc_rscp_local import (
 )
 from ._e3dc_rscp_web import E3DC_RSCP_web
 from ._rscpLib import rscpFindTag, rscpFindTagIndex
-from ._rscpTags import RscpTag, RscpType, getPowermeterType
+from ._rscpTags import RscpTag, RscpType, getStrPowermeterType
 
 REMOTE_ADDRESS = "https://s10.e3dc.com/s10/phpcmd/cmd.php"
 REQUEST_INTERVAL_SEC = 10  # minimum interval between requests
@@ -1904,7 +1904,7 @@ class E3DC:
                     {
                         "index": pmIndex,
                         "type": pmType,
-                        "typeName": getPowermeterType(pmType),
+                        "typeName": getStrPowermeterType(pmType),
                     }
                 )
 

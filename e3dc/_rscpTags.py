@@ -3593,6 +3593,8 @@ class RscpType(Enum):
 
 
 class RscpError(Enum):
+    """All available RSCP error codes. Imported from https://s10.e3dc.com/s10/js/rscpLibV0.9.3.min.js."""
+
     RSCP_ERR_NOT_HANDLED = 0x01
     RSCP_ERR_ACCESS_DENIED = 0x02
     RSCP_ERR_FORMAT = 0x03
@@ -3605,17 +3607,18 @@ class RscpError(Enum):
     """Catch all for unexpected errors. Happens for example in get_db_data if time and span is invalid (not available)."""
 
 
-powermeterTypes = {
-    0x00: "PM_TYPE_UNDEFINED",
-    0x01: "PM_TYPE_ROOT",
-    0x02: "PM_TYPE_ADDITIONAL",
-    0x03: "PM_TYPE_ADDITIONAL_PRODUCTION",
-    0x04: "PM_TYPE_ADDITIONAL_CONSUMPTION",
-    0x05: "PM_TYPE_FARM",
-    0x06: "PM_TYPE_UNUSED",
-    0x07: "PM_TYPE_WALLBOX",
-    0x08: "PM_TYPE_FARM_ADDITIONAL",
-}
+class PowermeterType(Enum):
+    """All available powermeter types."""
+
+    PM_TYPE_UNDEFINED = 0x00
+    PM_TYPE_ROOT = 0x01
+    PM_TYPE_ADDITIONAL = 0x02
+    PM_TYPE_ADDITIONAL_PRODUCTION = 0x03
+    PM_TYPE_ADDITIONAL_CONSUMPTION = 0x04
+    PM_TYPE_FARM = 0x05
+    PM_TYPE_UNUSED = 0x06
+    PM_TYPE_WALLBOX = 0x07
+    PM_TYPE_FARM_ADDITIONAL = 0x08
 
 
 def getRscpTag(tag: int | str | RscpTag) -> RscpTag:
@@ -3776,13 +3779,22 @@ def getStrRscpError(errorcode: int | str | RscpError) -> str:
     return errorcode.name
 
 
-def getPowermeterType(powermetertype_hex):
-    """Get powermeter type as string.
+def getStrPowermeterType(powermetertype: int | str | PowermeterType) -> str:
+    """
+    Convert a power meter type to its string name representation in PowermeterType enumeration.
 
-    Attributes:
-        powermeterType_hex (int): type of the powermeter as hex
+    Args:
+        powermetertype (int | str | PowermeterType): The power meter type to be converted.
+            - If int, it's assumed to be the power meter type value.
+            - If str, it's assumed to be the power meter type name.
+            - If PowermeterType, its name is used.
 
     Returns:
-        str: String representation of the given powermeterType_hex
+        str: The name of the power meter type as a string.
     """
-    return powermeterTypes[powermetertype_hex]
+    if isinstance(powermetertype, int):
+        powermetertype = PowermeterType(powermetertype)
+    elif isinstance(powermetertype, str):
+        powermetertype = PowermeterType[powermetertype]
+
+    return powermetertype.name
