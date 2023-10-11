@@ -14,6 +14,7 @@ import tzlocal
 import websocket
 
 from . import _rscpLib as rscpLib
+from ._rscpTags import RscpTag, RscpType
 
 """
  The connection works the following way: (> outgoing, < incoming)
@@ -120,14 +121,18 @@ class E3DC_RSCP_web:
         """Method to create Virtual Connection."""
         virtualConn = rscpLib.rscpFrame(
             rscpLib.rscpEncode(
-                "SERVER_REQ_NEW_VIRTUAL_CONNECTION",
-                "Container",
+                RscpTag.SERVER_REQ_NEW_VIRTUAL_CONNECTION,
+                RscpType.Container,
                 [
-                    ("SERVER_USER", "CString", self.username),
-                    ("SERVER_PASSWD", "CString", self.password),
-                    ("SERVER_IDENTIFIER", "CString", self.serialNumberWithPrefix),
-                    ("SERVER_TYPE", "Int32", 4),
-                    ("SERVER_HASH_CODE", "Int32", 1234567890),
+                    (RscpTag.SERVER_USER, RscpType.CString, self.username),
+                    (RscpTag.SERVER_PASSWD, RscpType.CString, self.password),
+                    (
+                        RscpTag.SERVER_IDENTIFIER,
+                        RscpType.CString,
+                        self.serialNumberWithPrefix,
+                    ),
+                    (RscpTag.SERVER_TYPE, RscpType.Int32, 4),
+                    (RscpTag.SERVER_HASH_CODE, RscpType.Int32, 1234567890),
                 ],
             )
         )
@@ -138,46 +143,69 @@ class E3DC_RSCP_web:
     def respondToINFORequest(self, decoded):
         """Create Response to INFO request."""
         TIMEZONE_STR, utcDiffS = calcTimeZone()
-        tag = decoded[0]
-        # print(tag)
-        if tag == "INFO_REQ_IP_ADDRESS":
-            return rscpLib.rscpEncode("INFO_IP_ADDRESS", "CString", "0.0.0.0")
-        elif tag == "INFO_REQ_SUBNET_MASK":
-            return rscpLib.rscpEncode("INFO_SUBNET_MASK", "CString", "0.0.0.0")
-        elif tag == "INFO_REQ_GATEWAY":
-            return rscpLib.rscpEncode("INFO_GATEWAY", "CString", "0.0.0.0")
-        elif tag == "INFO_REQ_DNS":
-            return rscpLib.rscpEncode("INFO_DNS", "CString", "0.0.0.0")
-        elif tag == "INFO_REQ_DHCP_STATUS":
-            return rscpLib.rscpEncode("INFO_DHCP_STATUS", "Bool", "false")
-        elif tag == "INFO_REQ_TIME":
+
+        try:
+            tag = RscpTag[decoded[0]]
+        except KeyError:
+            # This is a tag unknown to this library
+            return None
+
+        if tag == RscpTag.INFO_REQ_IP_ADDRESS:
             return rscpLib.rscpEncode(
-                "INFO_TIME", "ByteArray", timestampEncode(time.time())
+                RscpTag.INFO_IP_ADDRESS, RscpType.CString, "0.0.0.0"
             )
-        elif tag == "INFO_REQ_TIME_ZONE":
-            return rscpLib.rscpEncode("INFO_TIME_ZONE", "CString", TIMEZONE_STR)
-        elif tag == "INFO_REQ_UTC_TIME":
+        elif tag == RscpTag.INFO_REQ_SUBNET_MASK:
             return rscpLib.rscpEncode(
-                "INFO_UTC_TIME", "ByteArray", timestampEncode(time.time() - utcDiffS)
+                RscpTag.INFO_SUBNET_MASK, RscpType.CString, "0.0.0.0"
             )
-        elif tag == "INFO_REQ_A35_SERIAL_NUMBER":
-            return rscpLib.rscpEncode("INFO_A35_SERIAL_NUMBER", "CString", "123456")
-        elif tag == "INFO_REQ_INFO":
+        elif tag == RscpTag.INFO_REQ_GATEWAY:
+            return rscpLib.rscpEncode(RscpTag.INFO_GATEWAY, RscpType.CString, "0.0.0.0")
+        elif tag == RscpTag.INFO_REQ_DNS:
+            return rscpLib.rscpEncode(RscpTag.INFO_DNS, RscpType.CString, "0.0.0.0")
+        elif tag == RscpTag.INFO_REQ_DHCP_STATUS:
+            return rscpLib.rscpEncode(RscpTag.INFO_DHCP_STATUS, RscpType.Bool, "false")
+        elif tag == RscpTag.INFO_REQ_TIME:
             return rscpLib.rscpEncode(
-                "INFO_INFO",
-                "Container",
+                RscpTag.INFO_TIME, RscpType.ByteArray, timestampEncode(time.time())
+            )
+        elif tag == RscpTag.INFO_REQ_TIME_ZONE:
+            return rscpLib.rscpEncode(
+                RscpTag.INFO_TIME_ZONE, RscpType.CString, TIMEZONE_STR
+            )
+        elif tag == RscpTag.INFO_REQ_UTC_TIME:
+            return rscpLib.rscpEncode(
+                RscpTag.INFO_UTC_TIME,
+                RscpType.ByteArray,
+                timestampEncode(time.time() - utcDiffS),
+            )
+        elif tag == RscpTag.INFO_REQ_A35_SERIAL_NUMBER:
+            return rscpLib.rscpEncode(
+                RscpTag.INFO_A35_SERIAL_NUMBER, RscpType.CString, "123456"
+            )
+        elif tag == RscpTag.INFO_REQ_INFO:
+            return rscpLib.rscpEncode(
+                RscpTag.INFO_INFO,
+                RscpType.Container,
                 [
                     (
-                        "INFO_SERIAL_NUMBER",
-                        "CString",
+                        RscpTag.INFO_SERIAL_NUMBER,
+                        RscpType.CString,
                         "WEB_"
                         + hashlib.md5(self.username + bytes(self.conId)).hexdigest(),
                     ),
-                    ("INFO_PRODUCTION_DATE", "CString", "570412800000"),
-                    ("INFO_MAC_ADDRESS", "CString", "00:00:00:00:00:00"),
+                    (
+                        RscpTag.INFO_PRODUCTION_DATE,
+                        RscpType.CString,
+                        "570412800000",
+                    ),
+                    (
+                        RscpTag.INFO_MAC_ADDRESS,
+                        RscpType.CString,
+                        "00:00:00:00:00:00",
+                    ),
                 ],
             )
-        elif tag == "INFO_SERIAL_NUMBER":
+        elif tag == RscpTag.INFO_SERIAL_NUMBER:
             self.webSerialno = decoded[2]
             self.buildVirtualConn()
             return ""
@@ -186,19 +214,27 @@ class E3DC_RSCP_web:
     def registerConnectionHandler(self, decodedMsg):
         """Registering Connection Handler."""
         if self.conId is None:
-            self.conId = rscpLib.rscpFindTag(decodedMsg, "SERVER_CONNECTION_ID")[2]
-            self.authLevel = rscpLib.rscpFindTag(decodedMsg, "SERVER_AUTH_LEVEL")[2]
+            self.conId = rscpLib.rscpFindTag(decodedMsg, RscpTag.SERVER_CONNECTION_ID)[
+                2
+            ]
+            self.authLevel = rscpLib.rscpFindTag(decodedMsg, RscpTag.SERVER_AUTH_LEVEL)[
+                2
+            ]
         else:
-            self.virtConId = rscpLib.rscpFindTag(decodedMsg, "SERVER_CONNECTION_ID")[2]
-            self.virtAuthLevel = rscpLib.rscpFindTag(decodedMsg, "SERVER_AUTH_LEVEL")[2]
-        # reply = rscpLib.rscpFrame(rscpLib.rscpEncode("SERVER_CONNECTION_REGISTERED", "Container", [decodedMsg[2][0], decodedMsg[2][1]]));
+            self.virtConId = rscpLib.rscpFindTag(
+                decodedMsg, RscpTag.SERVER_CONNECTION_ID
+            )[2]
+            self.virtAuthLevel = rscpLib.rscpFindTag(
+                decodedMsg, RscpTag.SERVER_AUTH_LEVEL
+            )[2]
+        # reply = rscpLib.rscpFrame(rscpLib.rscpEncode(RscpTag.SERVER_CONNECTION_REGISTERED, RscpType.Container, [decodedMsg[2][0], decodedMsg[2][1]]));
         reply = rscpLib.rscpFrame(
             rscpLib.rscpEncode(
-                "SERVER_CONNECTION_REGISTERED",
-                "Container",
+                RscpTag.SERVER_CONNECTION_REGISTERED,
+                RscpType.Container,
                 [
-                    rscpLib.rscpFindTag(decodedMsg, "SERVER_CONNECTION_ID"),
-                    rscpLib.rscpFindTag(decodedMsg, "SERVER_AUTH_LEVEL"),
+                    rscpLib.rscpFindTag(decodedMsg, RscpTag.SERVER_CONNECTION_ID),
+                    rscpLib.rscpFindTag(decodedMsg, RscpTag.SERVER_AUTH_LEVEL),
                 ],
             )
         )
@@ -212,21 +248,27 @@ class E3DC_RSCP_web:
 
         decodedMsg = rscpLib.rscpDecode(message)[0]
 
+        try:
+            tag = RscpTag[decodedMsg[0]]
+        except KeyError:
+            # This is a tag unknown to this library
+            pass
+
         # print "Decoded received message", decodedMsg
-        if decodedMsg[0] == "SERVER_REQ_PING":
+        if tag == RscpTag.SERVER_REQ_PING:
             pingFrame = rscpLib.rscpFrame(
-                rscpLib.rscpEncode("SERVER_PING", "None", None)
+                rscpLib.rscpEncode(RscpTag.SERVER_PING, RscpType.NoneType, None)
             )
             self.ws.send(pingFrame, websocket.ABNF.OPCODE_BINARY)
             return
-        elif decodedMsg[0] == "SERVER_REGISTER_CONNECTION":
+        elif tag == RscpTag.SERVER_REGISTER_CONNECTION:
             self.registerConnectionHandler(decodedMsg)
-        elif decodedMsg[0] == "SERVER_UNREGISTER_CONNECTION":
+        elif tag == RscpTag.SERVER_UNREGISTER_CONNECTION:
             # this signifies some error
             self.disconnect()
-        elif decodedMsg[0] == "SERVER_REQ_RSCP_CMD":
+        elif tag == RscpTag.SERVER_REQ_RSCP_CMD:
             data = rscpLib.rscpFrameDecode(
-                rscpLib.rscpFindTag(decodedMsg, "SERVER_RSCP_DATA")[2]
+                rscpLib.rscpFindTag(decodedMsg, RscpTag.SERVER_RSCP_DATA)[2]
             )[0]
             response = b""
             self.responseCallbackCalled = False
@@ -244,7 +286,7 @@ class E3DC_RSCP_web:
                         self.responseCallbackCalled = True
                     responseChunk = b""
 
-                if type(responseChunk) is str:
+                if isinstance(responseChunk, str):
                     responseChunk = responseChunk.encode("utf-8")
                 response += responseChunk
             if self.responseCallbackCalled:
@@ -253,13 +295,13 @@ class E3DC_RSCP_web:
                 return  # do not send an empty response
             innerFrame = rscpLib.rscpFrame(response)
             responseContainer = rscpLib.rscpEncode(
-                "SERVER_REQ_RSCP_CMD",
-                "Container",
+                RscpTag.SERVER_REQ_RSCP_CMD,
+                RscpType.Container,
                 [
-                    ("SERVER_CONNECTION_ID", "Int64", self.conId),
-                    ("SERVER_AUTH_LEVEL", "UChar8", self.authLevel),
-                    ("SERVER_RSCP_DATA_LEN", "Int32", len(innerFrame)),
-                    ("SERVER_RSCP_DATA", "ByteArray", innerFrame),
+                    (RscpTag.SERVER_CONNECTION_ID, RscpType.Int64, self.conId),
+                    (RscpTag.SERVER_AUTH_LEVEL, RscpType.UChar8, self.authLevel),
+                    (RscpTag.SERVER_RSCP_DATA_LEN, RscpType.Int32, len(innerFrame)),
+                    (RscpTag.SERVER_RSCP_DATA, RscpType.ByteArray, innerFrame),
                 ],
             )
 
@@ -310,13 +352,17 @@ class E3DC_RSCP_web:
 
         outerFrame = rscpLib.rscpFrame(
             rscpLib.rscpEncode(
-                "SERVER_REQ_RSCP_CMD",
-                "Container",
+                RscpTag.SERVER_REQ_RSCP_CMD,
+                RscpType.Container,
                 [
-                    ("SERVER_CONNECTION_ID", "Int64", self.virtConId),
-                    ("SERVER_AUTH_LEVEL", "UChar8", self.virtAuthLevel),
-                    ("SERVER_RSCP_DATA_LEN", "Int32", len(innerFrame)),
-                    ("SERVER_RSCP_DATA", "ByteArray", innerFrame),
+                    (RscpTag.SERVER_CONNECTION_ID, RscpType.Int64, self.virtConId),
+                    (
+                        RscpTag.SERVER_AUTH_LEVEL,
+                        RscpType.UChar8,
+                        self.virtAuthLevel,
+                    ),
+                    (RscpTag.SERVER_RSCP_DATA_LEN, RscpType.Int32, len(innerFrame)),
+                    (RscpTag.SERVER_RSCP_DATA, RscpType.ByteArray, innerFrame),
                 ],
             )
         )
