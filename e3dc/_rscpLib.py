@@ -123,8 +123,8 @@ def rscpEncode(tagStr, typeStr=None, data=None):
         raise TypeError("Second argument must not be none if first is not a tuple")
 
     tagHex = getHexRscpTag(tagStr)
-    typeHex = getHexRscpType(typeStr)
-    type_ = getRscpType(typeStr)
+    rscptypeHex = getHexRscpType(typeStr)
+    rscptype = getRscpType(typeStr)
 
     if DEBUG_DICT["print_rscp"]:
         print(">", tagStr, typeStr, data)
@@ -137,10 +137,10 @@ def rscpEncode(tagStr, typeStr=None, data=None):
     )
     headerLen = struct.calcsize(packFmt)
 
-    if type_ == RscpType.NoneType:  # special case: no content
-        return struct.pack(packFmt, tagHex, typeHex, 0)
+    if rscptype == RscpType.NoneType:  # special case: no content
+        return struct.pack(packFmt, tagHex, rscptypeHex, 0)
     elif (
-        type_ == RscpType.Timestamp
+        rscptype == RscpType.Timestamp
     ):  # timestamp has a special format, divided into 32 bit integers
         ts = int(data / 1000)  # this is int64
         ms = (data - ts * 1000) * 1e6  # ms are multiplied by 10^6
@@ -151,8 +151,8 @@ def rscpEncode(tagStr, typeStr=None, data=None):
         packFmt += "iii"
         length = struct.calcsize(packFmt) - headerLen
 
-        return struct.pack(packFmt, tagHex, typeHex, length, hiword, loword, ms)
-    elif type_ == RscpType.Container:
+        return struct.pack(packFmt, tagHex, rscptypeHex, length, hiword, loword, ms)
+    elif rscptype == RscpType.Container:
         if isinstance(data, list):
             newData = b""
             for dataChunk in data:
@@ -160,14 +160,14 @@ def rscpEncode(tagStr, typeStr=None, data=None):
                     dataChunk[0], dataChunk[1], dataChunk[2]
                 )  # transform each dataChunk into byte array
             data = newData
-            packFmt += str(len(data)) + packFmtDict_VarSize[type_]
-    elif type_ in packFmtDict_FixedSize:
-        packFmt += packFmtDict_FixedSize[type_]
-    elif type_ in packFmtDict_VarSize:
-        packFmt += str(len(data)) + packFmtDict_VarSize[type_]
+            packFmt += str(len(data)) + packFmtDict_VarSize[rscptype]
+    elif rscptype in packFmtDict_FixedSize:
+        packFmt += packFmtDict_FixedSize[rscptype]
+    elif rscptype in packFmtDict_VarSize:
+        packFmt += str(len(data)) + packFmtDict_VarSize[rscptype]
 
     length = struct.calcsize(packFmt) - headerLen
-    return struct.pack(packFmt, tagHex, typeHex, length, data)
+    return struct.pack(packFmt, tagHex, rscptypeHex, length, data)
 
 
 def rscpFrame(data):

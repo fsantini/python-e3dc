@@ -20,7 +20,7 @@ OUTPUT_PY_FILE = "generated_enum.py"
 def _generate_enum_from_file(input_string, output_file_path):
     lines = input_string.splitlines()
     with open(output_file_path, "w") as outfile:
-        outfile.write("class RscpTags(Enum):\n")
+        outfile.write("class RscpTag(Enum):\n")
         outfile.write(
             f'    """All available RSCP tags. Generated from https://s10.e3dc.com/s10/js/{INPUT_SCRIPT_FILE}."""\n\n'
         )
@@ -33,8 +33,8 @@ def _generate_enum_from_file(input_string, output_file_path):
             number = number.strip()
             hex_number = hex(int(float(number))).upper()[2:]
             padded_hex_number = hex_number.zfill(8)
-            x = string.removeprefix('"').removesuffix('",')
-            enum_entry = f"    {x} = 0x{padded_hex_number}\n"
+            name = string.removeprefix('"').removesuffix('",').strip()
+            enum_entry = f"    {name} = 0x{padded_hex_number}\n"
             outfile.write(enum_entry)
 
 
