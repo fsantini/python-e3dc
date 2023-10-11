@@ -1,6 +1,7 @@
 # This is a helper script to convert the enumerations from the "official" RSCP
 # implementation into a format that can be used in the Python implementation.
-# The implementation can be found here:
+#
+# The source can be found here:
 # https://s10.e3dc.com/s10/js/rscpLibV<x.x.x>.min.js (replace <x.x.x> with the
 # version number). At the time of writing, the latest version is 0.9.3.
 #
@@ -16,7 +17,7 @@ INPUT_SCRIPT_FILE = "rscpLibV0.9.3.min.js"
 OUTPUT_PY_FILE = "generated_enum.py"
 
 
-def generate_enum_from_file(input_string, output_file_path):
+def _generate_enum_from_file(input_string, output_file_path):
     lines = input_string.splitlines()
     with open(output_file_path, "w") as outfile:
         outfile.write("class RscpTags(Enum):\n")
@@ -41,4 +42,4 @@ input = jsbeautifier.beautify_file(TOOLS_DIR + INPUT_SCRIPT_FILE)
 rscpTagsFromJS = re.search(
     r"var rscpTags = {(.*?)getHexTag.*?}", input, re.DOTALL
 ).group(1)
-generate_enum_from_file(rscpTagsFromJS, TOOLS_DIR + OUTPUT_PY_FILE)
+_generate_enum_from_file(rscpTagsFromJS, TOOLS_DIR + OUTPUT_PY_FILE)

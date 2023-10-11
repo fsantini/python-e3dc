@@ -3622,8 +3622,7 @@ class PowermeterType(Enum):
 
 
 def getRscpTag(tag: int | str | RscpTag) -> RscpTag:
-    """
-    Convert a tag to its RscpTag enumeration equivalent.
+    """Convert a tag to its RscpTag enumeration equivalent.
 
     Args:
         tag (int | str | RscpTag): The tag to be converted.
@@ -3643,8 +3642,7 @@ def getRscpTag(tag: int | str | RscpTag) -> RscpTag:
 
 
 def getHexRscpTag(tag: int | str | RscpTag) -> int:
-    """
-    Convert a tag to its hexadecimal value representation.
+    """Convert a tag to its hexadecimal value representation.
 
     Args:
         tag (int | str | RscpTag): The tag to be converted.
@@ -3664,8 +3662,7 @@ def getHexRscpTag(tag: int | str | RscpTag) -> int:
 
 
 def getStrRscpTag(tag: int | str | RscpTag) -> str:
-    """
-    Convert a tag to its string name representation.
+    """Convert a tag to its string name representation.
 
     Args:
         tag (int | str | RscpTag): The tag to be converted.
@@ -3685,8 +3682,7 @@ def getStrRscpTag(tag: int | str | RscpTag) -> str:
 
 
 def getRscpType(rscptype: int | str | RscpType) -> RscpType:
-    """
-    Convert a datatype to its RscpType enumeration equivalent.
+    """Convert a datatype to its RscpType enumeration equivalent.
 
     Args:
         rscptype (int | str | RscpType): The datatype to be converted.
@@ -3709,8 +3705,7 @@ def getRscpType(rscptype: int | str | RscpType) -> RscpType:
 
 
 def getHexRscpType(rscptype: int | str | RscpType) -> int:
-    """
-    Convert a datatype to its hexadecimal value representation.
+    """Convert a datatype to its hexadecimal value representation.
 
     Args:
         rscptype (int | str | RscpType): The datatype to be converted.
@@ -3733,8 +3728,7 @@ def getHexRscpType(rscptype: int | str | RscpType) -> int:
 
 
 def getStrRscpType(rscptype: int | str | RscpType) -> str:
-    """
-    Convert a datatype to its string name representation.
+    """Convert a datatype to its string name representation.
 
     Args:
         rscptype (int | str | RscpType): The datatype to be converted.
@@ -3759,8 +3753,7 @@ def getStrRscpType(rscptype: int | str | RscpType) -> str:
 
 
 def getStrRscpError(errorcode: int | str | RscpError) -> str:
-    """
-    Convert an error code to its string name representation in RscpError enumeration.
+    """Convert an error code to its string name representation in RscpError enumeration.
 
     Args:
         errorcode (int | str | RscpError): The error code to be converted.
@@ -3780,8 +3773,7 @@ def getStrRscpError(errorcode: int | str | RscpError) -> str:
 
 
 def getStrPowermeterType(powermetertype: int | str | PowermeterType) -> str:
-    """
-    Convert a power meter type to its string name representation in PowermeterType enumeration.
+    """Convert a power meter type to its string name representation in PowermeterType enumeration.
 
     Args:
         powermetertype (int | str | PowermeterType): The power meter type to be converted.
