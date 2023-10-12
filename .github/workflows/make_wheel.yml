@@ -21,7 +21,7 @@ jobs:
               run: pip install wheel twine
               
             - name: Checkout repository
-              uses: actions/checkout@v3
+              uses: actions/checkout@v4
             
             - name: Build wheel
               run: |

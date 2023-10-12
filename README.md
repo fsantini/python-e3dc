@@ -5,7 +5,7 @@
 [![Codestyle](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 [![Documentation Status](https://readthedocs.org/projects/python-e3dc/badge/?version=latest)](https://python-e3dc.readthedocs.io/en/latest/?badge=latest)
 
-**NOTE: With Release 0.6.0 at least Python 3.7 is required**
+**NOTE: With Release 0.8.0 at least Python 3.8 is required**
 
 Python API for querying an [E3/DC](https://e3dc.de/) systems
 
@@ -174,5 +174,5 @@ One limitation of the package concerns the implemented RSCP methods. This projec
 - Open an issue before making a pull request
 - Note the E3/DC system you tested with and implementation details
 - Pull request checks will enforce code styling (black, flake8, flake8-docstrings, isort)
-- Make sure to support Python versions >= 3.7
+- Make sure to support Python versions >= 3.8
 - Consider adding yourself to `AUTHORS`
