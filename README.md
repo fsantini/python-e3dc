@@ -5,6 +5,8 @@
 [![Codestyle](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 [![Documentation Status](https://readthedocs.org/projects/python-e3dc/badge/?version=latest)](https://python-e3dc.readthedocs.io/en/latest/?badge=latest)
 
+**NOTE: With Release 0.8.0 at least Python 3.8 is required**
+
 Python API for querying an [E3/DC](https://e3dc.de/) systems
 
 This is supported either directly via RSCP connection or through the manufacturer's portal. The RSCP implementation has currently the most capabilities.
