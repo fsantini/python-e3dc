@@ -172,5 +172,5 @@ One limitation of the package concerns the implemented RSCP methods. This projec
 - Open an issue before making a pull request
 - Note the E3/DC system you tested with and implementation details
 - Pull request checks will enforce code styling (black, flake8, flake8-docstrings, isort)
-- Make sure to support Python versions >= 3.7
+- Make sure to support Python versions >= 3.8
 - Consider adding yourself to `AUTHORS`
