@@ -1209,8 +1209,6 @@ class E3DC:
                     "maxChargeCurrent": <max charge current>,
                     "maxDischargeCurrent": <max discharge current>,
                     "maxDcbCellTemp": <max DCB cell temp>,
-                    "measuredResistance": <measured resistance>,
-                    "measuredResistanceRun": <measure resistance (RUN)>,
                     "minDcbCellTemp": <min DCB cell temp>,
                     "moduleVoltage": <module voltage>,
                     "rc": <rc>,
@@ -1380,23 +1378,39 @@ class E3DC:
             )
 
             info = rscpFindTag(req, RscpTag.BAT_DCB_INFO)
+            # For some devices, no info for the DCBs exists. Skip those.
+            if info is None or len(info) < 3 or info[1] == "Error":
+                continue
 
-            temperatures_raw = rscpFindTagIndex(
-                rscpFindTag(req, RscpTag.BAT_DCB_ALL_CELL_TEMPERATURES),
-                RscpTag.BAT_DATA,
-            )
+            # Initialize default values for DCB
+            sensorCount = 0
             temperatures = []
-            sensorCount = rscpFindTagIndex(info, RscpTag.BAT_DCB_NR_SENSOR)
-            for sensor in range(0, sensorCount):
-                temperatures.append(round(temperatures_raw[sensor][2], 2))
-
-            voltages_raw = rscpFindTagIndex(
-                rscpFindTag(req, RscpTag.BAT_DCB_ALL_CELL_VOLTAGES), RscpTag.BAT_DATA
-            )
+            seriesCellCount = 0
             voltages = []
-            seriesCellCount = rscpFindTagIndex(info, RscpTag.BAT_DCB_NR_SERIES_CELL)
-            for cell in range(0, seriesCellCount):
-                voltages.append(round(voltages_raw[cell][2], 2))
+
+            # Set temperatures, if available for the device
+            temps = rscpFindTag(req, RscpTag.BAT_DCB_ALL_CELL_TEMPERATURES)
+            if temps is not None and len(temps) == 3 and temps[1] != "Error":
+                temperatures_raw = rscpFindTagIndex(
+                    rscpFindTag(req, RscpTag.BAT_DCB_ALL_CELL_TEMPERATURES),
+                    RscpTag.BAT_DATA,
+                )
+                temperatures = []
+                sensorCount = rscpFindTagIndex(info, RscpTag.BAT_DCB_NR_SENSOR)
+                for sensor in range(0, sensorCount):
+                    temperatures.append(round(temperatures_raw[sensor][2], 2))
+
+            # Set voltages, if available for the device
+            voltages = rscpFindTag(req, RscpTag.BAT_DCB_ALL_CELL_VOLTAGES)
+            if voltages is not None and len(voltages) == 3 and voltages[1] != "Error":
+                voltages_raw = rscpFindTagIndex(
+                    rscpFindTag(req, RscpTag.BAT_DCB_ALL_CELL_VOLTAGES),
+                    RscpTag.BAT_DATA,
+                )
+                voltages = []
+                seriesCellCount = rscpFindTagIndex(info, RscpTag.BAT_DCB_NR_SERIES_CELL)
+                for cell in range(0, seriesCellCount):
+                    voltages.append(round(voltages_raw[cell][2], 2))
 
             dcbobj = {
                 "current": rscpFindTagIndex(info, RscpTag.BAT_DCB_CURRENT),
