@@ -6,7 +6,7 @@
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
-project = "e3dc"
+project = "python-e3dc"
 copyright = "2023, see AUTHORS file"
 author = "see AUTHORS file"
 
