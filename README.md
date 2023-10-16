@@ -168,6 +168,7 @@ One limitation of the package concerns the implemented RSCP methods. This projec
 - [e3dc-rest](https://github.com/vchrisb/e3dc-rest): a simple REST API to access an E3/DC system
 - [e3dc-to-mqtt](https://github.com/mdhom/e3dc-to-mqtt): publish E3/DC data via MQTT
 - [weewx-photovoltaics](https://github.com/roe-dl/weewx-photovoltaics): Extension to WeeWX for processing data of the photovoltaics system E3/DC
+- [hacs-e3dc](https://github.com/torbennehmer/hacs-e3dc): HACS Version of the E3DC Home Assistant integration
 
 ## Contribution
 

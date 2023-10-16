@@ -23,7 +23,7 @@ options:
 
 ## Run tests
 
-The script `test.py` will run all non altering methods for `pye3dc` for testing or sharing the output.
+The script `tests.py` will run all non altering methods for `pye3dc` for testing or sharing the output.
 
 ### usage
 
