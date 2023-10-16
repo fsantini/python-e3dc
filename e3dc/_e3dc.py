@@ -391,17 +391,9 @@ class E3DC:
         home = self.sendRequestTag(RscpTag.EMS_REQ_POWER_HOME, keepAlive=True)
         grid = self.sendRequestTag(RscpTag.EMS_REQ_POWER_GRID, keepAlive=True)
         wb = self.sendRequestTag(RscpTag.EMS_REQ_POWER_WB_ALL, keepAlive=True)
-
-        sc = round(
-            self.sendRequestTag(RscpTag.EMS_REQ_SELF_CONSUMPTION, keepAlive=True),
-            2,
-        )
-
+        sc = self.sendRequestTag(RscpTag.EMS_REQ_SELF_CONSUMPTION, keepAlive=True)
         # last call, use keepAlive value
-        autarky = round(
-            self.sendRequestTag(RscpTag.EMS_REQ_AUTARKY, keepAlive=keepAlive),
-            2,
-        )
+        autarky = self.sendRequestTag(RscpTag.EMS_REQ_AUTARKY, keepAlive=keepAlive)
 
         outObj = {
             "autarky": autarky,
@@ -975,10 +967,11 @@ class E3DC:
         Args:
             keepAlive (Optional[bool]): True to keep connection alive
         """
-        self.deratePercent = round(
+        self.deratePercent = (
             self.sendRequestTag(RscpTag.EMS_REQ_DERATE_AT_PERCENT_VALUE, keepAlive=True)
             * 100
         )
+
         self.deratePower = self.sendRequestTag(
             RscpTag.EMS_REQ_DERATE_AT_POWER_VALUE, keepAlive=True
         )
@@ -1288,12 +1281,10 @@ class E3DC:
         outObj = {
             "asoc": rscpFindTagIndex(req, RscpTag.BAT_ASOC),
             "chargeCycles": rscpFindTagIndex(req, RscpTag.BAT_CHARGE_CYCLES),
-            "current": round(rscpFindTagIndex(req, RscpTag.BAT_CURRENT), 2),
+            "current": rscpFindTagIndex(req, RscpTag.BAT_CURRENT),
             "dcbCount": dcbCount,
             "dcbs": {},
-            "designCapacity": round(
-                rscpFindTagIndex(req, RscpTag.BAT_DESIGN_CAPACITY), 2
-            ),
+            "designCapacity": rscpFindTagIndex(req, RscpTag.BAT_DESIGN_CAPACITY),
             "deviceConnected": rscpFindTagIndex(
                 deviceStateContainer, RscpTag.BAT_DEVICE_CONNECTED
             ),
@@ -1304,48 +1295,36 @@ class E3DC:
             "deviceWorking": rscpFindTagIndex(
                 deviceStateContainer, RscpTag.BAT_DEVICE_WORKING
             ),
-            "eodVoltage": round(rscpFindTagIndex(req, RscpTag.BAT_EOD_VOLTAGE), 2),
+            "eodVoltage": rscpFindTagIndex(req, RscpTag.BAT_EOD_VOLTAGE),
             "errorCode": rscpFindTagIndex(req, RscpTag.BAT_ERROR_CODE),
             "fcc": rscpFindTagIndex(req, RscpTag.BAT_FCC),
             "index": batIndex,
-            "maxBatVoltage": round(
-                rscpFindTagIndex(req, RscpTag.BAT_MAX_BAT_VOLTAGE), 2
+            "maxBatVoltage": rscpFindTagIndex(req, RscpTag.BAT_MAX_BAT_VOLTAGE),
+            "maxChargeCurrent": rscpFindTagIndex(req, RscpTag.BAT_MAX_CHARGE_CURRENT),
+            "maxDischargeCurrent": rscpFindTagIndex(
+                req, RscpTag.BAT_MAX_DISCHARGE_CURRENT
             ),
-            "maxChargeCurrent": round(
-                rscpFindTagIndex(req, RscpTag.BAT_MAX_CHARGE_CURRENT), 2
+            "maxDcbCellTemp": rscpFindTagIndex(
+                req, RscpTag.BAT_MAX_DCB_CELL_TEMPERATURE
             ),
-            "maxDischargeCurrent": round(
-                rscpFindTagIndex(req, RscpTag.BAT_MAX_DISCHARGE_CURRENT), 2
+            "minDcbCellTemp": rscpFindTagIndex(
+                req, RscpTag.BAT_MIN_DCB_CELL_TEMPERATURE
             ),
-            "maxDcbCellTemp": round(
-                rscpFindTagIndex(req, RscpTag.BAT_MAX_DCB_CELL_TEMPERATURE), 2
-            ),
-            "minDcbCellTemp": round(
-                rscpFindTagIndex(req, RscpTag.BAT_MIN_DCB_CELL_TEMPERATURE), 2
-            ),
-            "moduleVoltage": round(
-                rscpFindTagIndex(req, RscpTag.BAT_MODULE_VOLTAGE), 2
-            ),
-            "rc": round(rscpFindTagIndex(req, RscpTag.BAT_RC), 2),
-            "readyForShutdown": round(
-                rscpFindTagIndex(req, RscpTag.BAT_READY_FOR_SHUTDOWN), 2
-            ),
-            "rsoc": round(rscpFindTagIndex(req, RscpTag.BAT_RSOC), 2),
-            "rsocReal": round(rscpFindTagIndex(req, RscpTag.BAT_RSOC_REAL), 2),
+            "moduleVoltage": rscpFindTagIndex(req, RscpTag.BAT_MODULE_VOLTAGE),
+            "rc": rscpFindTagIndex(req, RscpTag.BAT_RC),
+            "readyForShutdown": rscpFindTagIndex(req, RscpTag.BAT_READY_FOR_SHUTDOWN),
+            "rsoc": rscpFindTagIndex(req, RscpTag.BAT_RSOC),
+            "rsocReal": rscpFindTagIndex(req, RscpTag.BAT_RSOC_REAL),
             "statusCode": rscpFindTagIndex(req, RscpTag.BAT_STATUS_CODE),
-            "terminalVoltage": round(
-                rscpFindTagIndex(req, RscpTag.BAT_TERMINAL_VOLTAGE), 2
-            ),
+            "terminalVoltage": rscpFindTagIndex(req, RscpTag.BAT_TERMINAL_VOLTAGE),
             "totalUseTime": rscpFindTagIndex(req, RscpTag.BAT_TOTAL_USE_TIME),
             "totalDischargeTime": rscpFindTagIndex(
                 req, RscpTag.BAT_TOTAL_DISCHARGE_TIME
             ),
             "trainingMode": rscpFindTagIndex(req, RscpTag.BAT_TRAINING_MODE),
-            "usuableCapacity": round(
-                rscpFindTagIndex(req, RscpTag.BAT_USABLE_CAPACITY), 2
-            ),
-            "usuableRemainingCapacity": round(
-                rscpFindTagIndex(req, RscpTag.BAT_USABLE_REMAINING_CAPACITY), 2
+            "usuableCapacity": rscpFindTagIndex(req, RscpTag.BAT_USABLE_CAPACITY),
+            "usuableRemainingCapacity": rscpFindTagIndex(
+                req, RscpTag.BAT_USABLE_REMAINING_CAPACITY
             ),
         }
 
@@ -1398,7 +1377,7 @@ class E3DC:
                 temperatures = []
                 sensorCount = rscpFindTagIndex(info, RscpTag.BAT_DCB_NR_SENSOR)
                 for sensor in range(0, sensorCount):
-                    temperatures.append(round(temperatures_raw[sensor][2], 2))
+                    temperatures.append(temperatures_raw[sensor][2])
 
             # Set voltages, if available for the device
             voltages = rscpFindTag(req, RscpTag.BAT_DCB_ALL_CELL_VOLTAGES)
@@ -1410,7 +1389,7 @@ class E3DC:
                 voltages = []
                 seriesCellCount = rscpFindTagIndex(info, RscpTag.BAT_DCB_NR_SERIES_CELL)
                 for cell in range(0, seriesCellCount):
-                    voltages.append(round(voltages_raw[cell][2], 2))
+                    voltages.append(voltages_raw[cell][2])
 
             dcbobj = {
                 "current": rscpFindTagIndex(info, RscpTag.BAT_DCB_CURRENT),
@@ -1705,11 +1684,8 @@ class E3DC:
                 keepAlive=True,
             )
             outObj["temperature"]["values"].append(
-                round(
-                    rscpFindTagIndex(
-                        rscpFindTag(req, RscpTag.PVI_TEMPERATURE), RscpTag.PVI_VALUE
-                    ),
-                    2,
+                rscpFindTagIndex(
+                    rscpFindTag(req, RscpTag.PVI_TEMPERATURE), RscpTag.PVI_VALUE
                 )
             )
 
@@ -1739,50 +1715,29 @@ class E3DC:
                 keepAlive=True,
             )
             phaseobj = {
-                "power": round(
-                    rscpFindTagIndex(
-                        rscpFindTag(req, RscpTag.PVI_AC_POWER), RscpTag.PVI_VALUE
-                    ),
-                    2,
+                "power": rscpFindTagIndex(
+                    rscpFindTag(req, RscpTag.PVI_AC_POWER), RscpTag.PVI_VALUE
                 ),
-                "voltage": round(
-                    rscpFindTagIndex(
-                        rscpFindTag(req, RscpTag.PVI_AC_VOLTAGE), RscpTag.PVI_VALUE
-                    ),
-                    2,
+                "voltage": rscpFindTagIndex(
+                    rscpFindTag(req, RscpTag.PVI_AC_VOLTAGE), RscpTag.PVI_VALUE
                 ),
-                "current": round(
-                    rscpFindTagIndex(
-                        rscpFindTag(req, RscpTag.PVI_AC_CURRENT), RscpTag.PVI_VALUE
-                    ),
-                    2,
+                "current": rscpFindTagIndex(
+                    rscpFindTag(req, RscpTag.PVI_AC_CURRENT), RscpTag.PVI_VALUE
                 ),
-                "apparentPower": round(
-                    rscpFindTag(
-                        rscpFindTag(req, RscpTag.PVI_AC_APPARENTPOWER),
-                        RscpTag.PVI_VALUE,
-                    )[2],
-                    2,
+                "apparentPower": rscpFindTag(
+                    rscpFindTag(req, RscpTag.PVI_AC_APPARENTPOWER),
+                    RscpTag.PVI_VALUE,
+                )[2],
+                "reactivePower": rscpFindTagIndex(
+                    rscpFindTag(req, RscpTag.PVI_AC_REACTIVEPOWER),
+                    RscpTag.PVI_VALUE,
                 ),
-                "reactivePower": round(
-                    rscpFindTagIndex(
-                        rscpFindTag(req, RscpTag.PVI_AC_REACTIVEPOWER),
-                        RscpTag.PVI_VALUE,
-                    ),
-                    2,
+                "energyAll": rscpFindTagIndex(
+                    rscpFindTag(req, RscpTag.PVI_AC_ENERGY_ALL), RscpTag.PVI_VALUE
                 ),
-                "energyAll": round(
-                    rscpFindTagIndex(
-                        rscpFindTag(req, RscpTag.PVI_AC_ENERGY_ALL), RscpTag.PVI_VALUE
-                    ),
-                    2,
-                ),
-                "energyGridConsumption": round(
-                    rscpFindTagIndex(
-                        rscpFindTag(req, RscpTag.PVI_AC_ENERGY_GRID_CONSUMPTION),
-                        RscpTag.PVI_VALUE,
-                    ),
-                    2,
+                "energyGridConsumption": rscpFindTagIndex(
+                    rscpFindTag(req, RscpTag.PVI_AC_ENERGY_GRID_CONSUMPTION),
+                    RscpTag.PVI_VALUE,
                 ),
             }
             outObj["phases"][phase] = phaseobj
@@ -1812,30 +1767,18 @@ class E3DC:
                 else keepAlive,  # last request should honor keepAlive
             )
             stringobj = {
-                "power": round(
-                    rscpFindTagIndex(
-                        rscpFindTag(req, RscpTag.PVI_DC_POWER), RscpTag.PVI_VALUE
-                    ),
-                    2,
+                "power": rscpFindTagIndex(
+                    rscpFindTag(req, RscpTag.PVI_DC_POWER), RscpTag.PVI_VALUE
                 ),
-                "voltage": round(
-                    rscpFindTagIndex(
-                        rscpFindTag(req, RscpTag.PVI_DC_VOLTAGE), RscpTag.PVI_VALUE
-                    ),
-                    2,
+                "voltage": rscpFindTagIndex(
+                    rscpFindTag(req, RscpTag.PVI_DC_VOLTAGE), RscpTag.PVI_VALUE
                 ),
-                "current": round(
-                    rscpFindTagIndex(
-                        rscpFindTag(req, RscpTag.PVI_DC_CURRENT), RscpTag.PVI_VALUE
-                    ),
-                    2,
+                "current": rscpFindTagIndex(
+                    rscpFindTag(req, RscpTag.PVI_DC_CURRENT), RscpTag.PVI_VALUE
                 ),
-                "energyAll": round(
-                    rscpFindTagIndex(
-                        rscpFindTag(req, RscpTag.PVI_DC_STRING_ENERGY_ALL),
-                        RscpTag.PVI_VALUE,
-                    ),
-                    2,
+                "energyAll": rscpFindTagIndex(
+                    rscpFindTag(req, RscpTag.PVI_DC_STRING_ENERGY_ALL),
+                    RscpTag.PVI_VALUE,
                 ),
             }
             outObj["strings"][string] = stringobj
@@ -2004,9 +1947,9 @@ class E3DC:
             },
             "type": rscpFindTagIndex(res, RscpTag.PM_TYPE),
             "voltage": {
-                "L1": round(rscpFindTagIndex(res, RscpTag.PM_VOLTAGE_L1), 4),
-                "L2": round(rscpFindTagIndex(res, RscpTag.PM_VOLTAGE_L2), 4),
-                "L3": round(rscpFindTagIndex(res, RscpTag.PM_VOLTAGE_L3), 4),
+                "L1": rscpFindTagIndex(res, RscpTag.PM_VOLTAGE_L1),
+                "L2": rscpFindTagIndex(res, RscpTag.PM_VOLTAGE_L2),
+                "L3": rscpFindTagIndex(res, RscpTag.PM_VOLTAGE_L3),
             },
         }
         return outObj
