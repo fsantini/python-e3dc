@@ -1395,11 +1395,7 @@ class E3DC:
                 and len(temperatures_raw) == 3
                 and temperatures_raw[1] != "Error"
             ):
-                temperatures_data = rscpFindTagIndex(
-                    rscpFindTag(req, RscpTag.BAT_DCB_ALL_CELL_TEMPERATURES),
-                    RscpTag.BAT_DATA,
-                )
-                temperatures = []
+                temperatures_data = rscpFindTagIndex(temperatures_raw, RscpTag.BAT_DATA)
                 sensorCount = rscpFindTagIndex(info, RscpTag.BAT_DCB_NR_SENSOR)
                 for sensor in range(0, sensorCount):
                     temperatures.append(round(temperatures_data[sensor][2], 2))
@@ -1411,11 +1407,7 @@ class E3DC:
                 and len(voltages_raw) == 3
                 and voltages_raw[1] != "Error"
             ):
-                voltages_data = rscpFindTagIndex(
-                    rscpFindTag(req, RscpTag.BAT_DCB_ALL_CELL_VOLTAGES),
-                    RscpTag.BAT_DATA,
-                )
-                voltages = []
+                voltages_data = rscpFindTagIndex(voltages_raw, RscpTag.BAT_DATA)
                 seriesCellCount = rscpFindTagIndex(info, RscpTag.BAT_DCB_NR_SERIES_CELL)
                 for cell in range(0, seriesCellCount):
                     voltages.append(round(voltages_data[cell][2], 2))
