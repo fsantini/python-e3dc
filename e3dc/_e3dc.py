@@ -1368,28 +1368,28 @@ class E3DC:
             voltages = []
 
             # Set temperatures, if available for the device
-            temps = rscpFindTag(req, RscpTag.BAT_DCB_ALL_CELL_TEMPERATURES)
-            if temps is not None and len(temps) == 3 and temps[1] != "Error":
-                temperatures_raw = rscpFindTagIndex(
-                    rscpFindTag(req, RscpTag.BAT_DCB_ALL_CELL_TEMPERATURES),
-                    RscpTag.BAT_DATA,
-                )
-                temperatures = []
+            temperatures_raw = rscpFindTag(req, RscpTag.BAT_DCB_ALL_CELL_TEMPERATURES)
+            if (
+                temperatures_raw is not None
+                and len(temperatures_raw) == 3
+                and temperatures_raw[1] != "Error"
+            ):
+                temperatures_data = rscpFindTagIndex(temperatures_raw, RscpTag.BAT_DATA)
                 sensorCount = rscpFindTagIndex(info, RscpTag.BAT_DCB_NR_SENSOR)
                 for sensor in range(0, sensorCount):
-                    temperatures.append(temperatures_raw[sensor][2])
+                    temperatures.append(temperatures_data[sensor][2])
 
             # Set voltages, if available for the device
-            voltages = rscpFindTag(req, RscpTag.BAT_DCB_ALL_CELL_VOLTAGES)
-            if voltages is not None and len(voltages) == 3 and voltages[1] != "Error":
-                voltages_raw = rscpFindTagIndex(
-                    rscpFindTag(req, RscpTag.BAT_DCB_ALL_CELL_VOLTAGES),
-                    RscpTag.BAT_DATA,
-                )
-                voltages = []
+            voltages_raw = rscpFindTag(req, RscpTag.BAT_DCB_ALL_CELL_VOLTAGES)
+            if (
+                voltages_raw is not None
+                and len(voltages_raw) == 3
+                and voltages_raw[1] != "Error"
+            ):
+                voltages_data = rscpFindTagIndex(voltages_raw, RscpTag.BAT_DATA)
                 seriesCellCount = rscpFindTagIndex(info, RscpTag.BAT_DCB_NR_SERIES_CELL)
                 for cell in range(0, seriesCellCount):
-                    voltages.append(voltages_raw[cell][2])
+                    voltages.append(voltages_data[cell][2])
 
             dcbobj = {
                 "current": rscpFindTagIndex(info, RscpTag.BAT_DCB_CURRENT),
