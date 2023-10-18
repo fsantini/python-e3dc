@@ -20,6 +20,7 @@ class Testcontainers:
         password,
         key,
         configuration,
+        module,
         version="3.8",
     ):
         """The init method for Testcontainers."""
@@ -46,6 +47,7 @@ class Testcontainers:
                 "PASSWORD": password,
                 "KEY": key,
                 "CONFIG": configuration,
+                "MODULE": module,
             },
         )
 
@@ -75,6 +77,13 @@ parser.add_argument(
     default='["3.8", "3.9", "3.10", "3.11", "3.12"]',
 )
 parser.add_argument("-c", "--config", help="config of E3DC", default="{}")
+parser.add_argument(
+    "-m",
+    "--module",
+    help="E3DC module source to use for test",
+    choices=["source", "default"],
+    default="source",
+)
 requiredNamed = parser.add_argument_group("required named arguments")
 requiredNamed.add_argument(
     "-i", "--ipaddress", help="IP address of E3DC", required=True
@@ -92,11 +101,12 @@ for version in json.loads(args["list"]):
         password=args["password"],
         key=args["key"],
         configuration=args["config"],
+        module=args["module"],
         version=version,
     )
     testcontainers.exec_cmd("pip install .")
     testcontainers.exec_cmd(
-        "sh -c 'python tools/tests.py -i $IPADDRESS -u $USERNAME -p $PASSWORD -k $KEY -c $CONFIG'"
+        "sh -c 'python tools/tests.py -i $IPADDRESS -u $USERNAME -p $PASSWORD -k $KEY -c $CONFIG -m $MODULE'"
     )
     testcontainers.remove()
     print()
