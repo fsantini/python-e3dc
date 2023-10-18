@@ -22,7 +22,7 @@ from ._e3dc_rscp_local import (
 )
 from ._e3dc_rscp_web import E3DC_RSCP_web
 from ._rscpLib import rscpFindTag, rscpFindTagIndex
-from ._rscpTags import RscpTag, RscpType, getStrPowermeterType
+from ._rscpTags import RscpTag, RscpType, getStrPowermeterType, getStrPviType
 
 REMOTE_ADDRESS = "https://s10.e3dc.com/s10/phpcmd/cmd.php"
 REQUEST_INTERVAL_SEC = 10  # minimum interval between requests
@@ -1136,6 +1136,47 @@ class E3DC:
         outObj = {k: SystemStatusBools[v] for k, v in outObj.items()}
         return outObj
 
+    def get_batteries(self, keepAlive=False):
+        """Scans for installed batteries via rscp protocol locally.
+
+        Args:
+            keepAlive (Optional[bool]): True to keep connection alive
+        Returns:
+            list[dict]: List containing the found batteries as follows.:
+                [
+                    {'index': 0, "dcbs": 3}
+                ]
+        """
+        maxBatteries = 8
+        outObj = []
+        for batIndex in range(maxBatteries):
+            try:
+                req = self.sendRequest(
+                    (
+                        RscpTag.BAT_REQ_DATA,
+                        RscpType.Container,
+                        [
+                            (RscpTag.BAT_INDEX, RscpType.Uint16, batIndex),
+                            (RscpTag.BAT_REQ_DCB_COUNT, RscpType.NoneType, None),
+                        ],
+                    ),
+                    keepAlive=True if batIndex < (maxBatteries - 1) else keepAlive,
+                )
+            except NotAvailableError:
+                continue
+
+            dcbCount = rscpFindTagIndex(req, RscpTag.BAT_DCB_COUNT)
+
+            if dcbCount is not None:
+                outObj.append(
+                    {
+                        "index": batIndex,
+                        "dcbs": dcbCount,
+                    }
+                )
+
+        return outObj
+
     def get_battery_data(self, batIndex=None, dcbs=None, keepAlive=False):
         """Polls the battery data via rscp protocol locally.
 
@@ -1491,6 +1532,55 @@ class E3DC:
 
         return outObj
 
+    def get_pvis(self, keepAlive=False):
+        """Scans for installed pvis via rscp protocol locally.
+
+        Args:
+            keepAlive (Optional[bool]): True to keep connection alive
+        Returns:
+            list[dict]: List containing the found pvis as follows.::
+                [
+                    {'index': 0, "phases": 3, "strings": 2, 'type': 3, 'typeName': 'PVI_TYPE_E3DC_E'}
+                ]
+        """
+        maxPvis = 8
+        outObj = []
+        for pviIndex in range(maxPvis):
+            req = self.sendRequest(
+                (
+                    RscpTag.PVI_REQ_DATA,
+                    "Container",
+                    [
+                        (RscpTag.PVI_INDEX, RscpType.Uint16, pviIndex),
+                        (RscpTag.PVI_REQ_TYPE, RscpType.NoneType, None),
+                        (RscpTag.PVI_REQ_USED_STRING_COUNT, RscpType.NoneType, None),
+                        (RscpTag.PVI_REQ_AC_MAX_PHASE_COUNT, RscpType.NoneType, None),
+                    ],
+                ),
+                keepAlive=True if pviIndex < (maxPvis - 1) else keepAlive,
+            )
+
+            pviType = rscpFindTagIndex(req, RscpTag.PVI_TYPE)
+
+            if pviType is not None:
+                maxPhaseCount = int(
+                    rscpFindTagIndex(req, RscpTag.PVI_AC_MAX_PHASE_COUNT)
+                )
+                usedStringCount = int(
+                    rscpFindTagIndex(req, RscpTag.PVI_USED_STRING_COUNT)
+                )
+                outObj.append(
+                    {
+                        "index": pviIndex,
+                        "phases": maxPhaseCount,
+                        "strings": usedStringCount,
+                        "type": pviType,
+                        "typeName": getStrPviType(pviType),
+                    }
+                )
+
+        return outObj
+
     def get_pvi_data(self, pviIndex=None, strings=None, phases=None, keepAlive=False):
         """Polls the inverter data via rscp protocol locally.
 
@@ -1830,9 +1920,9 @@ class E3DC:
             keepAlive (Optional[bool]): True to keep connection alive
 
         Returns:
-            dict: Dictionary containing the found powermeters as follows.::
+            list[dict]: List containing the found powermeters as follows.::
 
-                "powermeters": [
+                [
                     {'index': 0, 'type': 1, 'typeName': 'PM_TYPE_ROOT'},
                     {'index': 1, 'type': 4, 'typeName': 'PM_TYPE_ADDITIONAL_CONSUMPTION'}
                 ]
@@ -1842,7 +1932,7 @@ class E3DC:
         for pmIndex in range(
             maxPowermeters
         ):  # max 8 powermeters according to E3DC spec
-            res = self.sendRequest(
+            req = self.sendRequest(
                 (
                     RscpTag.PM_REQ_DATA,
                     RscpType.Container,
@@ -1854,7 +1944,7 @@ class E3DC:
                 keepAlive=True if pmIndex < (maxPowermeters - 1) else keepAlive,
             )
 
-            pmType = rscpFindTagIndex(res, RscpTag.PM_TYPE)
+            pmType = rscpFindTagIndex(req, RscpTag.PM_TYPE)
 
             if pmType is not None:
                 outObj.append(
