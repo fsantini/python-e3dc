@@ -3623,6 +3623,19 @@ class PowermeterType(Enum):
     PM_TYPE_FARM_ADDITIONAL = 0x08
 
 
+class PviType(Enum):
+    """All available pvi types."""
+
+    PVI_TYPE_UNDEFINED = 0x00
+    PVI_TYPE_SOLU = 0x01
+    PVI_TYPE_KACO = 0x02
+    PVI_TYPE_E3DC_E = 0x03
+    PVI_TYPE_E3DC_MINI = 0x04
+    PVI_TYPE_UNDEFINED_6 = 0x06
+    PVI_TYPE_UNDEFINED_7 = 0x07
+    PVI_TYPE_UNDEFINED_8 = 0x08
+
+
 def getRscpTag(tag: int | str | RscpTag) -> RscpTag:
     """Convert a tag to its RscpTag enumeration equivalent.
 
@@ -3792,3 +3805,23 @@ def getStrPowermeterType(powermetertype: int | str | PowermeterType) -> str:
         powermetertype = PowermeterType[powermetertype]
 
     return powermetertype.name
+
+
+def getStrPviType(pvitype: int | str | PviType) -> str:
+    """Convert a pvi type to its string name representation in PviType enumeration.
+
+    Args:
+        pvitype (int | str | PviType): The pvi type to be converted.
+            - If int, it's assumed to be the pvi type value.
+            - If str, it's assumed to be the pvi type name.
+            - If PviType, its name is used.
+
+    Returns:
+        str: The name of the pvi type as a string.
+    """
+    if isinstance(pvitype, int):
+        pvitype = PviType(pvitype)
+    elif isinstance(pvitype, str):
+        pvitype = PviType[pvitype]
+
+    return pvitype.name
