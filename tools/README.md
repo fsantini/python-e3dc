@@ -28,7 +28,7 @@ The script `tests.py` will run all non altering methods for `pye3dc` for testing
 ### usage
 
 ```
-usage: tests.py [-h] [-c CONFIG] -i IPADDRESS -u USERNAME -p PASSWORD -k KEY
+usage: tests.py [-h] [-c CONFIG] [-m {source,default}] -i IPADDRESS -u USERNAME -p PASSWORD -k KEY
 
 E3DC tests
 
@@ -36,6 +36,8 @@ options:
   -h, --help            show this help message and exit
   -c CONFIG, --config CONFIG
                         config of E3DC
+  -m {source,default}, --module {source,default}
+                        E3DC module source to use for test
 
 required named arguments:
   -i IPADDRESS, --ipaddress IPADDRESS
@@ -54,7 +56,7 @@ The script `testcontainers.py` wil run the `tests`, using docker, for multiple P
 ### usage
 
 ```
-usage: testcontainers.py [-h] [-l LIST] [-c CONFIG] -i IPADDRESS -u USERNAME -p PASSWORD -k KEY
+usage: testcontainers.py [-h] [-l LIST] [-c CONFIG] [-m {source,default}] -i IPADDRESS -u USERNAME -p PASSWORD -k KEY
 
 E3DC testcontainers
 
@@ -63,6 +65,8 @@ options:
   -l LIST, --list LIST  list of Python versions to test with
   -c CONFIG, --config CONFIG
                         config of E3DC
+  -m {source,default}, --module {source,default}
+                        E3DC module source to use for test
 
 required named arguments:
   -i IPADDRESS, --ipaddress IPADDRESS
