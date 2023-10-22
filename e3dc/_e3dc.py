@@ -2160,13 +2160,13 @@ class E3DC:
                         (RscpTag.EMS_POWER_LIMITS_USED, RscpType.Bool, True),
                         (
                             RscpTag.EMS_MAX_DISCHARGE_POWER,
-                            RscpType.UInt32,
+                            RscpType.Uint32,
                             max_discharge,
                         ),
-                        (RscpTag.EMS_MAX_CHARGE_POWER, RscpType.UInt32, max_charge),
+                        (RscpTag.EMS_MAX_CHARGE_POWER, RscpType.Uint32, max_charge),
                         (
                             RscpTag.EMS_DISCHARGE_START_POWER,
-                            RscpType.UInt32,
+                            RscpType.Uint32,
                             discharge_start,
                         ),
                     ],
