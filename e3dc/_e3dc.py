@@ -529,7 +529,7 @@ class E3DC:
                     raise SendError("Max retries reached")
 
         if not keepAlive:
-            self.rscp.disconnect()
+            self.disconnect()
 
         return result
 
@@ -553,6 +553,10 @@ class E3DC:
         return self.sendRequest(
             (tag, RscpType.NoneType, None), retries=retries, keepAlive=keepAlive
         )[2]
+
+    def disconnect(self):
+        """This function does disconnect the connection."""
+        self.rscp.disconnect()
 
     def get_idle_periods(self, keepAlive=False):
         """Poll via rscp protocol to get idle periods.
