@@ -128,13 +128,12 @@ class E3DC:
             self.poll = self.poll_rscp
         else:
             self._set_serial(kwargs["serialNumber"])
-            if "isPasswordMd5" in kwargs:
-                if kwargs["isPasswordMd5"]:
-                    self.password = kwargs["password"]
-                else:
-                    self.password = hashlib.md5(
-                        kwargs["password"].encode("utf-8")
-                    ).hexdigest()
+            if "isPasswordMd5" in kwargs and not kwargs["isPasswordMd5"]:
+                self.password = kwargs["password"]
+            else:
+                self.password = hashlib.md5(
+                    kwargs["password"].encode("utf-8")
+                ).hexdigest()
             self.rscp = E3DC_RSCP_web(
                 self.username,
                 self.password,
