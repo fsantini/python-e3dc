@@ -22,44 +22,75 @@ def printJson(obj):
 
 
 parser = argparse.ArgumentParser(description="E3DC tests")
-parser.add_argument("-c", "--config", help="config of E3DC", default="{}")
+parser.add_argument("-c", "--configuration", help="configuration of E3DC", default="{}")
 parser.add_argument(
     "-m",
     "--module",
-    help="E3DC module source to use for test",
-    choices=["source", "default"],
-    default="source",
+    action="store_false",
+    help="use locally installed E3DC module for test",
+)
+parser.add_argument(
+    "-v",
+    "--verbose",
+    action="store_true",
+    help="use local E3DC module for test",
 )
 requiredNamed = parser.add_argument_group("required named arguments")
-requiredNamed.add_argument(
-    "-i", "--ipaddress", help="IP address of E3DC", required=True
-)
 requiredNamed.add_argument("-u", "--username", help="username of E3DC", required=True)
 requiredNamed.add_argument("-p", "--password", help="password of E3DC", required=True)
-requiredNamed.add_argument("-k", "--key", help="key of E3DC", required=True)
+
+requiredNamedLocal = parser.add_argument_group(
+    "required named arguments for local connection"
+)
+requiredNamedLocal.add_argument("-i", "--ipaddress", help="IP address of E3DC")
+requiredNamedLocal.add_argument("-k", "--key", help="rscp key of E3DC")
+
+requiredNamedWeb = parser.add_argument_group(
+    "required named arguments for web connection"
+)
+requiredNamedWeb.add_argument("-s", "--serialnumber", help="serialnumber of E3DC")
+
 args = vars(parser.parse_args())
 
-if args["module"] == "source":
+if args["serialnumber"] and (args["ipaddress"] or args["key"]):
+    print("either provide require arguments for web or local connection")
+    exit(2)
+elif args["serialnumber"] is None and not (args["ipaddress"] and args["key"]):
+    print("for local connection ipaddress and key are required")
+    exit(2)
+
+if args["module"]:
     import sys
     from pathlib import Path
 
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
     import e3dc
 
-    print("Running Test for E3DC from sources!\n")
+    if args["verbose"]:
+        print("Running Test for E3DC from sources!\n")
 else:
     import e3dc
 
-    print("Running Test for E3DC {}\n".format(e3dc.__version__))
+    if args["verbose"]:
+        print("Running Test for E3DC {}\n".format(e3dc.__version__))
 
-e3dc_obj = e3dc.E3DC(
-    e3dc.E3DC.CONNECT_LOCAL,
-    ipAddress=args["ipaddress"],
-    username=args["username"],
-    password=args["password"],
-    key=args["key"],
-    configuration=json.loads(args["config"]),
-)
+if args["serialnumber"]:
+    e3dc_obj = e3dc.E3DC(
+        e3dc.E3DC.CONNECT_WEB,
+        username=args["username"],
+        password=args["password"],
+        serialNumber=args["serialnumber"],
+        configuration=json.loads(args["configuration"]),
+    )
+else:
+    e3dc_obj = e3dc.E3DC(
+        e3dc.E3DC.CONNECT_LOCAL,
+        ipAddress=args["ipaddress"],
+        username=args["username"],
+        password=args["password"],
+        key=args["key"],
+        configuration=json.loads(args["configuration"]),
+    )
 
 methods = [
     "poll",
@@ -81,7 +112,9 @@ methods = [
 ]
 
 for method in methods:
-    print(method + "():")
+    if args["verbose"]:
+        print("\n" + method + "():")
     method = getattr(e3dc_obj, method)
     printJson(method(keepAlive=True))
-    print()
+
+e3dc_obj.disconnect()

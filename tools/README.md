@@ -28,25 +28,31 @@ The script `tests.py` will run all non altering methods for `pye3dc` for testing
 ### usage
 
 ```
-usage: tests.py [-h] [-c CONFIG] [-m {source,default}] -i IPADDRESS -u USERNAME -p PASSWORD -k KEY
+usage: tests.py [-h] [-c CONFIGURATION] [-m] [-v] -u USERNAME -p PASSWORD [-i IPADDRESS] [-k KEY] [-s SERIALNUMBER]
 
 E3DC tests
 
 options:
   -h, --help            show this help message and exit
-  -c CONFIG, --config CONFIG
-                        config of E3DC
-  -m {source,default}, --module {source,default}
-                        E3DC module source to use for test
+  -c CONFIGURATION, --configuration CONFIGURATION
+                        configuration of E3DC
+  -m, --module          use locally installed E3DC module for test
+  -v, --verbose         use local E3DC module for test
 
 required named arguments:
-  -i IPADDRESS, --ipaddress IPADDRESS
-                        IP address of E3DC
   -u USERNAME, --username USERNAME
                         username of E3DC
   -p PASSWORD, --password PASSWORD
                         password of E3DC
-  -k KEY, --key KEY     key of E3DC
+
+required named arguments for local connection:
+  -i IPADDRESS, --ipaddress IPADDRESS
+                        IP address of E3DC
+  -k KEY, --key KEY     rscp key of E3DC
+
+required named arguments for web connection:
+  -s SERIALNUMBER, --serialnumber SERIALNUMBER
+                        serialnumber of E3DC
 ```
 
 ## Run tests for different python versions
@@ -56,24 +62,32 @@ The script `testcontainers.py` wil run the `tests`, using docker, for multiple P
 ### usage
 
 ```
-usage: testcontainers.py [-h] [-l LIST] [-c CONFIG] [-m {source,default}] -i IPADDRESS -u USERNAME -p PASSWORD -k KEY
+usage: testcontainers.py [-h] [-l LIST] [-c CONFIGURATION] [-m MODULE] [-v] -u USERNAME -p PASSWORD [-i IPADDRESS] [-k KEY]
+                         [-s SERIALNUMBER]
 
 E3DC testcontainers
 
 options:
   -h, --help            show this help message and exit
   -l LIST, --list LIST  list of Python versions to test with
-  -c CONFIG, --config CONFIG
-                        config of E3DC
-  -m {source,default}, --module {source,default}
-                        E3DC module source to use for test
+  -c CONFIGURATION, --configuration CONFIGURATION
+                        configuration of E3DC
+  -m MODULE, --module MODULE
+                        specify E3DC module version to be installed for tests. Use local to install from sources
+  -v, --verbose         use local E3DC module for test
 
 required named arguments:
-  -i IPADDRESS, --ipaddress IPADDRESS
-                        IP address of E3DC
   -u USERNAME, --username USERNAME
                         username of E3DC
   -p PASSWORD, --password PASSWORD
                         password of E3DC
-  -k KEY, --key KEY     key of E3DC
+
+required named arguments for local connection:
+  -i IPADDRESS, --ipaddress IPADDRESS
+                        IP address of E3DC
+  -k KEY, --key KEY     rscp key of E3DC
+
+required named arguments for web connection:
+  -s SERIALNUMBER, --serialnumber SERIALNUMBER
+                        serialnumber of E3DC
 ```
