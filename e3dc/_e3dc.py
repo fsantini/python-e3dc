@@ -6,13 +6,9 @@
 
 import datetime
 import hashlib
-import json
 import time
 import uuid
 from calendar import monthrange
-
-import dateutil.parser
-import requests
 
 from ._e3dc_rscp_local import (
     E3DC_RSCP_local,
@@ -23,10 +19,6 @@ from ._e3dc_rscp_local import (
 from ._e3dc_rscp_web import E3DC_RSCP_web
 from ._rscpLib import rscpFindTag, rscpFindTagIndex
 from ._rscpTags import RscpTag, RscpType, getStrPowermeterType, getStrPviType
-
-REMOTE_ADDRESS = "https://s10.e3dc.com/s10/phpcmd/cmd.php"
-REQUEST_INTERVAL_SEC = 10  # minimum interval between requests
-REQUEST_INTERVAL_SEC_LOCAL = 1  # minimum interval between requests
 
 
 class AuthenticationError(Exception):
@@ -125,7 +117,6 @@ class E3DC:
             self.key = kwargs["key"]
             self.password = kwargs["password"]
             self.rscp = E3DC_RSCP_local(self.username, self.password, self.ip, self.key)
-            self.poll = self.poll_rscp
         else:
             self._set_serial(kwargs["serialNumber"])
             if "isPasswordMd5" in kwargs and not kwargs["isPasswordMd5"]:
@@ -139,7 +130,6 @@ class E3DC:
                 self.password,
                 "{}{}".format(self.serialNumberPrefix, self.serialNumber),
             )
-            self.poll = self.poll_ajax
 
         self.get_system_info_static(keepAlive=True)
 
@@ -200,157 +190,7 @@ class E3DC:
             self.powermeters = self.powermeters or [{"index": 0}]
             self.pvis = self.pvis or [{"index": 0}]
 
-    def connect_web(self):
-        """Connects to the E3DC portal and opens a session.
-
-        Raises:
-            e3dc.AuthenticationError: login error
-        """
-        # login request
-        loginPayload = {
-            "DO": "LOGIN",
-            "USERNAME": self.username,
-            "PASSWD": self.password,
-        }
-        headers = {"Window-Id": self.guid}
-
-        try:
-            r = requests.post(REMOTE_ADDRESS, data=loginPayload, headers=headers)
-            jsonResponse = r.json()
-        except:
-            raise AuthenticationError("Error communicating with server")
-        if jsonResponse["ERRNO"] != 0:
-            raise AuthenticationError("Login error")
-
-        # get cookies
-        self.jar = r.cookies
-
-        # set the proper device
-        deviceSelectPayload = {
-            "DO": "GETCONTENT",
-            "MODID": "IDOVERVIEWUNITMAIN",
-            "ARG0": self.serialNumber,
-            "TOS": -7200,
-        }
-
-        try:
-            r = requests.post(
-                REMOTE_ADDRESS,
-                data=deviceSelectPayload,
-                cookies=self.jar,
-                headers=headers,
-            )
-            jsonResponse = r.json()
-        except:
-            raise AuthenticationError("Error communicating with server")
-        if jsonResponse["ERRNO"] != 0:
-            raise AuthenticationError("Error selecting device")
-        self.connected = True
-
-    def poll_ajax_raw(self):
-        """Polls the portal for the current status.
-
-        Returns:
-            dict: Dictionary containing the status information in raw format as returned by the portal
-
-        Raises:
-            e3dc.PollError in case of problems polling
-        """
-        if not self.connected:
-            self.connect_web()
-
-        pollPayload = {"DO": "LIVEUNITDATA"}
-        pollHeaders = {
-            "Pragma": "no-cache",
-            "Cache-Control": "no-store",
-            "Window-Id": self.guid,
-        }
-
-        try:
-            r = requests.post(
-                REMOTE_ADDRESS, data=pollPayload, cookies=self.jar, headers=pollHeaders
-            )
-            jsonResponse = r.json()
-        except:
-            self.connected = False
-            raise PollError("Error communicating with server")
-
-        if jsonResponse["ERRNO"] != 0:
-            raise PollError("Error polling: %d" % (jsonResponse["ERRNO"]))
-
-        return json.loads(jsonResponse["CONTENT"])
-
-    def poll_ajax(self, **kwargs):
-        """Polls the portal for the current status and returns a digest.
-
-        Args:
-            **kwars: argument list
-
-        Returns:
-            dict: Dictionary containing the condensed status information structured as follows::
-
-                {
-                    "autarky": <autarky in %>,
-                    "consumption": {
-                        "battery": <power entering battery (positive: charging, negative: discharging)>,
-                        "house": <house consumption>,
-                        "wallbox": <wallbox consumption>
-                    }
-                    "production": {
-                        "solar" : <production from solar in W>,
-                        "add" : <additional external power in W>,
-                        "grid" : <absorption from grid in W>
-                    }
-                    "stateOfCharge": <battery charge status in %>,
-                    "selfConsumption": <self consumed power in %>,
-                    "time": <datetime object containing the timestamp>
-                }
-
-        Raises:
-            e3dc.PollError in case of problems polling
-        """
-        if (
-            self.lastRequest is not None
-            and (time.time() - self.lastRequestTime) < REQUEST_INTERVAL_SEC
-        ):
-            return self.lastRequest
-
-        raw = self.poll_ajax_raw()
-        strPmIndex = str(self.pmIndexExt)
-        outObj = {
-            "time": dateutil.parser.parse(raw["time"]).replace(
-                tzinfo=datetime.timezone.utc
-            ),
-            "sysStatus": raw["SYSSTATUS"],
-            "stateOfCharge": int(raw["SOC"]),
-            "production": {
-                "solar": int(raw["POWER_PV_S1"])
-                + int(raw["POWER_PV_S2"])
-                + int(raw["POWER_PV_S3"]),
-                "add": -(
-                    int(raw["PM" + strPmIndex + "_L1"])
-                    + int(raw["PM" + strPmIndex + "_L2"])
-                    + int(raw["PM" + strPmIndex + "_L3"])
-                ),
-                "grid": int(raw["POWER_LM_L1"])
-                + int(raw["POWER_LM_L2"])
-                + int(raw["POWER_LM_L3"]),
-            },
-            "consumption": {
-                "battery": int(raw["POWER_BAT"]),
-                "house": int(raw["POWER_C_L1"])
-                + int(raw["POWER_C_L2"])
-                + int(raw["POWER_C_L3"]),
-                "wallbox": int(raw["POWER_WALLBOX"]),
-            },
-        }
-
-        self.lastRequest = outObj
-        self.lastRequestTime = time.time()
-
-        return outObj
-
-    def poll_rscp(self, keepAlive=False):
+    def poll(self, keepAlive=False):
         """Polls via rscp protocol locally.
 
         Args:
@@ -376,12 +216,6 @@ class E3DC:
                     "time": <datetime object containing the timestamp>
                 }
         """
-        if (
-            self.lastRequest is not None
-            and (time.time() - self.lastRequestTime) < REQUEST_INTERVAL_SEC_LOCAL
-        ):
-            return self.lastRequest
-
         ts = self.sendRequestTag(RscpTag.INFO_REQ_UTC_TIME, keepAlive=True)
         soc = self.sendRequestTag(RscpTag.EMS_REQ_BAT_SOC, keepAlive=True)
         solar = self.sendRequestTag(RscpTag.EMS_REQ_POWER_PV, keepAlive=True)
@@ -405,8 +239,6 @@ class E3DC:
             ),
         }
 
-        self.lastRequest = outObj
-        self.lastRequestTime = time.time()
         return outObj
 
     def poll_switches(self, keepAlive=False):
