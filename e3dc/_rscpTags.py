@@ -1,4 +1,4 @@
-from __future__ import annotations
+from __future__ import annotations  # required for python < 3.9
 
 from enum import Enum
 
@@ -3762,7 +3762,7 @@ def getStrRscpType(rscptype: int | str | RscpType) -> str:
         else:
             rscptype = RscpType[rscptype]
 
-    if RscpType == RscpType.NoneType:
+    if rscptype == RscpType.NoneType:
         return "None"
     return rscptype.name
 

@@ -1,6 +1,8 @@
+from __future__ import annotations  # required for python < 3.9
+
 import math
 
-from py3rijndael import RijndaelCbc, ZeroPadding
+from py3rijndael import RijndaelCbc, ZeroPadding  # type: ignore
 
 KEY_SIZE = 32
 BLOCK_SIZE = 32
@@ -12,7 +14,7 @@ class ParameterError(Exception):
     pass
 
 
-def zeroPad_multiple(string, value):
+def zeroPad_multiple(string: bytes, value: int) -> bytes:
     """Zero padding string."""
     length = len(string)
     if length % value == 0:
@@ -21,7 +23,7 @@ def zeroPad_multiple(string, value):
     return string.ljust(newL, b"\x00")
 
 
-def truncate_multiple(string, value):
+def truncate_multiple(string: bytes, value: int) -> bytes:
     """Truncating sting."""
     length = len(string)
     if length % value == 0:
@@ -33,22 +35,21 @@ def truncate_multiple(string, value):
 class RSCPEncryptDecrypt:
     """A class for encrypting and decrypting RSCP data."""
 
-    def __init__(self, key):
+    def __init__(self, key: bytes):
         """Constructor of a RSCP encryption and decryption class.
 
         Args:
-            key (str): RSCP encryption key
+            key (bytes): RSCP encryption key
         """
         if len(key) > KEY_SIZE:
             raise ParameterError("Key must be <%d bytes" % (KEY_SIZE))
-
         self.key = key.ljust(KEY_SIZE, b"\xff")
         self.encryptIV = b"\xff" * BLOCK_SIZE
         self.decryptIV = b"\xff" * BLOCK_SIZE
         self.remainingData = b""
         self.oldDecrypt = b""
 
-    def encrypt(self, plainText):
+    def encrypt(self, plainText: bytes) -> bytes:
         """Method to encryt plain text."""
         encryptor = RijndaelCbc(
             self.key,
@@ -60,7 +61,9 @@ class RSCPEncryptDecrypt:
         self.encryptIV = encText[-BLOCK_SIZE:]
         return encText
 
-    def decrypt(self, encText, previouslyProcessedData=None):
+    def decrypt(
+        self, encText: bytes, previouslyProcessedData: int | None = None
+    ) -> bytes:
         """Method to decryt encrypted text."""
         if previouslyProcessedData is None:
             length = len(self.oldDecrypt)
@@ -92,4 +95,4 @@ class RSCPEncryptDecrypt:
             padding=ZeroPadding(BLOCK_SIZE),
             block_size=BLOCK_SIZE,
         )
-        return decryptor.decrypt(toDecrypt)
+        return decryptor.decrypt(toDecrypt)  # pyright: ignore [reportUnknownMemberType]

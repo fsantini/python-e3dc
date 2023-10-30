@@ -26,11 +26,12 @@ if source.status_code != 200:
     exit(1)
 input = jsbeautifier.beautify(str(source.content, encoding="utf-8"))
 
-rscpTagsFromJS = re.search(
-    r"var rscpTags = {(.*?)getHexTag.*?}", input, re.DOTALL
-).group(1)
+rscpTagsFromJS = re.search(r"var rscpTags = {(.*?)getHexTag.*?}", input, re.DOTALL)
 
-lines = rscpTagsFromJS.splitlines()
+if rscpTagsFromJS is None:
+    exit(1)
+
+lines = rscpTagsFromJS.group(1).splitlines()
 
 print("class RscpTag(Enum):")
 print(

@@ -3,16 +3,14 @@
 #
 # Copyright 2017 Francesco Santini <francesco.santini@gmail.com>
 # Licensed under a MIT license. See LICENSE for details
+from __future__ import annotations  # required for python < 3.9
 
 import datetime
 import hashlib
-import json
 import time
 import uuid
 from calendar import monthrange
-
-import dateutil.parser
-import requests
+from typing import Any, Dict, List, Literal, Tuple
 
 from ._e3dc_rscp_local import (
     E3DC_RSCP_local,
@@ -61,7 +59,7 @@ class E3DC:
 
     _IDLE_TYPE = {"idleCharge": 0, "idleDischarge": 1}
 
-    def __init__(self, connectType, **kwargs):
+    def __init__(self, connectType: int, **kwargs: Any) -> None:
         """Constructor of an E3DC object.
 
         Args:
@@ -102,9 +100,9 @@ class E3DC:
         self.maxBatChargePower = None
         self.maxBatDischargePower = None
         self.startDischargeDefault = None
-        self.powermeters = None
-        self.pvis = None
-        self.batteries = None
+        self.powermeters: List[Dict[str, Any]] = []
+        self.pvis: List[Dict[str, Any]] = []
+        self.batteries: List[Dict[str, Any]] = []
         self.pmIndexExt = None
 
         if "configuration" in kwargs:
@@ -125,26 +123,23 @@ class E3DC:
             self.key = kwargs["key"]
             self.password = kwargs["password"]
             self.rscp = E3DC_RSCP_local(self.username, self.password, self.ip, self.key)
-            self.poll = self.poll_rscp
         else:
             self._set_serial(kwargs["serialNumber"])
-            if "isPasswordMd5" in kwargs:
-                if kwargs["isPasswordMd5"]:
-                    self.password = kwargs["password"]
-                else:
-                    self.password = hashlib.md5(
-                        kwargs["password"].encode("utf-8")
-                    ).hexdigest()
+            if "isPasswordMd5" in kwargs and not kwargs["isPasswordMd5"]:
+                self.password = kwargs["password"]
+            else:
+                self.password = hashlib.md5(
+                    kwargs["password"].encode("utf-8")
+                ).hexdigest()
             self.rscp = E3DC_RSCP_web(
                 self.username,
                 self.password,
                 "{}{}".format(self.serialNumberPrefix, self.serialNumber),
             )
-            self.poll = self.poll_ajax
 
         self.get_system_info_static(keepAlive=True)
 
-    def _set_serial(self, serial):
+    def _set_serial(self, serial: str):
         self.batteries = self.batteries or [{"index": 0}]
         self.pmIndexExt = 1
 
@@ -201,158 +196,80 @@ class E3DC:
             self.powermeters = self.powermeters or [{"index": 0}]
             self.pvis = self.pvis or [{"index": 0}]
 
-    def connect_web(self):
-        """Connects to the E3DC portal and opens a session.
+    def sendRequest(
+        self,
+        request: Tuple[str | int | RscpTag, str | int | RscpType, Any],
+        retries: int = 3,
+        keepAlive: bool = False,
+    ) -> Tuple[str | int | RscpTag, str | int | RscpType, Any]:
+        """This function uses the RSCP interface to make a request.
+
+        Does make retries in case of exceptions like Socket.Error
+
+        Args:
+            request: the request to send
+            retries (Optional[int]): number of retries
+            keepAlive (Optional[bool]): True to keep connection alive
+
+        Returns:
+            An object with the received data
 
         Raises:
             e3dc.AuthenticationError: login error
+            e3dc.SendError: if retries are reached
         """
-        # login request
-        loginPayload = {
-            "DO": "LOGIN",
-            "USERNAME": self.username,
-            "PASSWD": self.password,
-        }
-        headers = {"Window-Id": self.guid}
+        retry = 0
+        while True:
+            try:
+                if not self.rscp.isConnected():
+                    self.rscp.connect()
+                result = self.rscp.sendRequest(request)
+                break
+            except RSCPAuthenticationError:
+                raise AuthenticationError()
+            except RSCPNotAvailableError:
+                raise NotAvailableError()
+            except RSCPKeyError:
+                raise
+            except Exception:
+                retry += 1
+                if retry > retries:
+                    raise SendError("Max retries reached")
 
-        try:
-            r = requests.post(REMOTE_ADDRESS, data=loginPayload, headers=headers)
-            jsonResponse = r.json()
-        except:
-            raise AuthenticationError("Error communicating with server")
-        if jsonResponse["ERRNO"] != 0:
-            raise AuthenticationError("Login error")
+        if not keepAlive:
+            self.rscp.disconnect()
 
-        # get cookies
-        self.jar = r.cookies
+        return result
 
-        # set the proper device
-        deviceSelectPayload = {
-            "DO": "GETCONTENT",
-            "MODID": "IDOVERVIEWUNITMAIN",
-            "ARG0": self.serialNumber,
-            "TOS": -7200,
-        }
+    def sendRequestTag(
+        self, tag: str | int | RscpTag, retries: int = 3, keepAlive: bool = False
+    ):
+        """This function uses the RSCP interface to make a request for a single tag.
 
-        try:
-            r = requests.post(
-                REMOTE_ADDRESS,
-                data=deviceSelectPayload,
-                cookies=self.jar,
-                headers=headers,
-            )
-            jsonResponse = r.json()
-        except:
-            raise AuthenticationError("Error communicating with server")
-        if jsonResponse["ERRNO"] != 0:
-            raise AuthenticationError("Error selecting device")
-        self.connected = True
-
-    def poll_ajax_raw(self):
-        """Polls the portal for the current status.
-
-        Returns:
-            dict: Dictionary containing the status information in raw format as returned by the portal
-
-        Raises:
-            e3dc.PollError in case of problems polling
-        """
-        if not self.connected:
-            self.connect_web()
-
-        pollPayload = {"DO": "LIVEUNITDATA"}
-        pollHeaders = {
-            "Pragma": "no-cache",
-            "Cache-Control": "no-store",
-            "Window-Id": self.guid,
-        }
-
-        try:
-            r = requests.post(
-                REMOTE_ADDRESS, data=pollPayload, cookies=self.jar, headers=pollHeaders
-            )
-            jsonResponse = r.json()
-        except:
-            self.connected = False
-            raise PollError("Error communicating with server")
-
-        if jsonResponse["ERRNO"] != 0:
-            raise PollError("Error polling: %d" % (jsonResponse["ERRNO"]))
-
-        return json.loads(jsonResponse["CONTENT"])
-
-    def poll_ajax(self, **kwargs):
-        """Polls the portal for the current status and returns a digest.
+        Does make retries in case of exceptions like Socket.Error
 
         Args:
-            **kwars: argument list
+            tag (str): the request to send
+            retries (Optional[int]): number of retries
+            keepAlive (Optional[bool]): True to keep connection alive
 
         Returns:
-            dict: Dictionary containing the condensed status information structured as follows::
-
-                {
-                    "autarky": <autarky in %>,
-                    "consumption": {
-                        "battery": <power entering battery (positive: charging, negative: discharging)>,
-                        "house": <house consumption>,
-                        "wallbox": <wallbox consumption>
-                    }
-                    "production": {
-                        "solar" : <production from solar in W>,
-                        "add" : <additional external power in W>,
-                        "grid" : <absorption from grid in W>
-                    }
-                    "stateOfCharge": <battery charge status in %>,
-                    "selfConsumption": <self consumed power in %>,
-                    "time": <datetime object containing the timestamp>
-                }
+            An object with the received data
 
         Raises:
-            e3dc.PollError in case of problems polling
+            e3dc.AuthenticationError: login error
+            e3dc.SendError: if retries are reached
         """
-        if (
-            self.lastRequest is not None
-            and (time.time() - self.lastRequestTime) < REQUEST_INTERVAL_SEC
-        ):
-            return self.lastRequest
+        return self.sendRequest(
+            (tag, RscpType.NoneType, None), retries=retries, keepAlive=keepAlive
+        )[2]
 
-        raw = self.poll_ajax_raw()
-        strPmIndex = str(self.pmIndexExt)
-        outObj = {
-            "time": dateutil.parser.parse(raw["time"]).replace(
-                tzinfo=datetime.timezone.utc
-            ),
-            "sysStatus": raw["SYSSTATUS"],
-            "stateOfCharge": int(raw["SOC"]),
-            "production": {
-                "solar": int(raw["POWER_PV_S1"])
-                + int(raw["POWER_PV_S2"])
-                + int(raw["POWER_PV_S3"]),
-                "add": -(
-                    int(raw["PM" + strPmIndex + "_L1"])
-                    + int(raw["PM" + strPmIndex + "_L2"])
-                    + int(raw["PM" + strPmIndex + "_L3"])
-                ),
-                "grid": int(raw["POWER_LM_L1"])
-                + int(raw["POWER_LM_L2"])
-                + int(raw["POWER_LM_L3"]),
-            },
-            "consumption": {
-                "battery": int(raw["POWER_BAT"]),
-                "house": int(raw["POWER_C_L1"])
-                + int(raw["POWER_C_L2"])
-                + int(raw["POWER_C_L3"]),
-                "wallbox": int(raw["POWER_WALLBOX"]),
-            },
-        }
+    def disconnect(self):
+        """This function does disconnect the connection."""
+        self.rscp.disconnect()
 
-        self.lastRequest = outObj
-        self.lastRequestTime = time.time()
-
-        return outObj
-
-    def poll_rscp(self, keepAlive=False):
-        """Polls via rscp protocol locally.
+    def poll(self, keepAlive: bool = False):
+        """Polls via rscp protocol.
 
         Args:
             keepAlive (Optional[bool]): True to keep connection alive
@@ -410,7 +327,7 @@ class E3DC:
         self.lastRequestTime = time.time()
         return outObj
 
-    def poll_switches(self, keepAlive=False):
+    def poll_switches(self, keepAlive: bool = False):
         """This function uses the RSCP interface to poll the switch status.
 
         Args:
@@ -462,7 +379,9 @@ class E3DC:
 
         return switchList
 
-    def set_switch_onoff(self, switchID, value, keepAlive=False):
+    def set_switch_onoff(
+        self, switchID: int, value: Literal["on", "off"], keepAlive: bool = False
+    ):
         """This function uses the RSCP interface to turn a switch on or off.
 
         Args:
@@ -493,68 +412,7 @@ class E3DC:
         else:
             return False  # operation did not succeed
 
-    def sendRequest(self, request, retries=3, keepAlive=False):
-        """This function uses the RSCP interface to make a request.
-
-        Does make retries in case of exceptions like Socket.Error
-
-        Args:
-            request: the request to send
-            retries (Optional[int]): number of retries
-            keepAlive (Optional[bool]): True to keep connection alive
-
-        Returns:
-            An object with the received data
-
-        Raises:
-            e3dc.AuthenticationError: login error
-            e3dc.SendError: if retries are reached
-        """
-        retry = 0
-        while True:
-            try:
-                if not self.rscp.isConnected():
-                    self.rscp.connect()
-                result = self.rscp.sendRequest(request)
-                break
-            except RSCPAuthenticationError:
-                raise AuthenticationError()
-            except RSCPNotAvailableError:
-                raise NotAvailableError()
-            except RSCPKeyError:
-                raise
-            except Exception:
-                retry += 1
-                if retry > retries:
-                    raise SendError("Max retries reached")
-
-        if not keepAlive:
-            self.rscp.disconnect()
-
-        return result
-
-    def sendRequestTag(self, tag, retries=3, keepAlive=False):
-        """This function uses the RSCP interface to make a request for a single tag.
-
-        Does make retries in case of exceptions like Socket.Error
-
-        Args:
-            tag (str): the request to send
-            retries (Optional[int]): number of retries
-            keepAlive (Optional[bool]): True to keep connection alive
-
-        Returns:
-            An object with the received data
-
-        Raises:
-            e3dc.AuthenticationError: login error
-            e3dc.SendError: if retries are reached
-        """
-        return self.sendRequest(
-            (tag, RscpType.NoneType, None), retries=retries, keepAlive=keepAlive
-        )[2]
-
-    def get_idle_periods(self, keepAlive=False):
+    def get_idle_periods(self, keepAlive: bool = False):
         """Poll via rscp protocol to get idle periods.
 
         Args:
@@ -607,7 +465,7 @@ class E3DC:
         if idlePeriodsRaw[0] != RscpTag.EMS_GET_IDLE_PERIODS:
             return None
 
-        idlePeriods = {"idleCharge": [None] * 7, "idleDischarge": [None] * 7}
+        idlePeriods = {"idleCharge": [{}] * 7, "idleDischarge": [{}] * 7}
 
         # initialize
         for period in idlePeriodsRaw[2]:
@@ -634,7 +492,9 @@ class E3DC:
 
         return idlePeriods
 
-    def set_idle_periods(self, idlePeriods, keepAlive=False):
+    def set_idle_periods(
+        self, idlePeriods: Dict[str, List[Dict[str, Any]]], keepAlive: bool = False
+    ):
         """Set idle periods via rscp protocol.
 
         Args:
@@ -684,137 +544,123 @@ class E3DC:
         """
         periodList = []
 
-        if not isinstance(idlePeriods, dict):
-            raise TypeError("object is not a dict")
-        elif "idleCharge" not in idlePeriods and "idleDischarge" not in idlePeriods:
+        if "idleCharge" not in idlePeriods and "idleDischarge" not in idlePeriods:
             raise ValueError("neither key idleCharge nor idleDischarge in object")
 
         for idle_type in ["idleCharge", "idleDischarge"]:
             if idle_type in idlePeriods:
-                if isinstance(idlePeriods[idle_type], list):
-                    for idlePeriod in idlePeriods[idle_type]:
-                        if isinstance(idlePeriod, dict):
-                            if "day" not in idlePeriod:
-                                raise ValueError("day key in " + idle_type + " missing")
-                            elif isinstance(idlePeriod["day"], bool):
-                                raise TypeError("day in " + idle_type + " not a bool")
-                            elif not (0 <= idlePeriod["day"] <= 6):
-                                raise ValueError(
-                                    "day in " + idle_type + " out of range"
+                for idlePeriod in idlePeriods[idle_type]:
+                    if "day" not in idlePeriod:
+                        raise ValueError("day key in " + idle_type + " missing")
+                    elif isinstance(idlePeriod["day"], bool):
+                        raise TypeError("day in " + idle_type + " not a bool")
+                    elif not (0 <= idlePeriod["day"] <= 6):
+                        raise ValueError("day in " + idle_type + " out of range")
+
+                    if idlePeriod.keys() & ["active", "start", "end"]:
+                        if "active" in idlePeriod:
+                            if isinstance(idlePeriod["active"], bool):
+                                idlePeriod["active"] = idlePeriod["active"]
+                            else:
+                                raise TypeError(
+                                    "period "
+                                    + str(idlePeriod["day"])
+                                    + " in "
+                                    + idle_type
+                                    + " not a bool"
                                 )
 
-                            if idlePeriod.keys() & ["active", "start", "end"]:
-                                if "active" in idlePeriod:
-                                    if isinstance(idlePeriod["active"], bool):
-                                        idlePeriod["active"] = idlePeriod["active"]
-                                    else:
-                                        raise TypeError(
-                                            "period "
-                                            + str(idlePeriod["day"])
-                                            + " in "
-                                            + idle_type
-                                            + " not a bool"
-                                        )
-
-                                for key in ["start", "end"]:
-                                    if key in idlePeriod:
-                                        if (
-                                            isinstance(idlePeriod[key], list)
-                                            and len(idlePeriod[key]) == 2
-                                        ):
-                                            for i in range(2):
-                                                if isinstance(idlePeriod[key][i], int):
-                                                    if idlePeriod[key][i] >= 0 and (
-                                                        (
-                                                            i == 0
-                                                            and idlePeriod[key][i] < 24
-                                                        )
-                                                        or (
-                                                            i == 1
-                                                            and idlePeriod[key][i] < 60
-                                                        )
-                                                    ):
-                                                        idlePeriod[key][i] = idlePeriod[
-                                                            key
-                                                        ][i]
-                                                    else:
-                                                        raise ValueError(
-                                                            key
-                                                            in " period "
-                                                            + str(idlePeriod["day"])
-                                                            + " in "
-                                                            + idle_type
-                                                            + " is not between 00:00 and 23:59"
-                                                        )
+                        for key in ["start", "end"]:
+                            if key in idlePeriod:
                                 if (
-                                    idlePeriod["start"][0] * 60 + idlePeriod["start"][1]
-                                ) < (idlePeriod["end"][0] * 60 + idlePeriod["end"][1]):
-                                    periodList.append(
+                                    isinstance(idlePeriod[key], list)
+                                    and len(idlePeriod[key]) == 2
+                                ):
+                                    for i in range(2):
+                                        if isinstance(idlePeriod[key][i], int):
+                                            if idlePeriod[key][i] >= 0 and (
+                                                (i == 0 and idlePeriod[key][i] < 24)
+                                                or (i == 1 and idlePeriod[key][i] < 60)
+                                            ):
+                                                idlePeriod[key][i] = idlePeriod[key][i]
+                                            else:
+                                                raise ValueError(
+                                                    key
+                                                    in " period "
+                                                    + str(idlePeriod["day"])
+                                                    + " in "
+                                                    + idle_type
+                                                    + " is not between 00:00 and 23:59"
+                                                )
+                        if (idlePeriod["start"][0] * 60 + idlePeriod["start"][1]) < (
+                            idlePeriod["end"][0] * 60 + idlePeriod["end"][1]
+                        ):
+                            periodList.append(
+                                (
+                                    RscpTag.EMS_IDLE_PERIOD,
+                                    RscpType.Container,
+                                    [
                                         (
-                                            RscpTag.EMS_IDLE_PERIOD,
+                                            RscpTag.EMS_IDLE_PERIOD_TYPE,
+                                            RscpType.UChar8,
+                                            self._IDLE_TYPE[idle_type],
+                                        ),
+                                        (
+                                            RscpTag.EMS_IDLE_PERIOD_DAY,
+                                            RscpType.UChar8,
+                                            idlePeriod["day"],
+                                        ),
+                                        (
+                                            RscpTag.EMS_IDLE_PERIOD_ACTIVE,
+                                            RscpType.Bool,
+                                            idlePeriod["active"],
+                                        ),
+                                        (
+                                            RscpTag.EMS_IDLE_PERIOD_START,
                                             RscpType.Container,
                                             [
                                                 (
-                                                    RscpTag.EMS_IDLE_PERIOD_TYPE,
+                                                    RscpTag.EMS_IDLE_PERIOD_HOUR,
                                                     RscpType.UChar8,
-                                                    self._IDLE_TYPE[idle_type],
+                                                    idlePeriod["start"][0],
                                                 ),
                                                 (
-                                                    RscpTag.EMS_IDLE_PERIOD_DAY,
+                                                    RscpTag.EMS_IDLE_PERIOD_MINUTE,
                                                     RscpType.UChar8,
-                                                    idlePeriod["day"],
-                                                ),
-                                                (
-                                                    RscpTag.EMS_IDLE_PERIOD_ACTIVE,
-                                                    RscpType.Bool,
-                                                    idlePeriod["active"],
-                                                ),
-                                                (
-                                                    RscpTag.EMS_IDLE_PERIOD_START,
-                                                    RscpType.Container,
-                                                    [
-                                                        (
-                                                            RscpTag.EMS_IDLE_PERIOD_HOUR,
-                                                            RscpType.UChar8,
-                                                            idlePeriod["start"][0],
-                                                        ),
-                                                        (
-                                                            RscpTag.EMS_IDLE_PERIOD_MINUTE,
-                                                            RscpType.UChar8,
-                                                            idlePeriod["start"][1],
-                                                        ),
-                                                    ],
-                                                ),
-                                                (
-                                                    RscpTag.EMS_IDLE_PERIOD_END,
-                                                    RscpType.Container,
-                                                    [
-                                                        (
-                                                            RscpTag.EMS_IDLE_PERIOD_HOUR,
-                                                            RscpType.UChar8,
-                                                            idlePeriod["end"][0],
-                                                        ),
-                                                        (
-                                                            RscpTag.EMS_IDLE_PERIOD_MINUTE,
-                                                            RscpType.UChar8,
-                                                            idlePeriod["end"][1],
-                                                        ),
-                                                    ],
+                                                    idlePeriod["start"][1],
                                                 ),
                                             ],
-                                        )
-                                    )
-                                else:
-                                    raise ValueError(
-                                        "end time is smaller than start time in period "
-                                        + str(idlePeriod["day"])
-                                        + " in "
-                                        + idle_type
-                                        + " is not between 00:00 and 23:59"
-                                    )
-
+                                        ),
+                                        (
+                                            RscpTag.EMS_IDLE_PERIOD_END,
+                                            RscpType.Container,
+                                            [
+                                                (
+                                                    RscpTag.EMS_IDLE_PERIOD_HOUR,
+                                                    RscpType.UChar8,
+                                                    idlePeriod["end"][0],
+                                                ),
+                                                (
+                                                    RscpTag.EMS_IDLE_PERIOD_MINUTE,
+                                                    RscpType.UChar8,
+                                                    idlePeriod["end"][1],
+                                                ),
+                                            ],
+                                        ),
+                                    ],
+                                )
+                            )
                         else:
-                            raise TypeError("period in " + idle_type + " is not a dict")
+                            raise ValueError(
+                                "end time is smaller than start time in period "
+                                + str(idlePeriod["day"])
+                                + " in "
+                                + idle_type
+                                + " is not between 00:00 and 23:59"
+                            )
+
+                    else:
+                        raise TypeError("period in " + idle_type + " is not a dict")
 
                 else:
                     raise TypeError(idle_type + " is not a dict")
@@ -829,9 +675,9 @@ class E3DC:
         return True
 
     def get_db_data_timestamp(
-        self, startTimestamp: int, timespanSeconds: int, keepAlive=False
+        self, startTimestamp: int, timespanSeconds: int, keepAlive: bool = False
     ):
-        """Reads DB data and summed up values for the given timespan via rscp protocol locally.
+        """Reads DB data and summed up values for the given timespan via rscp protocol.
 
         Args:
             startTimestamp (int): UNIX timestampt from where the db data should be collected
@@ -906,9 +752,12 @@ class E3DC:
         return outObj
 
     def get_db_data(
-        self, startDate: datetime.date = None, timespan: str = "DAY", keepAlive=False
+        self,
+        startDate: datetime.date = datetime.date.today(),
+        timespan: Literal["DAY", "MONTH", "YEAR"] = "DAY",
+        keepAlive: bool = False,
     ):
-        """Reads DB data and summed up values for the given timespan via rscp protocol locally.
+        """Reads DB data and summed up values for the given timespan via rscp protocol.
 
         Args:
             startDate (datetime.date): start date for timespan, default today. Depending on timespan given,
@@ -934,9 +783,6 @@ class E3DC:
                     "timespanSeconds": <timespan in seconds of which db data is collected>
                 }
         """
-        if startDate is None:
-            startDate = datetime.date.today()
-
         if "YEAR" == timespan:
             requestDate = startDate.replace(day=1, month=1)
             span = 365 * 24 * 60 * 60
@@ -944,7 +790,7 @@ class E3DC:
             requestDate = startDate.replace(day=1)
             num_days = monthrange(requestDate.year, requestDate.month)[1]
             span = num_days * 24 * 60 * 60
-        elif "DAY" == timespan:
+        else:
             requestDate = startDate
             span = 24 * 60 * 60
 
@@ -961,8 +807,8 @@ class E3DC:
 
         return outObj
 
-    def get_system_info_static(self, keepAlive=False):
-        """Polls the static system info via rscp protocol locally.
+    def get_system_info_static(self, keepAlive: bool = False):
+        """Polls the static system info via rscp protocol.
 
         Args:
             keepAlive (Optional[bool]): True to keep connection alive
@@ -1029,8 +875,8 @@ class E3DC:
 
         return True
 
-    def get_system_info(self, keepAlive=False):
-        """Polls the system info via rscp protocol locally.
+    def get_system_info(self, keepAlive: bool = False):
+        """Polls the system info via rscp protocol.
 
         Args:
             keepAlive (Optional[bool]): True to keep connection alive
@@ -1074,8 +920,8 @@ class E3DC:
         }
         return outObj
 
-    def get_system_status(self, keepAlive=False):
-        """Polls the system status via rscp protocol locally.
+    def get_system_status(self, keepAlive: bool = False):
+        """Polls the system status via rscp protocol.
 
         Args:
             keepAlive (Optional[bool]): True to keep connection alive
@@ -1136,8 +982,8 @@ class E3DC:
         outObj = {k: SystemStatusBools[v] for k, v in outObj.items()}
         return outObj
 
-    def get_batteries(self, keepAlive=False):
-        """Scans for installed batteries via rscp protocol locally.
+    def get_batteries(self, keepAlive: bool = False):
+        """Scans for installed batteries via rscp protocol.
 
         Args:
             keepAlive (Optional[bool]): True to keep connection alive
@@ -1177,8 +1023,13 @@ class E3DC:
 
         return outObj
 
-    def get_battery_data(self, batIndex=None, dcbs=None, keepAlive=False):
-        """Polls the battery data via rscp protocol locally.
+    def get_battery_data(
+        self,
+        batIndex: int | None = None,
+        dcbs: List[int] | None = None,
+        keepAlive: bool = False,
+    ):
+        """Polls the battery data via rscp protocol.
 
         Args:
             batIndex (Optional[int]): battery index
@@ -1370,7 +1221,7 @@ class E3DC:
         }
 
         if dcbs is None:
-            dcbs = range(0, dcbCount)
+            dcbs = list(range(0, dcbCount))
 
         for dcb in dcbs:
             req = self.sendRequest(
@@ -1497,11 +1348,13 @@ class E3DC:
                 "voltages": voltages,
                 "warning": rscpFindTagIndex(info, RscpTag.BAT_DCB_WARNING),
             }
-            outObj["dcbs"][dcb] = dcbobj
+            outObj["dcbs"].update({dcb: dcbobj})  # type: ignore
         return outObj
 
-    def get_batteries_data(self, batteries=None, keepAlive=False):
-        """Polls the batteries data via rscp protocol locally.
+    def get_batteries_data(
+        self, batteries: List[Dict[str, Any]] | None = None, keepAlive: bool = False
+    ):
+        """Polls the batteries data via rscp protocol.
 
         Args:
             batteries (Optional[dict]): batteries dict
@@ -1517,7 +1370,7 @@ class E3DC:
 
         for battery in batteries:
             if "dcbs" in battery:
-                dcbs = range(0, battery["dcbs"])
+                dcbs = list(range(0, battery["dcbs"]))
             else:
                 dcbs = None
             outObj.append(
@@ -1532,8 +1385,8 @@ class E3DC:
 
         return outObj
 
-    def get_pvis(self, keepAlive=False):
-        """Scans for installed pvis via rscp protocol locally.
+    def get_pvis(self, keepAlive: bool = False):
+        """Scans for installed pvis via rscp protocol.
 
         Args:
             keepAlive (Optional[bool]): True to keep connection alive
@@ -1581,8 +1434,14 @@ class E3DC:
 
         return outObj
 
-    def get_pvi_data(self, pviIndex=None, strings=None, phases=None, keepAlive=False):
-        """Polls the inverter data via rscp protocol locally.
+    def get_pvi_data(
+        self,
+        pviIndex: int | None = None,
+        strings: List[int] | None = None,
+        phases: List[int] | None = None,
+        keepAlive: bool = False,
+    ):
+        """Polls the inverter data via rscp protocol.
 
         Args:
             pviIndex (int): pv inverter index
@@ -1655,7 +1514,7 @@ class E3DC:
         if pviIndex is None:
             pviIndex = self.pvis[0]["index"]
             if phases is None and "phases" in self.pvis[0]:
-                phases = range(0, self.pvis[0]["phases"])
+                phases = list(range(0, self.pvis[0]["phases"]))
 
         req = self.sendRequest(
             (
@@ -1773,14 +1632,14 @@ class E3DC:
                 ),
                 keepAlive=True,
             )
-            outObj["temperature"]["values"].append(
+            outObj["temperature"]["values"].append(  # type: ignore
                 rscpFindTagIndex(
                     rscpFindTag(req, RscpTag.PVI_TEMPERATURE), RscpTag.PVI_VALUE
                 )
             )
 
         if phases is None:
-            phases = range(0, maxPhaseCount)
+            phases = list(range(0, maxPhaseCount))
 
         for phase in phases:
             req = self.sendRequest(
@@ -1814,10 +1673,10 @@ class E3DC:
                 "current": rscpFindTagIndex(
                     rscpFindTag(req, RscpTag.PVI_AC_CURRENT), RscpTag.PVI_VALUE
                 ),
-                "apparentPower": rscpFindTag(
+                "apparentPower": rscpFindTagIndex(
                     rscpFindTag(req, RscpTag.PVI_AC_APPARENTPOWER),
                     RscpTag.PVI_VALUE,
-                )[2],
+                ),
                 "reactivePower": rscpFindTagIndex(
                     rscpFindTag(req, RscpTag.PVI_AC_REACTIVEPOWER),
                     RscpTag.PVI_VALUE,
@@ -1830,10 +1689,10 @@ class E3DC:
                     RscpTag.PVI_VALUE,
                 ),
             }
-            outObj["phases"][phase] = phaseobj
+            outObj["phases"].update({phase: phaseobj})  # type: ignore
 
         if strings is None:
-            strings = range(0, usedStringCount)
+            strings = list(range(0, usedStringCount))
 
         for string in strings:
             req = self.sendRequest(
@@ -1871,11 +1730,13 @@ class E3DC:
                     RscpTag.PVI_VALUE,
                 ),
             }
-            outObj["strings"][string] = stringobj
+            outObj["strings"].update({string: stringobj})  # type: ignore
         return outObj
 
-    def get_pvis_data(self, pvis=None, keepAlive=False):
-        """Polls the inverters data via rscp protocol locally.
+    def get_pvis_data(
+        self, pvis: List[Dict[str, Any]] | None = None, keepAlive: bool = False
+    ):
+        """Polls the inverters data via rscp protocol.
 
         Args:
             pvis (Optional[dict]): pvis dict
@@ -1891,12 +1752,12 @@ class E3DC:
 
         for pvi in pvis:
             if "strings" in pvi:
-                strings = range(0, pvi["strings"])
+                strings = list(range(0, pvi["strings"]))
             else:
                 strings = None
 
             if "phases" in pvi:
-                phases = range(0, pvi["phases"])
+                phases = list(range(0, pvi["phases"]))
             else:
                 phases = None
 
@@ -1913,8 +1774,8 @@ class E3DC:
 
         return outObj
 
-    def get_powermeters(self, keepAlive=False):
-        """Scans for installed power meters via rscp protocol locally.
+    def get_powermeters(self, keepAlive: bool = False):
+        """Scans for installed power meters via rscp protocol.
 
         Args:
             keepAlive (Optional[bool]): True to keep connection alive
@@ -1957,8 +1818,8 @@ class E3DC:
 
         return outObj
 
-    def get_powermeter_data(self, pmIndex=None, keepAlive=False):
-        """Polls the power meter data via rscp protocol locally.
+    def get_powermeter_data(self, pmIndex: int | None = None, keepAlive: bool = False):
+        """Polls the power meter data via rscp protocol.
 
         Args:
             pmIndex (Optional[int]): power meter index
@@ -2044,8 +1905,10 @@ class E3DC:
         }
         return outObj
 
-    def get_powermeters_data(self, powermeters=None, keepAlive=False):
-        """Polls the powermeters data via rscp protocol locally.
+    def get_powermeters_data(
+        self, powermeters: List[Dict[str, Any]] | None = None, keepAlive: bool = False
+    ):
+        """Polls the powermeters data via rscp protocol.
 
         Args:
             powermeters (Optional[dict]): powermeters dict
@@ -2071,12 +1934,8 @@ class E3DC:
 
         return outObj
 
-    def get_power_data(self, pmIndex=None, keepAlive=False):
-        """DEPRECATED: Please use get_powermeter_data() instead."""
-        return self.get_powermeter_data(pmIndex=pmIndex, keepAlive=keepAlive)
-
-    def get_power_settings(self, keepAlive=False):
-        """Polls the power settings via rscp protocol locally.
+    def get_power_settings(self, keepAlive: bool = False):
+        """Polls the power settings via rscp protocol.
 
         Args:
             keepAlive (Optional[bool]): True to keep connection alive
@@ -2122,13 +1981,13 @@ class E3DC:
 
     def set_power_limits(
         self,
-        enable,
-        max_charge=None,
-        max_discharge=None,
-        discharge_start=None,
-        keepAlive=False,
+        enable: bool,
+        max_charge: int | None = None,
+        max_discharge: int | None = None,
+        discharge_start: int | None = None,
+        keepAlive: bool = False,
     ):
-        """Setting the SmartPower power limits via rscp protocol locally.
+        """Setting the SmartPower power limits via rscp protocol.
 
         Args:
             enable (bool): True/False
@@ -2193,8 +2052,8 @@ class E3DC:
 
         return return_code
 
-    def set_powersave(self, enable, keepAlive=False):
-        """Setting the SmartPower power save via rscp protocol locally.
+    def set_powersave(self, enable: bool, keepAlive: bool = False):
+        """Setting the SmartPower power save via rscp protocol.
 
         Args:
             enable (bool): True/False
@@ -2227,8 +2086,8 @@ class E3DC:
         else:
             return -1
 
-    def set_weather_regulated_charge(self, enable, keepAlive=False):
-        """Setting the SmartCharge weather regulated charge via rscp protocol locally.
+    def set_weather_regulated_charge(self, enable: bool, keepAlive: bool = False):
+        """Setting the SmartCharge weather regulated charge via rscp protocol.
 
         Args:
             enable (bool): True/False
