@@ -25,4 +25,4 @@ __all__ = [
     "FrameError",
     "set_rscp_debug",
 ]
-__version__ = "0.8.2"
+__version__ = "0.8.3"
