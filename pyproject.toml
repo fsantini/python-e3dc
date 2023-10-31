@@ -1,3 +1,61 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pye3dc"
+authors = [
+    {name = "Francesco Santini", email = "francesco.santini@gmail.com"},
+    {name = "Christopher Banck", email = "christopher@banck.net"},
+]
+description = "E3/DC client for python"
+readme = "README.md"
+requires-python = ">=3.8"
+license = {text = "MIT"}
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: Web Environment",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
+dependencies = [
+    "py3rijndael",
+    "python-dateutil",
+    "tzlocal",
+    "websocket-client",
+]
+dynamic = ["version"]
+
+[project.optional-dependencies]
+develop = [
+    "jsbeautifier",
+    "argparse",
+    "docker",
+    "black",
+    "isort",
+    "flake8",
+    "flake8-docstrings",
+    "flake8-pyproject",
+    "pyright",
+]
+
+[project.urls]
+Documentation = "https://python-e3dc.readthedocs.io"
+Repository = "https://github.com/fsantini/python-e3dc"
+
+[tool.setuptools]
+packages = ["e3dc"]
+
+[tool.setuptools.dynamic]
+version = {attr = "e3dc.__version__"}
+
 [tool.black]
 target-version = ['py38','py39','py310','py311','py312']
 include = '\.pyi?$'
@@ -9,6 +67,16 @@ exclude = '''
   | dist
 )/
 '''
+
+[tool.flake8]
+exclude = [".venv", ".git", "build", "docs"]
+max-line-length = 88
+docstring-convention = "google"
+# E722 should be fixed
+extend-ignore = ["E203", "E302", "E501", "W293", "E722"]
+
+[tool.isort]
+profile = "black"
 
 [tool.pylint.messages_control]
 disable = "C0330, C0326"
