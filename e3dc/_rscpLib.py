@@ -10,7 +10,7 @@ import math
 import struct
 import time
 import zlib
-from typing import Any, Tuple
+from typing import Any, List, Tuple
 
 from ._rscpTags import (
     RscpTag,
@@ -85,7 +85,10 @@ def rscpFindTag(
     if decodedMsg[0] == tagStr:
         return decodedMsg
     if isinstance(decodedMsg[2], list):
-        for msg in decodedMsg[2]:
+        msgList: List[
+            Tuple[str | int | RscpTag, str | int | RscpType, Any]
+        ] = decodedMsg[2]
+        for msg in msgList:
             msgValue = rscpFindTag(msg, tag)
             if msgValue is not None:
                 return msgValue
@@ -171,7 +174,8 @@ def rscpEncode(
     elif rscptype == RscpType.Container:
         if isinstance(data, list):
             newData = b""
-            for dataChunk in data:
+            dataList: List[Tuple[str | int | RscpTag, str | int | RscpType, Any]] = data
+            for dataChunk in dataList:
                 newData += rscpEncode(
                     dataChunk[0], dataChunk[1], dataChunk[2]
                 )  # transform each dataChunk into byte array
@@ -269,7 +273,7 @@ def rscpDecode(
 
     if type_ == RscpType.Container:
         # this is a container: parse the inside
-        dataList = []
+        dataList: List[Tuple[str | int | RscpTag, str | int | RscpType, Any]] = []
         curByte = headerSize
         while curByte < headerSize + length:
             innerData, usedLength = rscpDecode(data[curByte:])

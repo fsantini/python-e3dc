@@ -359,7 +359,7 @@ class E3DC:
         descList = switchDesc[2]  # get the payload of the container
         statusList = switchStatus[2]
 
-        switchList = []
+        switchList: List[Dict[str, Any]] = []
 
         for switch in range(len(descList)):
             switchID = rscpFindTagIndex(descList[switch], RscpTag.HA_DATAPOINT_INDEX)
@@ -465,23 +465,26 @@ class E3DC:
         if idlePeriodsRaw[0] != RscpTag.EMS_GET_IDLE_PERIODS:
             return None
 
-        idlePeriods = {"idleCharge": [{}] * 7, "idleDischarge": [{}] * 7}
+        idlePeriods: Dict[str, List[Dict[str, Any]]] = {
+            "idleCharge": [] * 7,
+            "idleDischarge": [] * 7,
+        }
 
         # initialize
         for period in idlePeriodsRaw[2]:
-            active = rscpFindTagIndex(period, RscpTag.EMS_IDLE_PERIOD_ACTIVE)
+            active: bool = rscpFindTagIndex(period, RscpTag.EMS_IDLE_PERIOD_ACTIVE)
             typ = rscpFindTagIndex(period, RscpTag.EMS_IDLE_PERIOD_TYPE)
-            day = rscpFindTagIndex(period, RscpTag.EMS_IDLE_PERIOD_DAY)
+            day: int = rscpFindTagIndex(period, RscpTag.EMS_IDLE_PERIOD_DAY)
             start = rscpFindTag(period, RscpTag.EMS_IDLE_PERIOD_START)
-            startHour = rscpFindTagIndex(start, RscpTag.EMS_IDLE_PERIOD_HOUR)
-            startMin = rscpFindTagIndex(start, RscpTag.EMS_IDLE_PERIOD_MINUTE)
+            startHour: int = rscpFindTagIndex(start, RscpTag.EMS_IDLE_PERIOD_HOUR)
+            startMin: int = rscpFindTagIndex(start, RscpTag.EMS_IDLE_PERIOD_MINUTE)
             end = rscpFindTag(period, RscpTag.EMS_IDLE_PERIOD_END)
-            endHour = rscpFindTagIndex(end, RscpTag.EMS_IDLE_PERIOD_HOUR)
-            endMin = rscpFindTagIndex(end, RscpTag.EMS_IDLE_PERIOD_MINUTE)
+            endHour: int = rscpFindTagIndex(end, RscpTag.EMS_IDLE_PERIOD_HOUR)
+            endMin: int = rscpFindTagIndex(end, RscpTag.EMS_IDLE_PERIOD_MINUTE)
             periodObj = {
                 "day": day,
-                "start": [startHour, startMin],
-                "end": [endHour, endMin],
+                "start": (startHour, startMin),
+                "end": (endHour, endMin),
                 "active": active,
             }
 
@@ -542,7 +545,7 @@ class E3DC:
             True if success
             False if error
         """
-        periodList = []
+        periodList: List[Tuple[RscpTag, RscpType, Any]] = []
 
         if "idleCharge" not in idlePeriods and "idleDischarge" not in idlePeriods:
             raise ValueError("neither key idleCharge nor idleDischarge in object")
@@ -994,7 +997,7 @@ class E3DC:
                 ]
         """
         maxBatteries = 8
-        outObj = []
+        outObj: List[Dict[str, int]] = []
         for batIndex in range(maxBatteries):
             try:
                 req = self.sendRequest(
@@ -1170,7 +1173,7 @@ class E3DC:
         dcbCount = rscpFindTagIndex(req, RscpTag.BAT_DCB_COUNT)
         deviceStateContainer = rscpFindTag(req, RscpTag.BAT_DEVICE_STATE)
 
-        outObj = {
+        outObj: Dict[str, Any] = {
             "asoc": rscpFindTagIndex(req, RscpTag.BAT_ASOC),
             "chargeCycles": rscpFindTagIndex(req, RscpTag.BAT_CHARGE_CYCLES),
             "current": rscpFindTagIndex(req, RscpTag.BAT_CURRENT),
@@ -1255,9 +1258,9 @@ class E3DC:
 
             # Initialize default values for DCB
             sensorCount = 0
-            temperatures = []
+            temperatures: List[float] = []
             seriesCellCount = 0
-            voltages = []
+            voltages: List[float] = []
 
             # Set temperatures, if available for the device
             temperatures_raw = rscpFindTag(req, RscpTag.BAT_DCB_ALL_CELL_TEMPERATURES)
@@ -1283,7 +1286,7 @@ class E3DC:
                 for cell in range(0, seriesCellCount):
                     voltages.append(voltages_data[cell][2])
 
-            dcbobj = {
+            dcbobj: Dict[str, Any] = {
                 "current": rscpFindTagIndex(info, RscpTag.BAT_DCB_CURRENT),
                 "currentAvg30s": rscpFindTagIndex(
                     info, RscpTag.BAT_DCB_CURRENT_AVG_30S
@@ -1366,7 +1369,7 @@ class E3DC:
         if batteries is None:
             batteries = self.batteries
 
-        outObj = []
+        outObj: List[Dict[str, Any]] = []
 
         for battery in batteries:
             if "dcbs" in battery:
@@ -1397,7 +1400,7 @@ class E3DC:
                 ]
         """
         maxPvis = 8
-        outObj = []
+        outObj: List[Dict[str, Any]] = []
         for pviIndex in range(maxPvis):
             req = self.sendRequest(
                 (
@@ -1555,7 +1558,7 @@ class E3DC:
         frequency = rscpFindTag(req, RscpTag.PVI_FREQUENCY_UNDER_OVER)
         deviceState = rscpFindTag(req, RscpTag.PVI_DEVICE_STATE)
 
-        outObj = {
+        outObj: Dict[str, Any] = {
             "acMaxApparentPower": rscpFindTagIndex(
                 rscpFindTag(req, RscpTag.PVI_AC_MAX_APPARENTPOWER), RscpTag.PVI_VALUE
             ),
@@ -1748,7 +1751,7 @@ class E3DC:
         if pvis is None:
             pvis = self.pvis
 
-        outObj = []
+        outObj: List[Dict[str, Any]] = []
 
         for pvi in pvis:
             if "strings" in pvi:
@@ -1789,7 +1792,7 @@ class E3DC:
                 ]
         """
         maxPowermeters = 8
-        outObj = []
+        outObj: List[Dict[str, Any]] = []
         for pmIndex in range(
             maxPowermeters
         ):  # max 8 powermeters according to E3DC spec
@@ -1920,7 +1923,7 @@ class E3DC:
         if powermeters is None:
             powermeters = self.powermeters
 
-        outObj = []
+        outObj: List[Dict[str, Any]] = []
 
         for powermeter in powermeters:
             outObj.append(

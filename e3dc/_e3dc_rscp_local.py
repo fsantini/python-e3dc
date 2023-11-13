@@ -103,7 +103,7 @@ class E3DC_RSCP_local:
         except RSCPKeyError:
             self.disconnect()
             raise
-        except:
+        except Exception:
             self.disconnect()
             raise CommunicationError
 
@@ -125,7 +125,7 @@ class E3DC_RSCP_local:
             self.socket.connect((self.ip, PORT))
             self.processedData = None
             self.connected = True
-        except:
+        except Exception:
             self.disconnect()
             raise CommunicationError
         self.encdec = RSCPEncryptDecrypt(self.key)

@@ -121,7 +121,7 @@ class E3DC_RSCP_web:
         self.ws = WebSocketApp(
             REMOTE_ADDRESS,
             on_message=lambda _, msg: self.on_message(  # pyright: ignore [reportUnknownLambdaType]
-                msg
+                msg  # pyright: ignore [reportUnknownArgumentType]
             ),
             on_close=lambda _: self.reset(),  # pyright: ignore [reportUnknownLambdaType]
             on_error=lambda _: self.reset(),  # pyright: ignore [reportUnknownLambdaType]
@@ -130,7 +130,7 @@ class E3DC_RSCP_web:
 
     def reset(self):
         """Method to reset E3DC rscp web instance."""
-        self.ws.close()
+        self.ws.close()  # pyright: ignore [reportUnknownMemberType]
         self.conId: int = 0
         self.authLevel = None
         self.virtConId = None
@@ -413,7 +413,9 @@ class E3DC_RSCP_web:
     def connect(self):
         """Connect to E3DC system."""
         self.reset()
-        self.thread = threading.Thread(target=self.ws.run_forever)
+        self.thread = threading.Thread(
+            target=self.ws.run_forever  # pyright: ignore [reportUnknownMemberType, reportUnknownArgumentType]
+        )
 
         self.thread.start()
 
