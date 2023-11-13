@@ -74,7 +74,7 @@ class E3DC:
             ipAddress (str): IP address of the E3DC system - required for CONNECT_LOCAL
             key (str): encryption key as set in the E3DC settings - required for CONNECT_LOCAL
             serialNumber (str): the serial number of the system to monitor - required for CONNECT_WEB
-            isPasswordMd5 (Optional[bool]): indicates whether the password is already md5 digest (recommended, default = True) - required for CONNECT_WEB
+            isPasswordMd5 (bool): indicates whether the password is already md5 digest (recommended, default = True) - required for CONNECT_WEB
             configuration (Optional[dict]): dict containing details of the E3DC configuration. {"pvis": [{"index": 0, "strings": 2, "phases": 3}], "powermeters": [{"index": 0}], "batteries": [{"index": 0, "dcbs": 1}]}
         """
         self.connectType = connectType
@@ -208,8 +208,8 @@ class E3DC:
 
         Args:
             request: the request to send
-            retries (Optional[int]): number of retries
-            keepAlive (Optional[bool]): True to keep connection alive
+            retries (int): number of retries. Defaults to 3.
+            keepAlive (bool): True to keep connection alive. Defaults to False.
 
         Returns:
             An object with the received data
@@ -250,8 +250,8 @@ class E3DC:
 
         Args:
             tag (str): the request to send
-            retries (Optional[int]): number of retries
-            keepAlive (Optional[bool]): True to keep connection alive
+            retries (int): number of retries. Defaults to 3.
+            keepAlive (bool): True to keep connection alive. Defaults to False.
 
         Returns:
             An object with the received data
@@ -272,7 +272,7 @@ class E3DC:
         """Polls via rscp protocol.
 
         Args:
-            keepAlive (Optional[bool]): True to keep connection alive
+            keepAlive (bool): True to keep connection alive. Defaults to False.
 
         Returns:
             dict: Dictionary containing the condensed status information structured as follows::
@@ -331,7 +331,7 @@ class E3DC:
         """This function uses the RSCP interface to poll the switch status.
 
         Args:
-            keepAlive (Optional[bool]): True to keep connection alive
+            keepAlive (bool): True to keep connection alive. Defaults to False.
 
         Returns:
             list[dict]: list of the switches::
@@ -387,7 +387,7 @@ class E3DC:
         Args:
             switchID (int): id of the switch
             value (str): value
-            keepAlive (Optional[bool]): True to keep connection alive
+            keepAlive (bool): True to keep connection alive. Defaults to False.
 
         Returns:
             True/False
@@ -416,7 +416,7 @@ class E3DC:
         """Poll via rscp protocol to get idle periods.
 
         Args:
-            keepAlive (Optional[bool]): True to keep connection alive
+            keepAlive (bool): True to keep connection alive. Defaults to False.
 
         Returns:
             dict: Dictionary containing the idle periods structured as follows::
@@ -427,15 +427,15 @@ class E3DC:
                         {
                             "day": <the week day from 0 to 6>,
                             "start":
-                            [
+                            (
                                 <hour from 0 to 23>,
                                 <minute from 0 to 59>
-                            ],
+                            ),
                             "end":
-                            [
+                            (
                                 <hour from 0 to 23>,
                                 <minute from 0 to 59>
-                            ],
+                            ),
                             "active": <boolean of state>
                         }
                     ],
@@ -444,15 +444,15 @@ class E3DC:
                         {
                             "day": <the week day from 0 to 6>,
                             "start":
-                            [
+                            (
                                 <hour from 0 to 23>,
                                 <minute from 0 to 59>
-                            ],
+                            ),
                             "end":
-                            [
+                            (
                                 <hour from 0 to 23>,
                                 <minute from 0 to 59>
-                            ],
+                            ),
                             "active": <boolean of state>
                         }
                     ]
@@ -509,15 +509,15 @@ class E3DC:
                         {
                             "day": <the week day from 0 to 6>,
                             "start":
-                            [
+                            (
                                 <hour from 0 to 23>,
                                 <minute from 0 to 59>
-                            ],
+                            ),
                             "end":
-                            [
+                            (
                                 <hour from 0 to 23>,
                                 <minute from 0 to 59>
-                            ],
+                            ),
                             "active": <boolean of state>
                         }
                     ],
@@ -526,20 +526,20 @@ class E3DC:
                         {
                             "day": <the week day from 0 to 6>,
                             "start":
-                            [
+                            (
                                 <hour from 0 to 23>,
                                 <minute from 0 to 59>
-                            ],
+                            ),
                             "end":
-                            [
+                            (
                                 <hour from 0 to 23>,
                                 <minute from 0 to 59>
-                            ],
+                            ),
                             "active": <boolean of state>
                         }
                     ]
                 }
-            keepAlive (Optional[bool]): True to keep connection alive
+            keepAlive (bool): True to keep connection alive. Defaults to False.
 
         Returns:
             True if success
@@ -685,7 +685,7 @@ class E3DC:
         Args:
             startTimestamp (int): UNIX timestampt from where the db data should be collected
             timespanSeconds (int): number of seconds for which the data should be collected
-            keepAlive (Optional[bool]): True to keep connection alive
+            keepAlive (bool): True to keep connection alive. Defaults to False.
 
         Returns:
             dict: Dictionary containing the stored db information structured as follows::
@@ -766,7 +766,7 @@ class E3DC:
             startDate (datetime.date): start date for timespan, default today. Depending on timespan given,
                 the startDate is automatically adjusted to the first of the month or the year
             timespan (str): string specifying the time span ["DAY", "MONTH", "YEAR"]
-            keepAlive (Optional[bool]): True to keep connection alive
+            keepAlive (bool): True to keep connection alive. Defaults to False.
 
         Returns:
             dict: Dictionary containing the stored db information structured as follows::
@@ -814,7 +814,7 @@ class E3DC:
         """Polls the static system info via rscp protocol.
 
         Args:
-            keepAlive (Optional[bool]): True to keep connection alive
+            keepAlive (bool): True to keep connection alive. Defaults to False.
         """
         self.deratePercent = (
             self.sendRequestTag(RscpTag.EMS_REQ_DERATE_AT_PERCENT_VALUE, keepAlive=True)
@@ -882,7 +882,7 @@ class E3DC:
         """Polls the system info via rscp protocol.
 
         Args:
-            keepAlive (Optional[bool]): True to keep connection alive
+            keepAlive (bool): True to keep connection alive. Defaults to False.
 
         Returns:
             dict: Dictionary containing the system info structured as follows::
@@ -927,7 +927,7 @@ class E3DC:
         """Polls the system status via rscp protocol.
 
         Args:
-            keepAlive (Optional[bool]): True to keep connection alive
+            keepAlive (bool): True to keep connection alive. Defaults to False.
 
         Returns:
             dict: Dictionary containing the system status structured as follows::
@@ -989,7 +989,8 @@ class E3DC:
         """Scans for installed batteries via rscp protocol.
 
         Args:
-            keepAlive (Optional[bool]): True to keep connection alive
+            keepAlive (bool): True to keep connection alive. Defaults to False.
+
         Returns:
             list[dict]: List containing the found batteries as follows.:
                 [
@@ -1037,7 +1038,7 @@ class E3DC:
         Args:
             batIndex (Optional[int]): battery index
             dcbs (Optional[list]): dcb list
-            keepAlive (Optional[bool]): True to keep connection alive
+            keepAlive (bool): True to keep connection alive. Defaults to False.
 
         Returns:
             dict: Dictionary containing the battery data structured as follows::
@@ -1361,7 +1362,7 @@ class E3DC:
 
         Args:
             batteries (Optional[dict]): batteries dict
-            keepAlive (Optional[bool]): True to keep connection alive
+            keepAlive (bool): True to keep connection alive. Defaults to False.
 
         Returns:
             list[dict]: Returns a list of batteries data
@@ -1392,7 +1393,8 @@ class E3DC:
         """Scans for installed pvis via rscp protocol.
 
         Args:
-            keepAlive (Optional[bool]): True to keep connection alive
+            keepAlive (bool): True to keep connection alive. Defaults to False.
+
         Returns:
             list[dict]: List containing the found pvis as follows.::
                 [
@@ -1450,7 +1452,7 @@ class E3DC:
             pviIndex (int): pv inverter index
             strings (Optional[list]): string list
             phases (Optional[list]): phase list
-            keepAlive (Optional[bool]): True to keep connection alive
+            keepAlive (bool): True to keep connection alive. Defaults to False.
 
         Returns:
             dict: Dictionary containing the pvi data structured as follows::
@@ -1743,7 +1745,7 @@ class E3DC:
 
         Args:
             pvis (Optional[dict]): pvis dict
-            keepAlive (Optional[bool]): True to keep connection alive
+            keepAlive (bool): True to keep connection alive. Defaults to False.
 
         Returns:
             list[dict]: Returns a list of pvi data
@@ -1781,7 +1783,7 @@ class E3DC:
         """Scans for installed power meters via rscp protocol.
 
         Args:
-            keepAlive (Optional[bool]): True to keep connection alive
+            keepAlive (bool): True to keep connection alive. Defaults to False.
 
         Returns:
             list[dict]: List containing the found powermeters as follows.::
@@ -1826,7 +1828,7 @@ class E3DC:
 
         Args:
             pmIndex (Optional[int]): power meter index
-            keepAlive (Optional[bool]): True to keep connection alive
+            keepAlive (bool): True to keep connection alive. Defaults to False.
 
         Returns:
             dict: Dictionary containing the power data structured as follows::
@@ -1915,7 +1917,7 @@ class E3DC:
 
         Args:
             powermeters (Optional[dict]): powermeters dict
-            keepAlive (Optional[bool]): True to keep connection alive
+            keepAlive (bool): True to keep connection alive. Defaults to False.
 
         Returns:
             list[dict]: Returns a list of powermeters data
@@ -1941,7 +1943,7 @@ class E3DC:
         """Polls the power settings via rscp protocol.
 
         Args:
-            keepAlive (Optional[bool]): True to keep connection alive
+            keepAlive (bool): True to keep connection alive. Defaults to False.
 
         Returns:
             dict: Dictionary containing the power settings structured as follows::
@@ -1997,7 +1999,7 @@ class E3DC:
             max_charge (Optional[int]): maximum charge power
             max_discharge (Optional[int]: maximum discharge power
             discharge_start (Optional[int]: power where discharged is started
-            keepAlive (Optional[bool]): True to keep connection alive
+            keepAlive (bool): True to keep connection alive. Defaults to False.
 
         Returns:
             0 if success
@@ -2060,7 +2062,7 @@ class E3DC:
 
         Args:
             enable (bool): True/False
-            keepAlive (Optional[bool]): True to keep connection alive
+            keepAlive (bool): True to keep connection alive. Defaults to False.
 
         Returns:
             0 if success
@@ -2094,7 +2096,7 @@ class E3DC:
 
         Args:
             enable (bool): True/False
-            keepAlive (Optional[bool]): True to keep connection alive
+            keepAlive (bool): True to keep connection alive. Defaults to False.
 
         Returns:
             0 if success
