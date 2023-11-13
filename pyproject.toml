@@ -73,7 +73,7 @@ exclude = [".venv", ".git", "build", "docs"]
 max-line-length = 88
 docstring-convention = "google"
 # E722 should be fixed
-extend-ignore = ["E203", "E302", "E501", "W293", "E722"]
+extend-ignore = ["E203", "E302", "E501", "W293"]
 
 [tool.isort]
 profile = "black"
@@ -84,7 +84,3 @@ disable = "C0330, C0326"
 [tool.pyright]
 ignore = ["tools/*", "build/*", "dist/*", ".venv/*"]
 typeCheckingMode = "strict"
-reportUnknownVariableType = "warning"
-reportUnknownArgumentType = "warning"
-reportUnknownMemberType = "warning"
-reportUnknownParameterType = "warning"
