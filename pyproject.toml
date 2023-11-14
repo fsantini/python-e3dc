@@ -53,6 +53,9 @@ Repository = "https://github.com/fsantini/python-e3dc"
 [tool.setuptools]
 packages = ["e3dc"]
 
+[tool.setuptools.package-data]
+"*" = ["py.typed"]
+
 [tool.setuptools.dynamic]
 version = {attr = "e3dc.__version__"}
 
