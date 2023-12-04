@@ -13,7 +13,7 @@ import time
 from typing import Any, Callable, Tuple
 
 import tzlocal
-from websocket import ABNF, WebSocketApp  # pyright: ignore [reportMissingTypeStubs]
+from websocket import ABNF, WebSocketApp  # pyright: ignore [reportPrivateImportUsage]
 
 from ._rscpLib import (
     rscpDecode,
@@ -120,11 +120,9 @@ class E3DC_RSCP_web:
         self.serialNumberWithPrefix = serialNumberWithPrefix.encode("utf-8")
         self.ws = WebSocketApp(
             REMOTE_ADDRESS,
-            on_message=lambda _, msg: self.on_message(  # pyright: ignore [reportUnknownLambdaType]
-                msg  # pyright: ignore [reportUnknownArgumentType]
-            ),
-            on_close=lambda _: self.reset(),  # pyright: ignore [reportUnknownLambdaType]
-            on_error=lambda _: self.reset(),  # pyright: ignore [reportUnknownLambdaType]
+            on_message=lambda _, msg: self.on_message(msg),
+            on_close=lambda _ws, _, __: self.reset(),
+            on_error=lambda _ws, _: self.reset(),
         )
         self.reset()
 
@@ -163,9 +161,7 @@ class E3DC_RSCP_web:
         )
 
         # print("--------------------- Sending virtual conn")
-        self.ws.send(
-            virtualConn, ABNF.OPCODE_BINARY  # pyright: ignore [reportGeneralTypeIssues]
-        )
+        self.ws.send(virtualConn, ABNF.OPCODE_BINARY)
 
     def respondToINFORequest(
         self, decoded: Tuple[str | int | RscpTag, str | int | RscpType, Any]
@@ -255,9 +251,7 @@ class E3DC_RSCP_web:
                 ],
             )
         )
-        self.ws.send(
-            reply, ABNF.OPCODE_BINARY  # pyright: ignore [reportGeneralTypeIssues]
-        )
+        self.ws.send(reply, ABNF.OPCODE_BINARY)
 
     def on_message(self, message: bytes):
         """Method to handle a received message."""
@@ -278,7 +272,7 @@ class E3DC_RSCP_web:
                 rscpEncode(RscpTag.SERVER_PING, RscpType.NoneType, None)
             )
             self.ws.send(
-                pingFrame,  # pyright: ignore [reportGeneralTypeIssues]
+                pingFrame,
                 ABNF.OPCODE_BINARY,
             )
             return
@@ -328,9 +322,7 @@ class E3DC_RSCP_web:
             )
 
             self.ws.send(
-                rscpFrame(
-                    responseContainer
-                ),  # pyright: ignore [reportGeneralTypeIssues]
+                rscpFrame(responseContainer),
                 ABNF.OPCODE_BINARY,
             )
 
@@ -406,9 +398,7 @@ class E3DC_RSCP_web:
             )
         )
 
-        self.ws.send(
-            outerFrame, ABNF.OPCODE_BINARY  # pyright: ignore [reportGeneralTypeIssues]
-        )
+        self.ws.send(outerFrame, ABNF.OPCODE_BINARY)
 
     def connect(self):
         """Connect to E3DC system."""
