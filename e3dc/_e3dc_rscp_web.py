@@ -354,10 +354,10 @@ class E3DC_RSCP_web:
     def _sendRequest_internal(
         self,
         innerFrame: bytes | Tuple[str | int | RscpTag, str | int | RscpType, Any],
-        callback: Callable[
-            [Tuple[str | int | RscpTag, str | int | RscpType, Any]], None
-        ]
-        | None = None,
+        callback: (
+            Callable[[Tuple[str | int | RscpTag, str | int | RscpType, Any]], None]
+            | None
+        ) = None,
     ):
         """Internal send request method.
 
