@@ -51,11 +51,16 @@ class Testcontainers:
             },
         )
 
-    def exec_cmd_stream(self, command):
+    def exec_cmd_stream(self, command, verbose=True):
         """Execute a command and stream output."""
-        _, stream = self.container.exec_run(cmd=command, stream=True)
+        exec_id = self.container.client.api.exec_create(self.container.id, command)
+        stream = self.container.client.api.exec_start(exec_id, stream=True)
         for data in stream:
-            print(data.decode(), end="")
+            if verbose:
+                print(data.decode(), end="")
+        result = self.container.client.api.exec_inspect(exec_id)["ExitCode"]
+        if result != 0:
+            exit(1)
 
     def exec_cmd(self, command, verbose=True):
         """Execute a command and validate return code."""
@@ -130,10 +135,12 @@ for version in json.loads(args["list"]):
     )
     cmd = "sh -c 'python tools/tests.py -u $USERNAME -p $PASSWORD -c $CONFIG"
     if args["module"] == "local":
-        testcontainers.exec_cmd("pip install .", args["verbose"])
+        testcontainers.exec_cmd_stream("pip install .[develop]", args["verbose"])
+        print("Running black, flake8, isort and pyright:")
+        testcontainers.exec_cmd_stream("tools/validate.sh", args["verbose"])
     else:
-        testcontainers.exec_cmd(
-            "pip install pye3dc=={}".format(args["module"]), args["verbose"]
+        testcontainers.exec_cmd_stream(
+            "pip install pye3dc[develop]=={}".format(args["module"]), args["verbose"]
         )
         cmd = cmd + " -m"
     if args["key"]:
@@ -144,5 +151,5 @@ for version in json.loads(args["list"]):
         cmd = cmd + " -v'"
     else:
         cmd = cmd + "'"
-    testcontainers.exec_cmd(cmd)
+    testcontainers.exec_cmd_stream(cmd)
     testcontainers.remove()
