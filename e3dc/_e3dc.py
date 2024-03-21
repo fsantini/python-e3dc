@@ -391,15 +391,13 @@ class E3DC:
             True/False
 
         """
-        cmd = "on" if value else "off"
-
         result = self.sendRequest(
             (
                 RscpTag.HA_REQ_COMMAND_ACTUATOR,
                 RscpType.Container,
                 [
                     (RscpTag.HA_DATAPOINT_INDEX, RscpType.Uint16, switchID),
-                    (RscpTag.HA_REQ_COMMAND, RscpType.CString, cmd),
+                    (RscpTag.HA_REQ_COMMAND, RscpType.CString, value),
                 ],
             ),
             keepAlive=keepAlive,
