@@ -318,9 +318,7 @@ class E3DC:
             "production": {"solar": solar, "add": -add, "grid": grid},
             "selfConsumption": sc,
             "stateOfCharge": soc,
-            "time": datetime.datetime.utcfromtimestamp(ts).replace(
-                tzinfo=datetime.timezone.utc
-            ),
+            "time": datetime.datetime.fromtimestamp(ts, tz=datetime.timezone.utc),
         }
 
         self.lastRequest = outObj
