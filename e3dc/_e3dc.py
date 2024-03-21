@@ -1247,9 +1247,9 @@ class E3DC:
                         (RscpTag.BAT_REQ_DCB_INFO, RscpType.Uint16, dcb),
                     ],
                 ),
-                keepAlive=True
-                if dcb != dcbs[-1]
-                else keepAlive,  # last request should honor keepAlive
+                keepAlive=(
+                    True if dcb != dcbs[-1] else keepAlive
+                ),  # last request should honor keepAlive
             )
 
             info = rscpFindTag(req, RscpTag.BAT_DCB_INFO)
@@ -1381,9 +1381,11 @@ class E3DC:
                 self.get_battery_data(
                     batIndex=battery["index"],
                     dcbs=dcbs,
-                    keepAlive=True
-                    if battery["index"] != batteries[-1]["index"]
-                    else keepAlive,  # last request should honor keepAlive
+                    keepAlive=(
+                        True
+                        if battery["index"] != batteries[-1]["index"]
+                        else keepAlive
+                    ),  # last request should honor keepAlive
                 )
             )
 
@@ -1716,9 +1718,9 @@ class E3DC:
                         ),
                     ],
                 ),
-                keepAlive=True
-                if string != strings[-1]
-                else keepAlive,  # last request should honor keepAlive
+                keepAlive=(
+                    True if string != strings[-1] else keepAlive
+                ),  # last request should honor keepAlive
             )
             stringobj = {
                 "power": rscpFindTagIndex(
@@ -1771,9 +1773,9 @@ class E3DC:
                     pviIndex=pvi["index"],
                     strings=strings,
                     phases=phases,
-                    keepAlive=True
-                    if pvi["index"] != pvis[-1]["index"]
-                    else keepAlive,  # last request should honor keepAlive
+                    keepAlive=(
+                        True if pvi["index"] != pvis[-1]["index"] else keepAlive
+                    ),  # last request should honor keepAlive
                 )
             )
 
@@ -1931,9 +1933,11 @@ class E3DC:
             outObj.append(
                 self.get_powermeter_data(
                     pmIndex=powermeter["index"],
-                    keepAlive=True
-                    if powermeter["index"] != powermeters[-1]["index"]
-                    else keepAlive,  # last request should honor keepAlive
+                    keepAlive=(
+                        True
+                        if powermeter["index"] != powermeters[-1]["index"]
+                        else keepAlive
+                    ),  # last request should honor keepAlive
                 )
             )
 

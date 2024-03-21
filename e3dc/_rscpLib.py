@@ -85,9 +85,9 @@ def rscpFindTag(
     if decodedMsg[0] == tagStr:
         return decodedMsg
     if isinstance(decodedMsg[2], list):
-        msgList: List[
-            Tuple[str | int | RscpTag, str | int | RscpType, Any]
-        ] = decodedMsg[2]
+        msgList: List[Tuple[str | int | RscpTag, str | int | RscpType, Any]] = (
+            decodedMsg[2]
+        )
         for msg in msgList:
             msgValue = rscpFindTag(msg, tag)
             if msgValue is not None:
