@@ -140,7 +140,7 @@ for version in json.loads(args["list"]):
         testcontainers.exec_cmd_stream("tools/validate.sh", args["verbose"])
     else:
         testcontainers.exec_cmd_stream(
-            "pip install pye3dc[develop]=={}".format(args["module"]), args["verbose"]
+            "pip install pye3dc=={}".format(args["module"]), args["verbose"]
         )
         cmd = cmd + " -m"
     if args["key"]:
