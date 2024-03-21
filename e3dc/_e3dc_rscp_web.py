@@ -47,7 +47,7 @@ from ._rscpTags import RscpTag, RscpType, getRscpTag
  
 """
 
-REMOTE_ADDRESS = "wss://s10.e3dc.com/ws/"
+REMOTE_ADDRESS = "wss://s10.e3dc.com/ws"
 
 
 class SocketNotReady(Exception):
