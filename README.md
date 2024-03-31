@@ -75,7 +75,7 @@ TCP_IP = '192.168.1.57'
 USERNAME = 'test@test.com'
 PASS = 'MySecurePassword'
 KEY = 'abc123'
-CONFIG = {} 
+CONFIG = {}
 # CONFIG = {"powermeters": [{"index": 6}]}
 
 print("local connection")
@@ -96,7 +96,7 @@ from e3dc import E3DC
 USERNAME = 'test@test.com'
 PASS = 'MySecurePassword'
 SERIALNUMBER = 'S10-012345678910'
-CONFIG = {} 
+CONFIG = {}
 
 print("web connection")
 e3dc_obj = E3DC(E3DC.CONNECT_WEB, username=USERNAME, password=PASS, serialNumber = SERIALNUMBER, isPasswordMd5=False, configuration = CONFIG)
@@ -148,9 +148,16 @@ Poll returns a dictionary like the following:
 - `get_powermeter_data()`
 - `get_powermeters_data()`
 - `get_power_settings()`
+- `get_wallbox_data()`
+- `set_battery_to_car_mode()`
 - `set_power_limits()`
 - `set_powersave()`
+- `set_wallbox_max_charge_current()`
+- `set_wallbox_phases()`
+- `set_wallbox_schuko()`
+- `set_wallbox_sunmode()`
 - `set_weather_regulated_charge()`
+- `toggle_wallbox_charging()`
 
 See the full documentation on [ReadTheDocs](https://python-e3dc.readthedocs.io/en/latest/)
 
