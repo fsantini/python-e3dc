@@ -994,6 +994,7 @@ class E3DC:
 
                 {
                     "appSoftware": <version of the app>,
+                    "batteryToCar": <true if the wallbox may use the battery, otherwise false>,
                     "chargingActive": <true if charging is currently active, otherwise false>,
                     "chargingCanceled": <true if charging was manually canceled, otherwise false>,
                     "consumptionNet": <power currently consumed by the wallbox, provided by the grid in watts>,
@@ -1023,7 +1024,7 @@ class E3DC:
                     ("WB_REQ_KEY_STATE", "None", None),
                 ],
             ),
-            keepAlive=keepAlive,
+            keepAlive=True,
         )
 
         outObj = {
@@ -1063,6 +1064,14 @@ class E3DC:
         key_state = rscpFindTag(req, "WB_KEY_STATE")
         if key_state is not None:
             outObj["keyState"] = rscpFindTagIndex(key_state, "WB_KEY_STATE")
+
+        req = self.sendRequest(
+            ("EMS_REQ_BATTERY_TO_CAR_MODE", "None", None),
+            keepAlive=keepAlive,
+        )
+        battery_to_car = rscpFindTag(req, "EMS_BATTERY_TO_CAR_MODE")
+        if battery_to_car is not None:
+            outObj["batteryToCar"] = rscpFindTagIndex(battery_to_car, "EMS_BATTERY_TO_CAR_MODE")
 
         outObj = {k: v for k, v in sorted(outObj.items())}
         return outObj
@@ -1157,6 +1166,20 @@ class E3DC:
                     ),
                 ],
             ),
+            keepAlive=keepAlive,
+        )
+
+    def set_battery_to_car_mode(
+        self, enabled: bool, keepAlive=False
+    ):
+        """Sets whether the wallbox may use the battery.
+
+        Args:
+            enabled (bool): True to enable charging the car using the battery
+            keepAlive (Optional[bool]): True to keep connection alive
+        """
+        _ = self.sendRequest(
+            ('EMS_REQ_SET_BATTERY_TO_CAR_MODE', "UChar8", 1 if enabled else 0),
             keepAlive=keepAlive,
         )
 
