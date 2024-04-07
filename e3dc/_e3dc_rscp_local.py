@@ -8,6 +8,7 @@ import socket
 
 from ._RSCPEncryptDecrypt import RSCPEncryptDecrypt
 from ._rscpLib import rscpDecode, rscpEncode, rscpFrame
+from ._rscpTags import RscpError, RscpTag, RscpType
 
 PORT = 5033
 BUFFER_SIZE = 1024 * 32
@@ -98,9 +99,9 @@ class E3DC_RSCP_local:
 
         if receive[1] == "Error":
             self.disconnect()
-            if receive[2] == "RSCP_ERR_ACCESS_DENIED":
+            if receive[2] == RscpError.RSCP_ERR_ACCESS_DENIED.name:
                 raise RSCPAuthenticationError
-            elif receive[2] == "RSCP_ERR_NOT_AVAILABLE":
+            elif receive[2] == RscpError.RSCP_ERR_NOT_AVAILABLE.name:
                 raise RSCPNotAvailableError
             else:
                 raise CommunicationError(receive[2])
@@ -122,11 +123,15 @@ class E3DC_RSCP_local:
 
         self.sendRequest(
             (
-                "RSCP_REQ_AUTHENTICATION",
-                "Container",
+                RscpTag.RSCP_REQ_AUTHENTICATION,
+                RscpType.Container,
                 [
-                    ("RSCP_AUTHENTICATION_USER", "CString", self.username),
-                    ("RSCP_AUTHENTICATION_PASSWORD", "CString", self.password),
+                    (RscpTag.RSCP_AUTHENTICATION_USER, RscpType.CString, self.username),
+                    (
+                        RscpTag.RSCP_AUTHENTICATION_PASSWORD,
+                        RscpType.CString,
+                        self.password,
+                    ),
                 ],
             )
         )
