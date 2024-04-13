@@ -982,7 +982,7 @@ class E3DC:
         outObj = {k: SystemStatusBools[v] for k, v in outObj.items()}
         return outObj
 
-    def get_wallbox_data(self, wbIndex=0, keepAlive=False):
+    def get_wallbox_data(self, wbIndex: int = 0, keepAlive: bool = False):
         """Polls the wallbox status via rscp protocol locally.
 
         Args:
@@ -1071,12 +1071,16 @@ class E3DC:
         )
         battery_to_car = rscpFindTag(req, "EMS_BATTERY_TO_CAR_MODE")
         if battery_to_car is not None:
-            outObj["batteryToCar"] = rscpFindTagIndex(battery_to_car, "EMS_BATTERY_TO_CAR_MODE")
+            outObj["batteryToCar"] = rscpFindTagIndex(
+                battery_to_car, "EMS_BATTERY_TO_CAR_MODE"
+            )
 
         outObj = {k: v for k, v in sorted(outObj.items())}
         return outObj
 
-    def set_wallbox_sunmode(self, enable: bool, wbIndex=0, keepAlive=False):
+    def set_wallbox_sunmode(
+        self, enable: bool, wbIndex: int = 0, keepAlive: bool = False
+    ):
         """Sets the sun mode of the wallbox via rscp protocol locally.
 
         Args:
@@ -1086,7 +1090,7 @@ class E3DC:
         """
         return self.__wallbox_set_extern(0, 1 if enable else 2, wbIndex, keepAlive)
 
-    def set_wallbox_schuko(self, on: bool, wbIndex=0, keepAlive=False):
+    def set_wallbox_schuko(self, on: bool, wbIndex: int = 0, keepAlive: bool = False):
         """Sets the Schuko of the wallbox via rscp protocol locally.
 
         Args:
@@ -1097,7 +1101,7 @@ class E3DC:
         return self.__wallbox_set_extern(5, 1 if on else 0, wbIndex, keepAlive)
 
     def set_wallbox_max_charge_current(
-        self, max_charge_current: int, wbIndex=0, keepAlive=False
+        self, max_charge_current: int, wbIndex: int = 0, keepAlive: bool = False
     ):
         """Sets the maximum charge current of the wallbox via rscp protocol locally.
 
@@ -1126,7 +1130,9 @@ class E3DC:
             keepAlive=keepAlive,
         )
 
-    def set_wallbox_phases(self, phases: int, wbIndex=0, keepAlive=False):
+    def set_wallbox_phases(
+        self, phases: int, wbIndex: int = 0, keepAlive: bool = False
+    ):
         """Sets the number of phases used for charging on the wallbox via rscp protocol locally.
 
         Args:
@@ -1138,7 +1144,7 @@ class E3DC:
             raise Exception("Invalid phase given, valid values are 1 or 3")
         return self.__wallbox_set_extern(3, phases, wbIndex, keepAlive)
 
-    def toggle_wallbox_charging(self, wbIndex=0, keepAlive=False):
+    def toggle_wallbox_charging(self, wbIndex: int = 0, keepAlive: bool = False):
         """Toggles charging of the wallbox via rscp protocol locally.
 
         Args:
@@ -1147,7 +1153,9 @@ class E3DC:
         """
         return self.__wallbox_set_extern(4, 1, wbIndex, keepAlive)
 
-    def __wallbox_set_extern(self, index: int, value: int, wbIndex, keepAlive=False):
+    def __wallbox_set_extern(
+        self, index: int, value: int, wbIndex: int, keepAlive: bool = False
+    ):
         barry = bytearray([0, 0, 0, 0, 0, 0])
         barry[index] = value
         self.sendRequest(
@@ -1169,9 +1177,7 @@ class E3DC:
             keepAlive=keepAlive,
         )
 
-    def set_battery_to_car_mode(
-        self, enabled: bool, keepAlive=False
-    ):
+    def set_battery_to_car_mode(self, enabled: bool, keepAlive: bool = False):
         """Sets whether the wallbox may use the battery.
 
         Args:
@@ -1179,7 +1185,7 @@ class E3DC:
             keepAlive (Optional[bool]): True to keep connection alive
         """
         _ = self.sendRequest(
-            ('EMS_REQ_SET_BATTERY_TO_CAR_MODE', "UChar8", 1 if enabled else 0),
+            ("EMS_REQ_SET_BATTERY_TO_CAR_MODE", "UChar8", 1 if enabled else 0),
             keepAlive=keepAlive,
         )
 
