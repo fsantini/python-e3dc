@@ -153,11 +153,14 @@ Poll returns a dictionary like the following:
 - `set_power_limits()`
 - `set_powersave()`
 - `set_wallbox_max_charge_current()`
-- `set_wallbox_phases()`
 - `set_wallbox_schuko()`
 - `set_wallbox_sunmode()`
 - `set_weather_regulated_charge()`
 - `toggle_wallbox_charging()`
+- `toggle_wallbox_phases()`
+
+- `sendWallboxRequest()`
+- `sendWallboxSetRequest()`
 
 See the full documentation on [ReadTheDocs](https://python-e3dc.readthedocs.io/en/latest/)
 
