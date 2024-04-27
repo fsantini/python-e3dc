@@ -13,7 +13,7 @@ import time
 from typing import Any, Callable, Tuple
 
 import tzlocal
-from websocket import ABNF, WebSocketApp  # pyright: ignore [reportPrivateImportUsage]
+from websocket import ABNF, WebSocketApp
 
 from ._rscpLib import (
     rscpDecode,
