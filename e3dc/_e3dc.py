@@ -1569,9 +1569,8 @@ class E3DC:
                 and voltages_raw[1] != "Error"
             ):
                 voltages_data = rscpFindTagIndex(voltages_raw, RscpTag.BAT_DATA)
-                seriesCellCount = rscpFindTagIndex(info, RscpTag.BAT_DCB_NR_SERIES_CELL)
-                for cell in range(0, seriesCellCount):
-                    voltages.append(voltages_data[cell][2])
+                for cell_voltage in voltages_data:
+                    voltages.append(cell_voltage[2])
 
             dcbobj: Dict[str, Any] = {
                 "current": rscpFindTagIndex(info, RscpTag.BAT_DCB_CURRENT),
