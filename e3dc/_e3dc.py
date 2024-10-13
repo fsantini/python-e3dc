@@ -698,6 +698,8 @@ class E3DC:
                     "startTimestamp": <timestamp from which db data is fetched of>,
                     "stateOfCharge": <battery charge level in %>,
                     "solarProduction": <power production>,
+                    "pm0Production": <power production>,
+                    "pm1Production": <power production>,
                     "timespanSeconds": <timespan in seconds of which db data is collected>
                 }
         """
@@ -746,6 +748,8 @@ class E3DC:
                 response[2][0], RscpTag.DB_BAT_CHARGE_LEVEL
             ),
             "solarProduction": rscpFindTagIndex(response[2][0], RscpTag.DB_DC_POWER),
+            "pm0Production": rscpFindTagIndex(response[2][0], RscpTag.DB_PM_0_POWER),
+            "pm1Production": rscpFindTagIndex(response[2][0], RscpTag.DB_PM_1_POWER),
             "timespanSeconds": timespanSeconds,
         }
 
@@ -779,6 +783,8 @@ class E3DC:
                     "startDate": <date from which db data is fetched of>,
                     "stateOfCharge": <battery charge level in %>,
                     "solarProduction": <power production>,
+                    "pm0Production": <power production>,
+                    "pm1Production": <power production>,
                     "timespan": <timespan of which db data is collected>,
                     "timespanSeconds": <timespan in seconds of which db data is collected>
                 }
