@@ -2397,39 +2397,20 @@ class E3DC:
             0 if success
             -1 if error
         """
-        if enable:
-            res = self.sendRequest(
-                (
-                    RscpTag.EMS_REQ_SET_POWER_SETTINGS,
-                    RscpType.Container,
-                    [
-                        (
-                            RscpTag.EMS_WEATHER_REGULATED_CHARGE_ENABLED,
-                            RscpType.UChar8,
-                            1,
-                        )
-                    ],
-                ),
-                keepAlive=keepAlive,
-            )
-        else:
-            res = self.sendRequest(
-                (
-                    RscpTag.EMS_REQ_SET_POWER_SETTINGS,
-                    RscpType.Container,
-                    [
-                        (
-                            RscpTag.EMS_WEATHER_REGULATED_CHARGE_ENABLED,
-                            RscpType.UChar8,
-                            0,
-                        )
-                    ],
-                ),
-                keepAlive=keepAlive,
-            )
+        res = self.sendRequest(
+            (
+                RscpTag.EMS_REQ_SET_POWER_SETTINGS,
+                RscpType.Container,
+                [
+                    (
+                        RscpTag.EMS_WEATHER_REGULATED_CHARGE_ENABLED,
+                        RscpType.UChar8,
+                        enable,
+                    )
+                ],
+            ),
+            keepAlive=keepAlive,
+        )
 
-        # validate return code for EMS_RES_WEATHER_REGULATED_CHARGE_ENABLED is 0
-        if res[2][0][2] == 0:
-            return 0
-        else:
-            return -1
+        # validate return code for EMS_RES_WEATHER_REGULATED_CHARGE_ENABLED being equal to requested new state
+        return res[2][0][2] == enable
