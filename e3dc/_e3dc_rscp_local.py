@@ -45,7 +45,7 @@ class E3DC_RSCP_local:
     """A class describing an E3DC system connection using RSCP protocol locally."""
 
     def __init__(
-        self, username: str, password: str, ip: str, key: str, port: int = PORT
+        self, username: str, password: str, ip: str, key: str, port: int | None = PORT
     ):
         """Constructor of an E3DC RSCP local object.
 
@@ -59,7 +59,7 @@ class E3DC_RSCP_local:
         self.username = username.encode("utf-8")
         self.password = password.encode("utf-8")
         self.ip = ip
-        self.port = port
+        self.port = port if port else PORT
         self.key = key.encode("utf-8")
         self.socket: socket.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.connected: bool = False
