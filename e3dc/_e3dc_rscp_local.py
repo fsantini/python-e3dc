@@ -44,7 +44,9 @@ class CommunicationError(Exception):
 class E3DC_RSCP_local:
     """A class describing an E3DC system connection using RSCP protocol locally."""
 
-    def __init__(self, username: str, password: str, ip: str, key: str, port: int = PORT):
+    def __init__(
+        self, username: str, password: str, ip: str, key: str, port: int = PORT
+    ):
         """Constructor of an E3DC RSCP local object.
 
         Args:

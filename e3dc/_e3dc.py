@@ -125,7 +125,9 @@ class E3DC:
             self.key = kwargs["key"]
             self.password = kwargs["password"]
             self.port = kwargs.get("port", None)
-            self.rscp = E3DC_RSCP_local(self.username, self.password, self.ip, self.key, self.port)
+            self.rscp = E3DC_RSCP_local(
+                self.username, self.password, self.ip, self.key, self.port
+            )
         else:
             self._set_serial(kwargs["serialNumber"])
             if "isPasswordMd5" in kwargs and not kwargs["isPasswordMd5"]:
