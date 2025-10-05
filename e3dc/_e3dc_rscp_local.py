@@ -44,7 +44,9 @@ class CommunicationError(Exception):
 class E3DC_RSCP_local:
     """A class describing an E3DC system connection using RSCP protocol locally."""
 
-    def __init__(self, username: str, password: str, ip: str, key: str):
+    def __init__(
+        self, username: str, password: str, ip: str, key: str, port: int | None = PORT
+    ):
         """Constructor of an E3DC RSCP local object.
 
         Args:
@@ -52,10 +54,12 @@ class E3DC_RSCP_local:
             password (str): password (plain text)
             ip (str): IP address of the E3DC system
             key (str): encryption key as set in the E3DC settings
+            port (int, optional): port number. Defaults to PORT.
         """
         self.username = username.encode("utf-8")
         self.password = password.encode("utf-8")
         self.ip = ip
+        self.port = port if port else PORT
         self.key = key.encode("utf-8")
         self.socket: socket.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.connected: bool = False
@@ -122,7 +126,7 @@ class E3DC_RSCP_local:
         try:
             self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             self.socket.settimeout(5)
-            self.socket.connect((self.ip, PORT))
+            self.socket.connect((self.ip, self.port))
             self.processedData = None
             self.connected = True
         except Exception:

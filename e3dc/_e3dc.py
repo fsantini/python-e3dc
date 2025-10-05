@@ -77,6 +77,7 @@ class E3DC:
             serialNumber (str): the serial number of the system to monitor - required for CONNECT_WEB
             isPasswordMd5 (bool): indicates whether the password is already md5 digest (recommended, default = True) - required for CONNECT_WEB
             configuration (Optional[dict]): dict containing details of the E3DC configuration. {"pvis": [{"index": 0, "strings": 2, "phases": 3}], "powermeters": [{"index": 0}], "batteries": [{"index": 0, "dcbs": 1}]}
+            port (int, optional): port number for local connection. Defaults to None, which means default port 5033 is used.
         """
         self.connectType = connectType
         self.username = kwargs["username"]
@@ -123,7 +124,10 @@ class E3DC:
             self.ip = kwargs["ipAddress"]
             self.key = kwargs["key"]
             self.password = kwargs["password"]
-            self.rscp = E3DC_RSCP_local(self.username, self.password, self.ip, self.key)
+            self.port = kwargs.get("port", None)
+            self.rscp = E3DC_RSCP_local(
+                self.username, self.password, self.ip, self.key, self.port
+            )
         else:
             self._set_serial(kwargs["serialNumber"])
             if "isPasswordMd5" in kwargs and not kwargs["isPasswordMd5"]:
