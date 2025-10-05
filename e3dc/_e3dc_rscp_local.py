@@ -52,6 +52,7 @@ class E3DC_RSCP_local:
             password (str): password (plain text)
             ip (str): IP address of the E3DC system
             key (str): encryption key as set in the E3DC settings
+            port (int, optional): port number. Defaults to PORT.
         """
         self.username = username.encode("utf-8")
         self.password = password.encode("utf-8")
