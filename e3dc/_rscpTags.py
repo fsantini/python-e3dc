@@ -1,4 +1,4 @@
-from __future__ import annotations
+from __future__ import annotations  # required for python < 3.9
 
 from enum import Enum
 
@@ -141,6 +141,7 @@ class RscpTag(Enum):
     EMS_MANUAL_CHARGE_ACTIVE = 0x01000151
     EMS_MANUAL_CHARGE_ENERGY_COUNTER = 0x01000152
     EMS_MANUAL_CHARGE_LASTSTART = 0x01000153
+    EMS_MANUAL_CHARGE_LASTTARGET = 0x0100003E
     EMS_REQ_REMOTE_CONTROL = 0x01000200
     EMS_REQ_DEACTIVATE_REMOTE_CONTROL = 0x01000201
     EMS_REQ_IP_REMOTE_CONTROL = 0x01000202
@@ -3762,7 +3763,7 @@ def getStrRscpType(rscptype: int | str | RscpType) -> str:
         else:
             rscptype = RscpType[rscptype]
 
-    if RscpType == RscpType.NoneType:
+    if rscptype == RscpType.NoneType:
         return "None"
     return rscptype.name
 

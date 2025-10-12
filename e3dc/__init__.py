@@ -5,7 +5,7 @@ Copyright 2017-2023 Francesco Santini <francesco.santini@gmail.com> and collabor
 Licensed under a MIT license. See LICENSE for details.
 """
 
-from ._e3dc import E3DC, AuthenticationError, PollError
+from ._e3dc import E3DC, AuthenticationError, NotAvailableError, PollError, SendError
 from ._e3dc_rscp_local import CommunicationError, RSCPAuthenticationError, RSCPKeyError
 from ._e3dc_rscp_web import RequestTimeoutError, SocketNotReady
 from ._rscpLib import FrameError
@@ -25,4 +25,4 @@ __all__ = [
     "FrameError",
     "set_rscp_debug",
 ]
-__version__ = "0.8.1"
+__version__ = "0.9.2"

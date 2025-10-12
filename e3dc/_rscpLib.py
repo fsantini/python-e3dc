@@ -4,12 +4,16 @@
 # Copyright 2017 Francesco Santini <francesco.santini@gmail.com>
 # Licensed under a MIT license. See LICENSE for details
 
+from __future__ import annotations  # required for python < 3.9
+
 import math
 import struct
 import time
 import zlib
+from typing import Any, List, Tuple
 
 from ._rscpTags import (
+    RscpTag,
     RscpType,
     getHexRscpTag,
     getHexRscpType,
@@ -22,7 +26,7 @@ from ._rscpTags import (
 DEBUG_DICT = {"print_rscp": False}
 
 
-def set_debug(debug):
+def set_debug(debug: bool):
     """Turns debug on/off.
 
     Args:
@@ -57,11 +61,14 @@ packFmtDict_VarSize = {
 }
 
 
-def rscpFindTag(decodedMsg, tag):
+def rscpFindTag(
+    decodedMsg: Tuple[str | int | RscpTag, str | int | RscpType, Any] | None,
+    tag: int | str | RscpTag,
+) -> Tuple[str | int | RscpTag, str | int | RscpType, Any] | None:
     """Finds a submessage with a specific tag.
 
     Args:
-    decodedMsg (list): the decoded message
+    decodedMsg (tuple): the decoded message
     tag (RscpTag): the RSCP Tag to search for
 
     Returns:
@@ -78,20 +85,27 @@ def rscpFindTag(decodedMsg, tag):
     if decodedMsg[0] == tagStr:
         return decodedMsg
     if isinstance(decodedMsg[2], list):
-        for msg in decodedMsg[2]:
+        msgList: List[Tuple[str | int | RscpTag, str | int | RscpType, Any]] = (
+            decodedMsg[2]
+        )
+        for msg in msgList:
             msgValue = rscpFindTag(msg, tag)
             if msgValue is not None:
                 return msgValue
     return None
 
 
-def rscpFindTagIndex(decodedMsg, tag, index=2):
+def rscpFindTagIndex(
+    decodedMsg: Tuple[str | int | RscpTag, str | int | RscpType, Any] | None,
+    tag: int | str | RscpTag,
+    index: int = 2,
+) -> Any:
     """Finds a submessage with a specific tag and extracts an index.
 
     Args:
-    decodedMsg (list): the decoded message
+    decodedMsg (Tuple): the decoded message
     tag (RscpTag): the RSCP Tag to search for
-    index (Optional[int]): the index of the found tag to return. Default is 2, the value of the Tag.
+    index (int): the index of the found tag to return. Default is 2, the value of the Tag.
 
     Returns:
         the content of the configured index for the tag.
@@ -99,10 +113,11 @@ def rscpFindTagIndex(decodedMsg, tag, index=2):
     res = rscpFindTag(decodedMsg, tag)
     if res is not None:
         return res[index]
-    return None
+    else:
+        return None
 
 
-def endianSwapUint16(val):
+def endianSwapUint16(val: int):
     """Endian swaps magic and ctrl."""
     return struct.unpack("<H", struct.pack(">H", val))[0]
 
@@ -113,21 +128,25 @@ class FrameError(Exception):
     pass
 
 
-def rscpEncode(tagStr, typeStr=None, data=None):
+def rscpEncode(
+    tag: int | str | RscpTag | Tuple[str | int | RscpTag, str | int | RscpType, Any],
+    rscptype: int | str | RscpType | None = None,
+    data: Any = None,
+) -> bytes:
     """RSCP encodes data."""
-    if isinstance(tagStr, tuple):
-        typeStr = tagStr[1]
-        data = tagStr[2]
-        tagStr = tagStr[0]
-    elif typeStr is None:
+    if isinstance(tag, tuple):
+        rscptype = tag[1]
+        data = tag[2]
+        tag = tag[0]
+    elif rscptype is None:
         raise TypeError("Second argument must not be none if first is not a tuple")
 
-    tagHex = getHexRscpTag(tagStr)
-    rscptypeHex = getHexRscpType(typeStr)
-    rscptype = getRscpType(typeStr)
+    tagHex = getHexRscpTag(tag)
+    rscptypeHex = getHexRscpType(rscptype)
+    rscptype = getRscpType(rscptype)
 
     if DEBUG_DICT["print_rscp"]:
-        print(">", tagStr, typeStr, data)
+        print(">", tag, rscptype, data)
 
     if isinstance(data, str):
         data = data.encode("utf-8")
@@ -155,7 +174,8 @@ def rscpEncode(tagStr, typeStr=None, data=None):
     elif rscptype == RscpType.Container:
         if isinstance(data, list):
             newData = b""
-            for dataChunk in data:
+            dataList: List[Tuple[str | int | RscpTag, str | int | RscpType, Any]] = data
+            for dataChunk in dataList:
                 newData += rscpEncode(
                     dataChunk[0], dataChunk[1], dataChunk[2]
                 )  # transform each dataChunk into byte array
@@ -170,7 +190,7 @@ def rscpEncode(tagStr, typeStr=None, data=None):
     return struct.pack(packFmt, tagHex, rscptypeHex, length, data)
 
 
-def rscpFrame(data):
+def rscpFrame(data: bytes) -> bytes:
     """Generates RSCP frame."""
     magic = endianSwapUint16(0xE3DC)
     ctrl = endianSwapUint16(0x11)
@@ -186,13 +206,13 @@ def rscpFrame(data):
     return frame
 
 
-def rscpFrameDecode(frameData, returnFrameLen=False):
+def rscpFrameDecode(frameData: bytes, returnFrameLen: bool = False):
     """Decodes RSCP Frame."""
     headerFmt = "<HHIIIH"
     crcFmt = "I"
     crc = None
 
-    magic, ctrl, sec1, sec2, ns, length = struct.unpack(
+    magic, ctrl, sec1, _, ns, length = struct.unpack(
         headerFmt, frameData[: struct.calcsize(headerFmt)]
     )
 
@@ -226,7 +246,9 @@ def rscpFrameDecode(frameData, returnFrameLen=False):
         return data, timestamp
 
 
-def rscpDecode(data):
+def rscpDecode(
+    data: bytes,
+) -> Tuple[Tuple[str | int | RscpTag, str | int | RscpType, Any], int]:
     """Decodes RSCP data."""
     headerFmt = (
         "<IBH"  # format of header: little-endian, Uint32 tag, Uint8 type, Uint16 length
@@ -251,7 +273,7 @@ def rscpDecode(data):
 
     if type_ == RscpType.Container:
         # this is a container: parse the inside
-        dataList = []
+        dataList: List[Tuple[str | int | RscpTag, str | int | RscpType, Any]] = []
         curByte = headerSize
         while curByte < headerSize + length:
             innerData, usedLength = rscpDecode(data[curByte:])
@@ -272,6 +294,8 @@ def rscpDecode(data):
         fmt = "<" + packFmtDict_FixedSize[type_]
     elif type_ in packFmtDict_VarSize:
         fmt = "<" + str(length) + packFmtDict_VarSize[type_]
+    else:
+        raise Exception("data can't be decoded")
 
     val = struct.unpack(fmt, data[headerSize : headerSize + struct.calcsize(fmt)])[0]
 
