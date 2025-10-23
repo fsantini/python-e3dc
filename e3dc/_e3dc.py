@@ -1568,7 +1568,11 @@ class E3DC:
             ):
                 temperatures_data = rscpFindTagIndex(temperatures_raw, RscpTag.BAT_DATA)
                 sensorCount = rscpFindTagIndex(info, RscpTag.BAT_DCB_NR_SENSOR)
-                for sensor in range(0, sensorCount):
+                
+                # As sensorCount can return bigger values than we have actual temperatures_data,
+                # we use the smaller count for robustness.
+                sensors = min(sensorCount, len(temperatures_data))
+                for sensor in range(0, sensors):
                     temperatures.append(temperatures_data[sensor][2])
 
             # Set voltages, if available for the device
