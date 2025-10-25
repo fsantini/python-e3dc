@@ -1568,7 +1568,7 @@ class E3DC:
             ):
                 temperatures_data = rscpFindTagIndex(temperatures_raw, RscpTag.BAT_DATA)
                 sensorCount = rscpFindTagIndex(info, RscpTag.BAT_DCB_NR_SENSOR)
-                
+
                 # As sensorCount can return bigger values than we have actual temperatures_data,
                 # we use the smaller count for robustness.
                 sensors = min(sensorCount, len(temperatures_data))
