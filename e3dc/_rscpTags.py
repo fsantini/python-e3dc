@@ -1,5 +1,3 @@
-from __future__ import annotations  # required for python < 3.9
-
 from enum import Enum
 
 

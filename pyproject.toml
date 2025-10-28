@@ -10,7 +10,7 @@ authors = [
 ]
 description = "E3/DC client for python"
 readme = "README.md"
-requires-python = ">=3.8"
+requires-python = ">=3.10"
 license = {text = "MIT"}
 classifiers = [
     "Development Status :: 4 - Beta",
@@ -19,11 +19,10 @@ classifiers = [
     "Intended Audience :: Developers",
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
-    "Programming Language :: Python :: 3.8",
-    "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
 ]
 dependencies = [
     "py3rijndael",
@@ -60,7 +59,7 @@ packages = ["e3dc"]
 version = {attr = "e3dc.__version__"}
 
 [tool.black]
-target-version = ['py38','py39','py310','py311','py312']
+target-version = ['py310','py311','py312','py313']
 include = '\.pyi?$'
 exclude = '''
 /(
