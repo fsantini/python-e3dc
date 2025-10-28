@@ -8,7 +8,7 @@ import math
 import struct
 import time
 import zlib
-from typing import Any, cast
+from typing import Any, TypeAlias, cast
 
 from ._rscpTags import (
     RscpTag,
@@ -20,6 +20,9 @@ from ._rscpTags import (
     getStrRscpTag,
     getStrRscpType,
 )
+
+# Type alias for RSCP messages
+RscpMessage: TypeAlias = tuple[str | int | RscpTag, str | int | RscpType, Any]
 
 DEBUG_DICT = {"print_rscp": False}
 
@@ -60,9 +63,9 @@ packFmtDict_VarSize = {
 
 
 def rscpFindTag(
-    decodedMsg: tuple[str | int | RscpTag, str | int | RscpType, Any] | None,
+    decodedMsg: RscpMessage | None,
     tag: int | str | RscpTag,
-) -> tuple[str | int | RscpTag, str | int | RscpType, Any] | None:
+) -> RscpMessage | None:
     """Finds a submessage with a specific tag.
 
     Args:
@@ -83,9 +86,7 @@ def rscpFindTag(
     if decodedMsg[0] == tagStr:
         return decodedMsg
     if isinstance(decodedMsg[2], list):
-        msgList: list[tuple[str | int | RscpTag, str | int | RscpType, Any]] = cast(
-            list[tuple[str | int | RscpTag, str | int | RscpType, Any]], decodedMsg[2]
-        )
+        msgList: list[RscpMessage] = cast(list[RscpMessage], decodedMsg[2])
         for msg in msgList:
             msgValue = rscpFindTag(msg, tag)
             if msgValue is not None:
@@ -94,7 +95,7 @@ def rscpFindTag(
 
 
 def rscpFindTagIndex(
-    decodedMsg: tuple[str | int | RscpTag, str | int | RscpType, Any] | None,
+    decodedMsg: RscpMessage | None,
     tag: int | str | RscpTag,
     index: int = 2,
 ) -> Any:
@@ -127,7 +128,7 @@ class FrameError(Exception):
 
 
 def rscpEncode(
-    tag: int | str | RscpTag | tuple[str | int | RscpTag, str | int | RscpType, Any],
+    tag: int | str | RscpTag | RscpMessage,
     rscptype: int | str | RscpType | None = None,
     data: Any = None,
 ) -> bytes:
@@ -172,9 +173,7 @@ def rscpEncode(
     elif rscptype == RscpType.Container:
         if isinstance(data, list):
             newData = b""
-            dataList: list[tuple[str | int | RscpTag, str | int | RscpType, Any]] = (
-                cast(list[tuple[str | int | RscpTag, str | int | RscpType, Any]], data)
-            )
+            dataList: list[RscpMessage] = cast(list[RscpMessage], data)
             for dataChunk in dataList:
                 newData += rscpEncode(
                     dataChunk[0], dataChunk[1], dataChunk[2]
@@ -248,7 +247,7 @@ def rscpFrameDecode(frameData: bytes, returnFrameLen: bool = False):
 
 def rscpDecode(
     data: bytes,
-) -> tuple[tuple[str | int | RscpTag, str | int | RscpType, Any], int]:
+) -> tuple[RscpMessage, int]:
     """Decodes RSCP data."""
     headerFmt = (
         "<IBH"  # format of header: little-endian, Uint32 tag, Uint8 type, Uint16 length
@@ -273,7 +272,7 @@ def rscpDecode(
 
     if type_ == RscpType.Container:
         # this is a container: parse the inside
-        dataList: list[tuple[str | int | RscpTag, str | int | RscpType, Any]] = []
+        dataList: list[RscpMessage] = []
         curByte = headerSize
         while curByte < headerSize + length:
             innerData, usedLength = rscpDecode(data[curByte:])

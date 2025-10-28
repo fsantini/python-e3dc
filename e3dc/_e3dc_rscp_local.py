@@ -5,10 +5,9 @@
 # Licensed under a MIT license. See LICENSE for details
 
 import socket
-from typing import Any
 
 from ._RSCPEncryptDecrypt import RSCPEncryptDecrypt
-from ._rscpLib import rscpDecode, rscpEncode, rscpFrame
+from ._rscpLib import RscpMessage, rscpDecode, rscpEncode, rscpFrame
 from ._rscpTags import RscpError, RscpTag, RscpType
 
 PORT = 5033
@@ -64,9 +63,7 @@ class E3DC_RSCP_local:
         self.encdec: RSCPEncryptDecrypt
         self.processedData = None
 
-    def _send(
-        self, plainMsg: tuple[str | int | RscpTag, str | int | RscpType, Any]
-    ) -> None:
+    def _send(self, plainMsg: RscpMessage) -> None:
         sendData = rscpFrame(rscpEncode(plainMsg))
         encData = self.encdec.encrypt(sendData)
         self.socket.send(encData)
@@ -78,9 +75,7 @@ class E3DC_RSCP_local:
         decData = rscpDecode(self.encdec.decrypt(data))[0]
         return decData
 
-    def sendCommand(
-        self, plainMsg: tuple[str | int | RscpTag, str | int | RscpType, Any]
-    ) -> None:
+    def sendCommand(self, plainMsg: RscpMessage) -> None:
         """Sending RSCP command.
 
         Args:
@@ -88,9 +83,7 @@ class E3DC_RSCP_local:
         """
         self.sendRequest(plainMsg)  # same as sendRequest but doesn't return a value
 
-    def sendRequest(
-        self, plainMsg: tuple[str | int | RscpTag, str | int | RscpType, Any]
-    ) -> tuple[str | int | RscpTag, str | int | RscpType, Any]:
+    def sendRequest(self, plainMsg: RscpMessage) -> RscpMessage:
         """Sending RSCP request.
 
         Args:
