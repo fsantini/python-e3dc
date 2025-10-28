@@ -10,7 +10,7 @@ from ._RSCPEncryptDecrypt import RSCPEncryptDecrypt
 from ._rscpLib import RscpMessage, rscpDecode, rscpEncode, rscpFrame
 from ._rscpTags import RscpError, RscpTag, RscpType
 
-PORT = 5033
+DEFAULT_PORT = 5033
 BUFFER_SIZE = 1024 * 32
 
 
@@ -42,7 +42,7 @@ class E3DC_RSCP_local:
     """A class describing an E3DC system connection using RSCP protocol locally."""
 
     def __init__(
-        self, username: str, password: str, ip: str, key: str, port: int | None = PORT
+        self, username: str, password: str, ip: str, key: str, port: int | None = None
     ):
         """Constructor of an E3DC RSCP local object.
 
@@ -56,7 +56,7 @@ class E3DC_RSCP_local:
         self.username = username.encode("utf-8")
         self.password = password.encode("utf-8")
         self.ip = ip
-        self.port = port if port else PORT
+        self.port = port or DEFAULT_PORT
         self.key = key.encode("utf-8")
         self.socket: socket.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.connected: bool = False
