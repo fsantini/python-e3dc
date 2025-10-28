@@ -74,7 +74,7 @@ class E3DC:
             key (str): encryption key as set in the E3DC settings - required for CONNECT_LOCAL
             serialNumber (str): the serial number of the system to monitor - required for CONNECT_WEB
             isPasswordMd5 (bool): indicates whether the password is already md5 digest (recommended, default = True) - required for CONNECT_WEB
-            configuration (Optional[dict]): dict containing details of the E3DC configuration. {"pvis": [{"index": 0, "strings": 2, "phases": 3}], "powermeters": [{"index": 0}], "batteries": [{"index": 0, "dcbs": 1}]}
+            configuration (dict | None): dict containing details of the E3DC configuration. {"pvis": [{"index": 0, "strings": 2, "phases": 3}], "powermeters": [{"index": 0}], "batteries": [{"index": 0, "dcbs": 1}]}
             port (int, optional): port number for local connection. Defaults to None, which means default port 5033 is used.
         """
         self.connectType = connectType
@@ -994,8 +994,8 @@ class E3DC:
         """Polls the wallbox status via rscp protocol locally.
 
         Args:
-            wbIndex (Optional[int]): Index of the wallbox to poll data for
-            keepAlive (Optional[bool]): True to keep connection alive
+            wbIndex (int | None): Index of the wallbox to poll data for
+            keepAlive (bool | None): True to keep connection alive
 
         Returns:
             dict: Dictionary containing the wallbox status structured as follows::
@@ -1093,8 +1093,8 @@ class E3DC:
 
         Args:
             enable (bool): True to enable sun mode, otherwise false,
-            wbIndex (Optional[int]): index of the requested wallbox,
-            keepAlive (Optional[bool]): True to keep connection alive
+            wbIndex (int | None): index of the requested wallbox,
+            keepAlive (bool | None): True to keep connection alive
 
         Returns:
             True if success
@@ -1111,8 +1111,8 @@ class E3DC:
 
         Args:
             on (bool): True to activate the Schuko, otherwise false
-            wbIndex (Optional[int]): index of the requested wallbox,
-            keepAlive (Optional[bool]): True to keep connection alive
+            wbIndex (int | None): index of the requested wallbox,
+            keepAlive (bool | None): True to keep connection alive
 
         Returns:
             True if success (wallbox has understood the request, but might have ignored an unsupported value)
@@ -1129,8 +1129,8 @@ class E3DC:
 
         Args:
             max_charge_current (int): maximum allowed charge current in A
-            wbIndex (Optional[int]): index of the requested wallbox,
-            keepAlive (Optional[bool]): True to keep connection alive
+            wbIndex (int | None): index of the requested wallbox,
+            keepAlive (bool | None): True to keep connection alive
 
         Returns:
             True if success (wallbox has understood the request, but might have clipped the value)
@@ -1150,8 +1150,8 @@ class E3DC:
         """Toggles charging of the wallbox via rscp protocol locally.
 
         Args:
-            wbIndex (Optional[int]): index of the requested wallbox,
-            keepAlive (Optional[bool]): True to keep connection alive
+            wbIndex (int | None): index of the requested wallbox,
+            keepAlive (bool | None): True to keep connection alive
 
         Returns:
             True if success
@@ -1165,8 +1165,8 @@ class E3DC:
         """Toggles the number of phases used for charging by the wallbox between 1 and 3 via rscp protocol locally.
 
         Args:
-            wbIndex (Optional[int]): index of the requested wallbox,
-            keepAlive (Optional[bool]): True to keep connection alive
+            wbIndex (int | None): index of the requested wallbox,
+            keepAlive (bool | None): True to keep connection alive
 
         Returns:
             True if success
@@ -1189,9 +1189,9 @@ class E3DC:
         Args:
             dataIndex (int): byte index in the WB_EXTERN_DATA array (values: 0-5)
             value (int): byte value to be set in the WB_EXTERN_DATA array at the given index
-            request (Optional[RscpTag]): request identifier (WB_REQ_SET_EXTERN, WB_REQ_SET_PARAM_1 or WB_REQ_SET_PARAM_2),
-            wbIndex (Optional[int]): index of the requested wallbox,
-            keepAlive (Optional[bool]): True to keep connection alive
+            request (RscpTag | None): request identifier (WB_REQ_SET_EXTERN, WB_REQ_SET_PARAM_1 or WB_REQ_SET_PARAM_2),
+            wbIndex (int | None): index of the requested wallbox,
+            keepAlive (bool | None): True to keep connection alive
 
         Returns:
             An object with the received data
@@ -1235,9 +1235,9 @@ class E3DC:
         Args:
             dataIndex (int): byte index in the WB_EXTERN_DATA array (values: 0-5)
             value (int): byte value to be set in the WB_EXTERN_DATA array at the given index
-            request (Optional[RscpTag]): request identifier (WB_REQ_SET_EXTERN, WB_REQ_SET_PARAM_1 or WB_REQ_SET_PARAM_2),
-            wbIndex (Optional[int]): index of the requested wallbox,
-            keepAlive (Optional[bool]): True to keep connection alive
+            request (RscpTag | None): request identifier (WB_REQ_SET_EXTERN, WB_REQ_SET_PARAM_1 or WB_REQ_SET_PARAM_2),
+            wbIndex (int | None): index of the requested wallbox,
+            keepAlive (bool | None): True to keep connection alive
 
         Returns:
             True if success
@@ -1260,7 +1260,7 @@ class E3DC:
 
         Args:
             enabled (bool): True to enable charging the car using the battery
-            keepAlive (Optional[bool]): True to keep connection alive
+            keepAlive (bool | None): True to keep connection alive
 
         Returns:
             True if success
@@ -1330,8 +1330,8 @@ class E3DC:
         """Polls the battery data via rscp protocol.
 
         Args:
-            batIndex (Optional[int]): battery index
-            dcbs (Optional[list]): dcb list
+            batIndex (int | None): battery index
+            dcbs (list | None): dcb list
             keepAlive (bool): True to keep connection alive. Defaults to False.
 
         Returns:
@@ -1658,7 +1658,7 @@ class E3DC:
         """Polls the batteries data via rscp protocol.
 
         Args:
-            batteries (Optional[dict]): batteries dict
+            batteries (dict | None): batteries dict
             keepAlive (bool): True to keep connection alive. Defaults to False.
 
         Returns:
@@ -1749,8 +1749,8 @@ class E3DC:
 
         Args:
             pviIndex (int): pv inverter index
-            strings (Optional[list]): string list
-            phases (Optional[list]): phase list
+            strings (list | None): string list
+            phases (list | None): phase list
             keepAlive (bool): True to keep connection alive. Defaults to False.
 
         Returns:
@@ -2043,7 +2043,7 @@ class E3DC:
         """Polls the inverters data via rscp protocol.
 
         Args:
-            pvis (Optional[dict]): pvis dict
+            pvis (dict | None): pvis dict
             keepAlive (bool): True to keep connection alive. Defaults to False.
 
         Returns:
@@ -2126,7 +2126,7 @@ class E3DC:
         """Polls the power meter data via rscp protocol.
 
         Args:
-            pmIndex (Optional[int]): power meter index
+            pmIndex (int | None): power meter index
             keepAlive (bool): True to keep connection alive. Defaults to False.
 
         Returns:
@@ -2215,7 +2215,7 @@ class E3DC:
         """Polls the powermeters data via rscp protocol.
 
         Args:
-            powermeters (Optional[dict]): powermeters dict
+            powermeters (dict | None): powermeters dict
             keepAlive (bool): True to keep connection alive. Defaults to False.
 
         Returns:
@@ -2297,9 +2297,9 @@ class E3DC:
 
         Args:
             enable (bool): True/False
-            max_charge (Optional[int]): maximum charge power
-            max_discharge (Optional[int]: maximum discharge power
-            discharge_start (Optional[int]: power where discharged is started
+            max_charge (int | None): maximum charge power
+            max_discharge (int | None): maximum discharge power
+            discharge_start (int | None): power where discharged is started
             keepAlive (bool): True to keep connection alive. Defaults to False.
 
         Returns:
