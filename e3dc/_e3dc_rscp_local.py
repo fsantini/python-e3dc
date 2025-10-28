@@ -4,10 +4,8 @@
 # Copyright 2017 Francesco Santini <francesco.santini@gmail.com>
 # Licensed under a MIT license. See LICENSE for details
 
-from __future__ import annotations  # required for python < 3.9
-
 import socket
-from typing import Any, Tuple
+from typing import Any
 
 from ._RSCPEncryptDecrypt import RSCPEncryptDecrypt
 from ._rscpLib import rscpDecode, rscpEncode, rscpFrame
@@ -67,7 +65,7 @@ class E3DC_RSCP_local:
         self.processedData = None
 
     def _send(
-        self, plainMsg: Tuple[str | int | RscpTag, str | int | RscpType, Any]
+        self, plainMsg: tuple[str | int | RscpTag, str | int | RscpType, Any]
     ) -> None:
         sendData = rscpFrame(rscpEncode(plainMsg))
         encData = self.encdec.encrypt(sendData)
@@ -81,7 +79,7 @@ class E3DC_RSCP_local:
         return decData
 
     def sendCommand(
-        self, plainMsg: Tuple[str | int | RscpTag, str | int | RscpType, Any]
+        self, plainMsg: tuple[str | int | RscpTag, str | int | RscpType, Any]
     ) -> None:
         """Sending RSCP command.
 
@@ -91,8 +89,8 @@ class E3DC_RSCP_local:
         self.sendRequest(plainMsg)  # same as sendRequest but doesn't return a value
 
     def sendRequest(
-        self, plainMsg: Tuple[str | int | RscpTag, str | int | RscpType, Any]
-    ) -> Tuple[str | int | RscpTag, str | int | RscpType, Any]:
+        self, plainMsg: tuple[str | int | RscpTag, str | int | RscpType, Any]
+    ) -> tuple[str | int | RscpTag, str | int | RscpType, Any]:
         """Sending RSCP request.
 
         Args:

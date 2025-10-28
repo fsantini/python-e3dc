@@ -3,14 +3,12 @@
 #
 # Copyright 2017 Francesco Santini <francesco.santini@gmail.com>
 # Licensed under a MIT license. See LICENSE for details
-from __future__ import annotations  # required for python < 3.9
-
 import datetime
 import hashlib
 import struct
 import threading
 import time
-from typing import Any, Callable, Tuple
+from typing import Any, Callable
 
 import tzlocal
 from websocket import ABNF, WebSocketApp
@@ -135,10 +133,10 @@ class E3DC_RSCP_web:
         self.virtAuthLevel = None
         self.webSerialno = None
         self.responseCallback: Callable[
-            [Tuple[str | int | RscpTag, str | int | RscpType, Any]], None
+            [tuple[str | int | RscpTag, str | int | RscpType, Any]], None
         ]
         self.responseCallbackCalled = False
-        self.requestResult: Tuple[str | int | RscpTag, str | int | RscpType, Any]
+        self.requestResult: tuple[str | int | RscpTag, str | int | RscpType, Any]
 
     def buildVirtualConn(self):
         """Method to create Virtual Connection."""
@@ -164,7 +162,7 @@ class E3DC_RSCP_web:
         self.ws.send(virtualConn, ABNF.OPCODE_BINARY)
 
     def respondToINFORequest(
-        self, decoded: Tuple[str | int | RscpTag, str | int | RscpType, Any]
+        self, decoded: tuple[str | int | RscpTag, str | int | RscpType, Any]
     ):
         """Create Response to INFO request."""
         TIMEZONE_STR, utcDiffS = calcTimeZone()
@@ -231,7 +229,7 @@ class E3DC_RSCP_web:
         return None  # this is no standard request
 
     def registerConnectionHandler(
-        self, decodedMsg: Tuple[str | int | RscpTag, str | int | RscpType, Any]
+        self, decodedMsg: tuple[str | int | RscpTag, str | int | RscpType, Any]
     ):
         """Registering Connection Handler."""
         if self.conId == 0:
@@ -327,13 +325,13 @@ class E3DC_RSCP_web:
             )
 
     def _defaultRequestCallback(
-        self, msg: Tuple[str | int | RscpTag, str | int | RscpType, Any]
+        self, msg: tuple[str | int | RscpTag, str | int | RscpType, Any]
     ):
         self.requestResult = msg
 
     def sendRequest(
-        self, message: Tuple[str | int | RscpTag, str | int | RscpType, Any]
-    ) -> Tuple[str | int | RscpTag, str | int | RscpType, Any]:
+        self, message: tuple[str | int | RscpTag, str | int | RscpType, Any]
+    ) -> tuple[str | int | RscpTag, str | int | RscpType, Any]:
         """Send a request and wait for a response."""
         self._sendRequest_internal(rscpFrame(rscpEncode(message)))
         for _ in range(self.TIMEOUT * 10):
@@ -346,16 +344,16 @@ class E3DC_RSCP_web:
         return self.requestResult
 
     def sendCommand(
-        self, message: Tuple[str | int | RscpTag, str | int | RscpType, Any]
+        self, message: tuple[str | int | RscpTag, str | int | RscpType, Any]
     ):
         """Send a command."""
         return self._sendRequest_internal(rscpFrame(rscpEncode(message)))
 
     def _sendRequest_internal(
         self,
-        innerFrame: bytes | Tuple[str | int | RscpTag, str | int | RscpType, Any],
+        innerFrame: bytes | tuple[str | int | RscpTag, str | int | RscpType, Any],
         callback: (
-            Callable[[Tuple[str | int | RscpTag, str | int | RscpType, Any]], None]
+            Callable[[tuple[str | int | RscpTag, str | int | RscpType, Any]], None]
             | None
         ) = None,
     ):

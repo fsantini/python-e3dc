@@ -3,15 +3,13 @@
 #
 # Copyright 2017 Francesco Santini <francesco.santini@gmail.com>
 # Licensed under a MIT license. See LICENSE for details
-from __future__ import annotations  # required for python < 3.9
-
 import datetime
 import hashlib
 import struct
 import time
 import uuid
 from calendar import monthrange
-from typing import Any, Dict, List, Literal, Tuple
+from typing import Any, Literal
 
 from ._e3dc_rscp_local import (
     E3DC_RSCP_local,
@@ -102,9 +100,9 @@ class E3DC:
         self.maxBatChargePower = None
         self.maxBatDischargePower = None
         self.startDischargeDefault = None
-        self.powermeters: List[Dict[str, Any]] = []
-        self.pvis: List[Dict[str, Any]] = []
-        self.batteries: List[Dict[str, Any]] = []
+        self.powermeters: list[dict[str, Any]] = []
+        self.pvis: list[dict[str, Any]] = []
+        self.batteries: list[dict[str, Any]] = []
         self.pmIndexExt = None
 
         if "configuration" in kwargs:
@@ -203,10 +201,10 @@ class E3DC:
 
     def sendRequest(
         self,
-        request: Tuple[str | int | RscpTag, str | int | RscpType, Any],
+        request: tuple[str | int | RscpTag, str | int | RscpType, Any],
         retries: int = 3,
         keepAlive: bool = False,
-    ) -> Tuple[str | int | RscpTag, str | int | RscpType, Any]:
+    ) -> tuple[str | int | RscpTag, str | int | RscpType, Any]:
         """This function uses the RSCP interface to make a request.
 
         Does make retries in case of exceptions like Socket.Error
@@ -362,7 +360,7 @@ class E3DC:
         descList = switchDesc[2]  # get the payload of the container
         statusList = switchStatus[2]
 
-        switchList: List[Dict[str, Any]] = []
+        switchList: list[dict[str, Any]] = []
 
         for switch in range(len(descList)):
             switchID = rscpFindTagIndex(descList[switch], RscpTag.HA_DATAPOINT_INDEX)
@@ -466,7 +464,7 @@ class E3DC:
         if idlePeriodsRaw[0] != RscpTag.EMS_GET_IDLE_PERIODS:
             return None
 
-        idlePeriods: Dict[str, List[Dict[str, Any]]] = {
+        idlePeriods: dict[str, list[dict[str, Any]]] = {
             "idleCharge": [] * 7,
             "idleDischarge": [] * 7,
         }
@@ -497,7 +495,7 @@ class E3DC:
         return idlePeriods
 
     def set_idle_periods(
-        self, idlePeriods: Dict[str, List[Dict[str, Any]]], keepAlive: bool = False
+        self, idlePeriods: dict[str, list[dict[str, Any]]], keepAlive: bool = False
     ):
         """Set idle periods via rscp protocol.
 
@@ -546,7 +544,7 @@ class E3DC:
             True if success
             False if error
         """
-        periodList: List[Tuple[RscpTag, RscpType, Any]] = []
+        periodList: list[tuple[RscpTag, RscpType, Any]] = []
 
         if "idleCharge" not in idlePeriods and "idleDischarge" not in idlePeriods:
             raise ValueError("neither key idleCharge nor idleDischarge in object")
@@ -1185,7 +1183,7 @@ class E3DC:
         request: RscpTag = RscpTag.WB_REQ_SET_EXTERN,
         wbIndex: int = 0,
         keepAlive: bool = False,
-    ) -> Tuple[str | int | RscpTag, str | int | RscpType, Any]:
+    ) -> tuple[str | int | RscpTag, str | int | RscpType, Any]:
         """Sends a low-level request with WB_EXTERN_DATA to the wallbox via rscp protocol locally.
 
         Args:
@@ -1294,7 +1292,7 @@ class E3DC:
                 ]
         """
         maxBatteries = 8
-        outObj: List[Dict[str, int]] = []
+        outObj: list[dict[str, int]] = []
         for batIndex in range(maxBatteries):
             try:
                 req = self.sendRequest(
@@ -1326,7 +1324,7 @@ class E3DC:
     def get_battery_data(
         self,
         batIndex: int | None = None,
-        dcbs: List[int] | None = None,
+        dcbs: list[int] | None = None,
         keepAlive: bool = False,
     ):
         """Polls the battery data via rscp protocol.
@@ -1470,7 +1468,7 @@ class E3DC:
         dcbCount = rscpFindTagIndex(req, RscpTag.BAT_DCB_COUNT)
         deviceStateContainer = rscpFindTag(req, RscpTag.BAT_DEVICE_STATE)
 
-        outObj: Dict[str, Any] = {
+        outObj: dict[str, Any] = {
             "asoc": rscpFindTagIndex(req, RscpTag.BAT_ASOC),
             "chargeCycles": rscpFindTagIndex(req, RscpTag.BAT_CHARGE_CYCLES),
             "current": rscpFindTagIndex(req, RscpTag.BAT_CURRENT),
@@ -1555,9 +1553,9 @@ class E3DC:
 
             # Initialize default values for DCB
             sensorCount = 0
-            temperatures: List[float] = []
+            temperatures: list[float] = []
             seriesCellCount = 0
-            voltages: List[float] = []
+            voltages: list[float] = []
 
             # Set temperatures, if available for the device
             temperatures_raw = rscpFindTag(req, RscpTag.BAT_DCB_ALL_CELL_TEMPERATURES)
@@ -1586,7 +1584,7 @@ class E3DC:
                 for cell_voltage in voltages_data:
                     voltages.append(cell_voltage[2])
 
-            dcbobj: Dict[str, Any] = {
+            dcbobj: dict[str, Any] = {
                 "current": rscpFindTagIndex(info, RscpTag.BAT_DCB_CURRENT),
                 "currentAvg30s": rscpFindTagIndex(
                     info, RscpTag.BAT_DCB_CURRENT_AVG_30S
@@ -1655,7 +1653,7 @@ class E3DC:
         return outObj
 
     def get_batteries_data(
-        self, batteries: List[Dict[str, Any]] | None = None, keepAlive: bool = False
+        self, batteries: list[dict[str, Any]] | None = None, keepAlive: bool = False
     ):
         """Polls the batteries data via rscp protocol.
 
@@ -1669,7 +1667,7 @@ class E3DC:
         if batteries is None:
             batteries = self.batteries
 
-        outObj: List[Dict[str, Any]] = []
+        outObj: list[dict[str, Any]] = []
 
         for battery in batteries:
             if "dcbs" in battery:
@@ -1703,7 +1701,7 @@ class E3DC:
                 ]
         """
         maxPvis = 8
-        outObj: List[Dict[str, Any]] = []
+        outObj: list[dict[str, Any]] = []
         for pviIndex in range(maxPvis):
             req = self.sendRequest(
                 (
@@ -1743,8 +1741,8 @@ class E3DC:
     def get_pvi_data(
         self,
         pviIndex: int | None = None,
-        strings: List[int] | None = None,
-        phases: List[int] | None = None,
+        strings: list[int] | None = None,
+        phases: list[int] | None = None,
         keepAlive: bool = False,
     ):
         """Polls the inverter data via rscp protocol.
@@ -1861,7 +1859,7 @@ class E3DC:
         frequency = rscpFindTag(req, RscpTag.PVI_FREQUENCY_UNDER_OVER)
         deviceState = rscpFindTag(req, RscpTag.PVI_DEVICE_STATE)
 
-        outObj: Dict[str, Any] = {
+        outObj: dict[str, Any] = {
             "acMaxApparentPower": rscpFindTagIndex(
                 rscpFindTag(req, RscpTag.PVI_AC_MAX_APPARENTPOWER), RscpTag.PVI_VALUE
             ),
@@ -2040,7 +2038,7 @@ class E3DC:
         return outObj
 
     def get_pvis_data(
-        self, pvis: List[Dict[str, Any]] | None = None, keepAlive: bool = False
+        self, pvis: list[dict[str, Any]] | None = None, keepAlive: bool = False
     ):
         """Polls the inverters data via rscp protocol.
 
@@ -2054,7 +2052,7 @@ class E3DC:
         if pvis is None:
             pvis = self.pvis
 
-        outObj: List[Dict[str, Any]] = []
+        outObj: list[dict[str, Any]] = []
 
         for pvi in pvis:
             if "strings" in pvi:
@@ -2095,7 +2093,7 @@ class E3DC:
                 ]
         """
         maxPowermeters = 8
-        outObj: List[Dict[str, Any]] = []
+        outObj: list[dict[str, Any]] = []
         for pmIndex in range(
             maxPowermeters
         ):  # max 8 powermeters according to E3DC spec
@@ -2212,7 +2210,7 @@ class E3DC:
         return outObj
 
     def get_powermeters_data(
-        self, powermeters: List[Dict[str, Any]] | None = None, keepAlive: bool = False
+        self, powermeters: list[dict[str, Any]] | None = None, keepAlive: bool = False
     ):
         """Polls the powermeters data via rscp protocol.
 
@@ -2226,7 +2224,7 @@ class E3DC:
         if powermeters is None:
             powermeters = self.powermeters
 
-        outObj: List[Dict[str, Any]] = []
+        outObj: list[dict[str, Any]] = []
 
         for powermeter in powermeters:
             outObj.append(
