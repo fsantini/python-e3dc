@@ -24,5 +24,7 @@ jobs:
         run: isort ./ --check
       - name: Run black
         run: black ./ --check
+      - name: Run pyright
+        run: pyright
       - name: Run test install
         run: pip install .
