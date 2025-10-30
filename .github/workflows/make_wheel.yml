@@ -1,5 +1,8 @@
 name: Build Wheel
 
+permissions:
+  id-token: write
+
 # run on new version tag
 on:
     push:
