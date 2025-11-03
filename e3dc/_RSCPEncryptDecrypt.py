@@ -1,5 +1,3 @@
-from __future__ import annotations  # required for python < 3.9
-
 import math
 
 from py3rijndael import RijndaelCbc, ZeroPadding  # type: ignore
