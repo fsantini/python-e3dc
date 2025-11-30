@@ -3812,7 +3812,9 @@ def getStrPowermeterType(powermetertype: int | str | PowermeterType) -> str:
 
         return powermetertype.name
     except (ValueError, KeyError) as e:
-        print(f"Warning: Unknown PowermeterType '{powermetertype}' encountered. Returning PM_TYPE_UNDEFINED. Error: {e}")
+        print(
+            f"Warning: Unknown PowermeterType '{powermetertype}' encountered. Returning PM_TYPE_UNDEFINED. Error: {e}"
+        )
         return PowermeterType.PM_TYPE_UNDEFINED.name
 
 
@@ -3837,5 +3839,7 @@ def getStrPviType(pvitype: int | str | PviType) -> str:
 
         return pvitype.name
     except (ValueError, KeyError) as e:
-        print(f"Warning: Unknown PviType '{pvitype}' encountered. Returning PVI_TYPE_UNDEFINED. Error: {e}")
+        print(
+            f"Warning: Unknown PviType '{pvitype}' encountered. Returning PVI_TYPE_UNDEFINED. Error: {e}"
+        )
         return PviType.PVI_TYPE_UNDEFINED.name
