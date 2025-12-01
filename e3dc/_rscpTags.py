@@ -3620,6 +3620,9 @@ class PowermeterType(Enum):
     PM_TYPE_UNUSED = 0x06
     PM_TYPE_WALLBOX = 0x07
     PM_TYPE_FARM_ADDITIONAL = 0x08
+    PM_TYPE_DATA_DISPLAY = 0x09
+    PM_TYPE_REGULATION_BYPASS = 0x0A
+    PM_TYPE_ADDITIONAL_PRODUCTION_NO_STORAGE = 0x0B
 
 
 class PviType(Enum):
@@ -3797,13 +3800,20 @@ def getStrPowermeterType(powermetertype: int | str | PowermeterType) -> str:
 
     Returns:
         str: The name of the power meter type as a string.
+              Returns "PM_TYPE_UNDEFINED" for unknown types.
     """
-    if isinstance(powermetertype, int):
-        powermetertype = PowermeterType(powermetertype)
-    elif isinstance(powermetertype, str):
-        powermetertype = PowermeterType[powermetertype]
+    try:
+        if isinstance(powermetertype, int):
+            powermetertype = PowermeterType(powermetertype)
+        elif isinstance(powermetertype, str):
+            powermetertype = PowermeterType[powermetertype]
 
-    return powermetertype.name
+        return powermetertype.name
+    except (ValueError, KeyError) as e:
+        print(
+            f"Warning: Unknown PowermeterType '{powermetertype}' encountered. Returning PM_TYPE_UNDEFINED. Error: {e}"
+        )
+        return PowermeterType.PM_TYPE_UNDEFINED.name
 
 
 def getStrPviType(pvitype: int | str | PviType) -> str:
@@ -3817,10 +3827,17 @@ def getStrPviType(pvitype: int | str | PviType) -> str:
 
     Returns:
         str: The name of the pvi type as a string.
+              Returns "PVI_TYPE_UNDEFINED" for unknown types.
     """
-    if isinstance(pvitype, int):
-        pvitype = PviType(pvitype)
-    elif isinstance(pvitype, str):
-        pvitype = PviType[pvitype]
+    try:
+        if isinstance(pvitype, int):
+            pvitype = PviType(pvitype)
+        elif isinstance(pvitype, str):
+            pvitype = PviType[pvitype]
 
-    return pvitype.name
+        return pvitype.name
+    except (ValueError, KeyError) as e:
+        print(
+            f"Warning: Unknown PviType '{pvitype}' encountered. Returning PVI_TYPE_UNDEFINED. Error: {e}"
+        )
+        return PviType.PVI_TYPE_UNDEFINED.name
