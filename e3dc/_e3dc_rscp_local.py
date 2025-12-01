@@ -4,16 +4,13 @@
 # Copyright 2017 Francesco Santini <francesco.santini@gmail.com>
 # Licensed under a MIT license. See LICENSE for details
 
-from __future__ import annotations  # required for python < 3.9
-
 import socket
-from typing import Any, Tuple
 
 from ._RSCPEncryptDecrypt import RSCPEncryptDecrypt
-from ._rscpLib import rscpDecode, rscpEncode, rscpFrame
+from ._rscpLib import RscpMessage, rscpDecode, rscpEncode, rscpFrame
 from ._rscpTags import RscpError, RscpTag, RscpType
 
-PORT = 5033
+DEFAULT_PORT = 5033
 BUFFER_SIZE = 1024 * 32
 
 
@@ -45,7 +42,7 @@ class E3DC_RSCP_local:
     """A class describing an E3DC system connection using RSCP protocol locally."""
 
     def __init__(
-        self, username: str, password: str, ip: str, key: str, port: int | None = PORT
+        self, username: str, password: str, ip: str, key: str, port: int | None = None
     ):
         """Constructor of an E3DC RSCP local object.
 
@@ -59,16 +56,14 @@ class E3DC_RSCP_local:
         self.username = username.encode("utf-8")
         self.password = password.encode("utf-8")
         self.ip = ip
-        self.port = port if port else PORT
+        self.port = port or DEFAULT_PORT
         self.key = key.encode("utf-8")
         self.socket: socket.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.connected: bool = False
         self.encdec: RSCPEncryptDecrypt
         self.processedData = None
 
-    def _send(
-        self, plainMsg: Tuple[str | int | RscpTag, str | int | RscpType, Any]
-    ) -> None:
+    def _send(self, plainMsg: RscpMessage) -> None:
         sendData = rscpFrame(rscpEncode(plainMsg))
         encData = self.encdec.encrypt(sendData)
         self.socket.send(encData)
@@ -80,9 +75,7 @@ class E3DC_RSCP_local:
         decData = rscpDecode(self.encdec.decrypt(data))[0]
         return decData
 
-    def sendCommand(
-        self, plainMsg: Tuple[str | int | RscpTag, str | int | RscpType, Any]
-    ) -> None:
+    def sendCommand(self, plainMsg: RscpMessage) -> None:
         """Sending RSCP command.
 
         Args:
@@ -90,9 +83,7 @@ class E3DC_RSCP_local:
         """
         self.sendRequest(plainMsg)  # same as sendRequest but doesn't return a value
 
-    def sendRequest(
-        self, plainMsg: Tuple[str | int | RscpTag, str | int | RscpType, Any]
-    ) -> Tuple[str | int | RscpTag, str | int | RscpType, Any]:
+    def sendRequest(self, plainMsg: RscpMessage) -> RscpMessage:
         """Sending RSCP request.
 
         Args:
