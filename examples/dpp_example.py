@@ -11,7 +11,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 from e3dc import E3DC  # noqa: E402
 
 # Connection parameters
-TCP_IP = "192.168.1.57"
+TCP_IP = "192.168.1.56"
 USERNAME = "user@example.com"
 PASS = "your_password"
 KEY = "your_rscp_key"
