@@ -8,7 +8,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
-from e3dc import E3DC
+from e3dc import E3DC  # noqa: E402
 
 # Connection parameters
 TCP_IP = "192.168.1.57"
