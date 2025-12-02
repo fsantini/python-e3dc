@@ -2439,3 +2439,225 @@ class E3DC:
             return 0
         else:
             return -1
+
+    def get_dpp_data(self, keepAlive: bool = False):
+        """Get dynamic power pricing (DPP) data via rscp protocol.
+
+        Args:
+            keepAlive (bool): True to keep connection alive. Defaults to False.
+
+        Returns:
+            dict: Dictionary with DPP status information including:
+                - price_based_battery_charge_active: Whether DPP battery charging is currently active
+                - price_based_battery_charge_enabled: Whether DPP battery charging is enabled
+                - price_limit_battery: Price limit for battery charging (€/kWh)
+                - soc_battery: Target state of charge for battery (%)
+                - months_active: Bitmask or string of active months
+        """
+        # Request all DPP data
+        request = (
+            RscpTag.EMS_REQ_DPP_PRICE_BASED_BATTERY_CHARGE_ACTIVE,
+            RscpType.NoneType,
+            None,
+        )
+        res_bat_active = self.sendRequest(request, keepAlive=True)
+
+        request = (
+            RscpTag.EMS_REQ_DPP_PRICE_BASED_BATTERY_CHARGE_ENABLED,
+            RscpType.NoneType,
+            None,
+        )
+        res_bat_enabled = self.sendRequest(request, keepAlive=True)
+
+        request = (RscpTag.EMS_REQ_DPP_PRICE_LIMIT_BATTERY, RscpType.NoneType, None)
+        res_price = self.sendRequest(request, keepAlive=True)
+
+        request = (RscpTag.EMS_REQ_DPP_SOC_BATTERY, RscpType.NoneType, None)
+        res_soc = self.sendRequest(request, keepAlive=True)
+
+        request = (RscpTag.EMS_REQ_DPP_MONTHS_ACTIVE, RscpType.NoneType, None)
+        res_months = self.sendRequest(request, keepAlive=keepAlive)
+
+        # Extract values from responses
+        price_raw = rscpFindTagIndex(res_price, RscpTag.EMS_DPP_PRICE_LIMIT_BATTERY)
+
+        dpp_data = {
+            "price_based_battery_charge_active": bool(
+                rscpFindTagIndex(
+                    res_bat_active, RscpTag.EMS_DPP_PRICE_BASED_BATTERY_CHARGE_ACTIVE
+                )
+            ),
+            "price_based_battery_charge_enabled": bool(
+                rscpFindTagIndex(
+                    res_bat_enabled, RscpTag.EMS_DPP_PRICE_BASED_BATTERY_CHARGE_ENABLED
+                )
+            ),
+            "price_limit_battery": (
+                price_raw / 100.0 if price_raw is not None else None
+            ),
+            "soc_battery": rscpFindTagIndex(res_soc, RscpTag.EMS_DPP_SOC_BATTERY),
+            "months_active": rscpFindTagIndex(
+                res_months, RscpTag.EMS_DPP_MONTHS_ACTIVE
+            ),
+        }
+
+        # Convert months bitmask to human-readable string (e.g., "jfmaMJJAsond")
+        if dpp_data["months_active"] is not None:
+            dpp_data["months_active_string"] = self._bitmask_to_month_string(
+                dpp_data["months_active"]
+            )
+
+        return dpp_data
+
+    def set_dpp_battery_charging(
+        self,
+        enabled: bool | None = None,
+        price_limit: float | None = None,
+        soc_target: int | None = None,
+        months_active: int | str | None = None,
+        keepAlive: bool = False,
+    ) -> dict[str, int]:
+        """Configure dynamic power pricing (DPP) settings for battery charging.
+
+        Args:
+            enabled (bool | None): Enable or disable DPP battery charging. Defaults to None (no change).
+            price_limit (float | None): Price limit for battery charging in €/kWh. Defaults to None (no change).
+            soc_target (int | None): Target state of charge (0-100%). Defaults to None (no change).
+            months_active (int | str | None): Active months as bitmask (int) or string like "jfmaMJJAsond".
+                                               Uppercase letters indicate active months. Defaults to None (no change).
+            keepAlive (bool): True to keep connection alive. Defaults to False.
+
+        Returns:
+            dict[str, int]: Dictionary with return codes for each setting changed:
+                - enabled: 0 if success, -1 if error
+                - price_limit: 0 if success, -1 if error
+                - soc_target: 0 if success, -1 if error
+                - months_active: 0 if success, -1 if error
+        """
+        results: dict[str, int] = {}
+
+        # Enable/disable DPP battery charging
+        if enabled is not None:
+            res = self.sendRequest(
+                (
+                    RscpTag.EMS_REQ_DPP_SET_BATTERY_CHARGE_ENABLED,
+                    RscpType.Bool,
+                    enabled,
+                ),
+                keepAlive=True,
+            )
+            results["enabled"] = (
+                0
+                if rscpFindTagIndex(res, RscpTag.EMS_DPP_SET_BATTERY_CHARGE_ENABLED)
+                is not None
+                else -1
+            )
+
+        # Set price limit
+        if price_limit is not None:
+            # E3/DC expects price in cents/kWh, so multiply by 100
+            res = self.sendRequest(
+                (
+                    RscpTag.EMS_REQ_DPP_SET_PRICE_LIMIT_BATTERY,
+                    RscpType.Float32,
+                    float(price_limit * 100),
+                ),
+                keepAlive=True,
+            )
+            results["price_limit"] = (
+                0
+                if rscpFindTagIndex(res, RscpTag.EMS_DPP_SET_PRICE_LIMIT_BATTERY)
+                is not None
+                else -1
+            )
+
+        # Set SOC target
+        if soc_target is not None:
+            if not 0 <= soc_target <= 100:
+                raise ValueError("soc_target must be between 0 and 100")
+            res = self.sendRequest(
+                (RscpTag.EMS_REQ_DPP_SET_SOC_BATTERY, RscpType.UChar8, soc_target),
+                keepAlive=True,
+            )
+            results["soc_target"] = (
+                0
+                if rscpFindTagIndex(res, RscpTag.EMS_DPP_SET_SOC_BATTERY) is not None
+                else -1
+            )
+
+        # Set active months
+        if months_active is not None:
+            # Convert string to bitmask if needed
+            if isinstance(months_active, str):
+                months_bitmask = self._month_string_to_bitmask(months_active)
+            else:
+                months_bitmask = months_active
+
+            res = self.sendRequest(
+                (
+                    RscpTag.EMS_REQ_DPP_SET_MONTHS_ACTIVE,
+                    RscpType.Uint16,
+                    months_bitmask,
+                ),
+                keepAlive=keepAlive,
+            )
+            results["months_active"] = (
+                0
+                if rscpFindTagIndex(res, RscpTag.EMS_DPP_SET_MONTHS_ACTIVE) is not None
+                else -1
+            )
+        elif keepAlive is False and len(results) > 0:
+            # Disconnect if this was the last request and keepAlive is False
+            self.disconnect()
+
+        return results
+
+    @staticmethod
+    def _bitmask_to_month_string(bitmask: int) -> str:
+        """Convert month bitmask to human-readable string.
+
+        Args:
+            bitmask (int): 12-bit bitmask representing months (bit 0 = January, bit 11 = December)
+
+        Returns:
+            str: String like "jfmaMJJAsond" where uppercase = active, lowercase = inactive
+        """
+        if bitmask >= 4096:  # 2^12
+            return ""
+
+        months = ["j", "f", "m", "a", "m", "j", "j", "a", "s", "o", "n", "d"]
+        result: list[str] = []
+
+        for i in range(12):
+            if bitmask & (1 << i):
+                result.append(months[i].upper())
+            else:
+                result.append(months[i])
+
+        return "".join(result)
+
+    @staticmethod
+    def _month_string_to_bitmask(months: str) -> int:
+        """Convert month string to bitmask.
+
+        Args:
+            months (str): String like "jfmaMJJAsond" where uppercase = active
+
+        Returns:
+            int: 12-bit bitmask representing months
+        """
+        if len(months) != 12:
+            raise ValueError("months string must be exactly 12 characters")
+
+        months_lower = months.lower()
+        if months_lower != "jfmamjjasond":
+            raise ValueError(
+                "months string must be 'jfmamjjasond' with uppercase for active months"
+            )
+
+        bitmask = 0
+        for i in range(12):
+            if months[i].isupper():
+                bitmask |= 1 << i
+
+        return bitmask
