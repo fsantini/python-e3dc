@@ -158,6 +158,8 @@ Poll returns a dictionary like the following:
 - `set_weather_regulated_charge()`
 - `toggle_wallbox_charging()`
 - `toggle_wallbox_phases()`
+- `get_dpp_data()`
+- `set_dpp_battery_charging()`
 
 - `sendWallboxRequest()`
 - `sendWallboxSetRequest()`
