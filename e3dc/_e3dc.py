@@ -461,7 +461,20 @@ class E3DC:
             (RscpTag.EMS_REQ_GET_IDLE_PERIODS, RscpType.NoneType, None),
             keepAlive=keepAlive,
         )
-        if idlePeriodsRaw[0] != RscpTag.EMS_GET_IDLE_PERIODS:
+
+        raw = idlePeriodsRaw[0]
+
+        if isinstance(raw, RscpTag):
+            tag = raw
+        elif isinstance(raw, str):
+            try:
+                tag = RscpTag[raw]
+            except KeyError:
+                return None
+        else:
+            return None
+
+        if tag != RscpTag.EMS_GET_IDLE_PERIODS:
             return None
 
         idlePeriods: dict[str, list[dict[str, Any]]] = {
