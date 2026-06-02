@@ -62,9 +62,9 @@ For any other configurations, there is an optional `configuration` object that c
 
 > Note: Not all options need to be configured.
 
-## Usage
+## Usage 
 
-### Local Connection
+### Local Connection for E3DC
 
 An example script using the library is the following:
 
