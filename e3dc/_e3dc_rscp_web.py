@@ -5,6 +5,7 @@
 # Licensed under a MIT license. See LICENSE for details
 import datetime
 import hashlib
+import logging
 import struct
 import threading
 import time
@@ -23,6 +24,8 @@ from ._rscpLib import (
     rscpFrameDecode,
 )
 from ._rscpTags import RscpTag, RscpType, getRscpTag
+
+logger = logging.getLogger(__name__)
 
 """
  The connection works the following way: (> outgoing, < incoming)
@@ -121,7 +124,7 @@ class E3DC_RSCP_web:
             REMOTE_ADDRESS,
             on_message=lambda _, msg: self.on_message(msg),
             on_close=lambda _ws, _, __: self.reset(),
-            on_error=lambda _ws, _: self.reset(),
+            on_error=lambda _ws, err: (logger.warning("WebSocket error: %s", err) or self.reset())
         )
         self.reset()
 
@@ -139,6 +142,7 @@ class E3DC_RSCP_web:
 
     def buildVirtualConn(self):
         """Method to create Virtual Connection."""
+        logger.debug("Requesting virtual connection for %s", self.serialNumberWithPrefix)
         virtualConn = rscpFrame(
             rscpEncode(
                 RscpTag.SERVER_REQ_NEW_VIRTUAL_CONNECTION,
@@ -230,9 +234,15 @@ class E3DC_RSCP_web:
         if self.conId == 0:
             self.conId = rscpFindTagIndex(decodedMsg, RscpTag.SERVER_CONNECTION_ID)
             self.authLevel = rscpFindTagIndex(decodedMsg, RscpTag.SERVER_AUTH_LEVEL)
+            logger.debug("Initial connection registered: conId=%s authLevel=%s", self.conId, self.authLevel)
         else:
             self.virtConId = rscpFindTagIndex(decodedMsg, RscpTag.SERVER_CONNECTION_ID)
             self.virtAuthLevel = rscpFindTagIndex(decodedMsg, RscpTag.SERVER_AUTH_LEVEL)
+            if self.virtConId == -1:
+                logger.error("Authentication failed: server rejected credentials")
+                self.virtConId = None
+            else:
+                logger.debug("Virtual connection registered: virtConId=%s virtAuthLevel=%s", self.virtConId, self.virtAuthLevel)
         # reply = rscpFrame(rscpEncode(RscpTag.SERVER_CONNECTION_REGISTERED, RscpType.Container, [decodedMsg[2][0], decodedMsg[2][1]]));
         reply = rscpFrame(
             rscpEncode(
@@ -260,7 +270,12 @@ class E3DC_RSCP_web:
             raise
 
         # print "Decoded received message", decodedMsg
-        if tag == RscpTag.SERVER_REQ_PING:
+        if tag == RscpTag.RSCP_REQ_SET_PROTOCOL_VERSION:
+            logger.debug("Protocol version request: v%s, acknowledging", decodedMsg[2])
+            reply = rscpFrame(rscpEncode(RscpTag.RSCP_SET_PROTOCOL_VERSION, decodedMsg[1], decodedMsg[2]))
+            self.ws.send(reply, ABNF.OPCODE_BINARY)
+            return
+        elif tag == RscpTag.SERVER_REQ_PING:
             pingFrame = rscpFrame(
                 rscpEncode(RscpTag.SERVER_PING, RscpType.NoneType, None)
             )
@@ -272,8 +287,7 @@ class E3DC_RSCP_web:
         elif tag == RscpTag.SERVER_REGISTER_CONNECTION:
             self.registerConnectionHandler(decodedMsg)
         elif tag == RscpTag.SERVER_UNREGISTER_CONNECTION:
-            # this signifies some error
-            self.disconnect()
+            logger.warning("Server unregistered connection")
         elif tag == RscpTag.SERVER_REQ_RSCP_CMD:
             data = rscpFrameDecode(
                 rscpFindTagIndex(decodedMsg, RscpTag.SERVER_RSCP_DATA)
@@ -330,6 +344,7 @@ class E3DC_RSCP_web:
                 break
             time.sleep(0.1)
         if not self.responseCallbackCalled:
+            logger.warning("Request timed out after %s seconds", self.TIMEOUT)
             raise RequestTimeoutError
 
         return self.requestResult
@@ -398,6 +413,7 @@ class E3DC_RSCP_web:
                 break
             time.sleep(0.1)
         if not self.isConnected():
+            logger.warning("Connection timed out after %s seconds", self.TIMEOUT)
             raise RequestTimeoutError
 
     def disconnect(self):

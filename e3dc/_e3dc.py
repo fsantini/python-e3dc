@@ -5,6 +5,7 @@
 # Licensed under a MIT license. See LICENSE for details
 import datetime
 import hashlib
+import logging
 import struct
 import time
 import uuid
@@ -20,6 +21,8 @@ from ._e3dc_rscp_local import (
 from ._e3dc_rscp_web import E3DC_RSCP_web
 from ._rscpLib import rscpFindTag, rscpFindTagIndex
 from ._rscpTags import RscpTag, RscpType, getStrPowermeterType, getStrPviType
+
+logger = logging.getLogger(__name__)
 
 REMOTE_ADDRESS = "https://s10.e3dc.com/s10/phpcmd/cmd.php"
 REQUEST_INTERVAL_SEC = 10  # minimum interval between requests
@@ -238,6 +241,7 @@ class E3DC:
                 retry += 1
                 if retry > retries:
                     raise SendError("Max retries reached")
+                logger.warning("Request failed, retrying (%d/%d)", retry, retries, exc_info=True)
 
         if not keepAlive:
             self.rscp.disconnect()
