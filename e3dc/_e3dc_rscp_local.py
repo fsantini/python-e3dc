@@ -5,9 +5,10 @@
 # Licensed under a MIT license. See LICENSE for details
 
 import socket
+import struct
 
 from ._RSCPEncryptDecrypt import RSCPEncryptDecrypt
-from ._rscpLib import RscpMessage, rscpDecode, rscpEncode, rscpFrame
+from ._rscpLib import RscpMessage, rscpDecode, rscpEncode, rscpFrame, rscpFrameDecode
 from ._rscpTags import RscpError, RscpTag, RscpType
 
 DEFAULT_PORT = 5033
@@ -69,11 +70,22 @@ class E3DC_RSCP_local:
         self.socket.send(encData)
 
     def _receive(self):
-        data = self.socket.recv(BUFFER_SIZE)
-        if len(data) == 0:
-            raise RSCPKeyError
-        decData = rscpDecode(self.encdec.decrypt(data))[0]
-        return decData
+        # A single socket.recv() call is not guaranteed to return a complete
+        # RSCP frame (large responses can be split across multiple TCP reads),
+        # so keep receiving and decrypting until a full frame is available.
+        decData = b""
+        while True:
+            data = self.socket.recv(BUFFER_SIZE)
+            if len(data) == 0:
+                raise RSCPKeyError
+            decData += self.encdec.decrypt(data)
+            try:
+                rscpFrameDecode(decData)
+            except struct.error:
+                # not enough data yet for a full frame: keep receiving
+                continue
+            break
+        return rscpDecode(decData)[0]
 
     def sendCommand(self, plainMsg: RscpMessage) -> None:
         """Sending RSCP command.
