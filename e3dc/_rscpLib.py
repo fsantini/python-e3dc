@@ -148,7 +148,7 @@ def rscpEncode(
     rscptypeHex = getHexRscpType(rscptype)
     rscptype = getRscpType(rscptype)
 
-    loggable_data = '<redacted>' if tag in (RscpTag.SERVER_PASSWD, RscpTag.SERVER_USER ) else data
+    loggable_data = '<redacted>' if tag in (RscpTag.SERVER_PASSWD, RscpTag.SERVER_USER) else data
     logger.debug("> %s %s %s", tag, rscptype, loggable_data)
 
     if isinstance(data, str):
