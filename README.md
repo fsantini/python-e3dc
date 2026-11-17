@@ -153,6 +153,7 @@ Poll returns a dictionary like the following:
 - `set_power_limits()`
 - `set_powersave()`
 - `set_wallbox_max_charge_current()`
+- `set_wallbox_min_charge_current()`
 - `set_wallbox_schuko()`
 - `set_wallbox_sunmode()`
 - `set_weather_regulated_charge()`

@@ -1160,7 +1160,29 @@ class E3DC:
             wbIndex=wbIndex,
             keepAlive=keepAlive,
         )
+    
+    def set_wallbox_min_charge_current(
+        self, min_charge_current: int, wbIndex: int = 0, keepAlive: bool = False
+    ) -> bool:
+        """Sets the minimum charge current of the wallbox via rscp protocol locally.
 
+        Args:
+            min_charge_current (int): maximum allowed charge current in A
+            wbIndex (int | None): index of the requested wallbox,
+            keepAlive (bool | None): True to keep connection alive
+
+        Returns:
+            True if success (wallbox has understood the request, but might have clipped the value)
+            False if error
+        """
+        return self.sendWallboxSetRequest(
+            dataIndex=2,
+            value=min_charge_current,
+            request=RscpTag.WB_REQ_SET_PARAM_1,
+            wbIndex=wbIndex,
+            keepAlive=keepAlive,
+        )
+    
     def toggle_wallbox_charging(
         self, wbIndex: int = 0, keepAlive: bool = False
     ) -> bool:
