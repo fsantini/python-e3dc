@@ -1183,7 +1183,7 @@ class E3DC:
                     (RscpTag.WB_INDEX, RscpType.UChar8, wbIndex),
                     (
                         RscpTag.WB_REQ_SET_MIN_CHARGE_CURRENT,
-                        RscpType.UChar8,
+                        RscpType.Int32,
                         min_charge_current,
                     ),
                 ],
