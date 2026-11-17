@@ -1167,21 +1167,34 @@ class E3DC:
         """Sets the minimum charge current of the wallbox via rscp protocol locally.
 
         Args:
-            min_charge_current (int): maximum allowed charge current in A
+            min_charge_current (int): minimum allowed charge current in A
             wbIndex (int | None): index of the requested wallbox,
             keepAlive (bool | None): True to keep connection alive
 
         Returns:
-            True if success (wallbox has understood the request, but might have clipped the value)
+            True if success
             False if error
         """
-        return self.sendWallboxSetRequest(
-            dataIndex=2,
-            value=min_charge_current,
-            request=RscpTag.WB_REQ_SET_PARAM_1,
-            wbIndex=wbIndex,
+        response = self.sendRequest(
+            (
+                RscpTag.WB_REQ_DATA,
+                RscpType.Container,
+                [
+                    (RscpTag.WB_INDEX, RscpType.UChar8, wbIndex),
+                    (
+                        RscpTag.WB_REQ_SET_MIN_CHARGE_CURRENT,
+                        RscpType.UChar8,
+                        min_charge_current,
+                    ),
+                ],
+            ),
             keepAlive=keepAlive,
         )
+
+        if response[0] != RscpTag.WB_DATA.name:
+            return False
+        responseData = response[2][-1]
+        return responseData[1] != RscpType.Error.name
     
     def toggle_wallbox_charging(
         self, wbIndex: int = 0, keepAlive: bool = False
