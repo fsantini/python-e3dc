@@ -26,4 +26,4 @@ __all__ = [
     "RscpMessage",
     "set_rscp_debug",
 ]
-__version__ = "0.10.0"
+__version__ = "0.10.1"
