@@ -1047,6 +1047,7 @@ class E3DC:
                     (RscpTag.WB_REQ_EXTERN_DATA_NET, RscpType.NoneType, None),
                     (RscpTag.WB_REQ_APP_SOFTWARE, RscpType.NoneType, None),
                     (RscpTag.WB_REQ_KEY_STATE, RscpType.NoneType, None),
+                    (RscpTag.WB_REQ_MIN_CHARGE_CURRENT, RscpType.NoneType, None),
                 ],
             ),
             keepAlive=True,
