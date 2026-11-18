@@ -1030,6 +1030,7 @@ class E3DC:
                     "index": <index of the requested wallbox>,
                     "keyState": <state of the key switch at the wallbox>,
                     "maxChargeCurrent": <configured maximum charge current in A>,
+                    "minChargeCurrent": <configured minimum charge current in A>,
                     "phases": <number of phases used for charging>,
                     "schukoOn": <true if the connected schuko of the wallbox is on, otherwise false>,
                     "soc": <state of charge>,
@@ -1047,6 +1048,7 @@ class E3DC:
                     (RscpTag.WB_REQ_EXTERN_DATA_NET, RscpType.NoneType, None),
                     (RscpTag.WB_REQ_APP_SOFTWARE, RscpType.NoneType, None),
                     (RscpTag.WB_REQ_KEY_STATE, RscpType.NoneType, None),
+                    (RscpTag.WB_REQ_MIN_CHARGE_CURRENT, RscpType.NoneType, None),
                 ],
             ),
             keepAlive=True,
@@ -1089,7 +1091,12 @@ class E3DC:
         key_state = rscpFindTag(req, RscpTag.WB_KEY_STATE)
         if key_state is not None:
             outObj["keyState"] = rscpFindTagIndex(key_state, RscpTag.WB_KEY_STATE)
-
+        
+        min_charge_current = rscpFindTag(req, RscpTag.WB_MIN_CHARGE_CURRENT)
+        if min_charge_current is not None and min_charge_current[1] != RscpType.Error.name:
+            outObj["minChargeCurrent"] = rscpFindTagIndex(
+                min_charge_current, RscpTag.WB_MIN_CHARGE_CURRENT
+            )
         req = self.sendRequest(
             (RscpTag.EMS_REQ_BATTERY_TO_CAR_MODE, RscpType.NoneType, None),
             keepAlive=keepAlive,
@@ -1160,7 +1167,42 @@ class E3DC:
             wbIndex=wbIndex,
             keepAlive=keepAlive,
         )
+    
+    def set_wallbox_min_charge_current(
+        self, min_charge_current: int, wbIndex: int = 0, keepAlive: bool = False
+    ) -> bool:
+        """Sets the minimum charge current of the wallbox via rscp protocol locally.
 
+        Args:
+            min_charge_current (int): minimum allowed charge current in A
+            wbIndex (int | None): index of the requested wallbox,
+            keepAlive (bool | None): True to keep connection alive
+
+        Returns:
+            True if success
+            False if error
+        """
+        response = self.sendRequest(
+            (
+                RscpTag.WB_REQ_DATA,
+                RscpType.Container,
+                [
+                    (RscpTag.WB_INDEX, RscpType.UChar8, wbIndex),
+                    (
+                        RscpTag.WB_REQ_SET_MIN_CHARGE_CURRENT,
+                        RscpType.Int32,
+                        min_charge_current,
+                    ),
+                ],
+            ),
+            keepAlive=keepAlive,
+        )
+
+        if response[0] != RscpTag.WB_DATA.name:
+            return False
+        responseData = response[2][-1]
+        return responseData[1] != RscpType.Error.name
+    
     def toggle_wallbox_charging(
         self, wbIndex: int = 0, keepAlive: bool = False
     ) -> bool:
