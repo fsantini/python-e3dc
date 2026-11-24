@@ -2257,6 +2257,35 @@ class E3DC:
 
         return outObj
 
+    def get_dpp_target_soc(self, keepAlive: bool = False) -> int:
+        """Read the Dynamic Power Pricing battery target state of charge (%)."""
+        return self.sendRequestTag(
+            RscpTag.EMS_REQ_DPP_SOC_BATTERY, keepAlive=keepAlive
+        )
+
+    def get_dpp_price_based_charging_enabled(self, keepAlive: bool = False) -> bool:
+        """Return whether DPP price-based battery charging is enabled."""
+        return self.sendRequestTag(
+            RscpTag.EMS_REQ_DPP_PRICE_BASED_BATTERY_CHARGE_ENABLED,
+            keepAlive=keepAlive,
+        )
+
+    def set_dpp_target_soc(self, target_soc: int, keepAlive: bool = False) -> int:
+        """Set the DPP battery target SoC (0–100%).
+
+        This does not enable DPP or override the device's price logic.
+        Returns the value acknowledged by the device.
+        """
+        if type(target_soc) is not int or not 0 <= target_soc <= 100:
+            raise ValueError("target_soc must be an integer between 0 and 100")
+        response = self.sendRequest(
+            (RscpTag.EMS_REQ_DPP_SET_SOC_BATTERY, RscpType.UChar8, target_soc),
+            keepAlive=keepAlive,
+        )
+        if response[0] != RscpTag.EMS_DPP_SET_SOC_BATTERY:
+            raise ValueError("Unexpected DPP target SoC response tag")
+        return response[2]
+
     def get_power_settings(self, keepAlive: bool = False):
         """Polls the power settings via rscp protocol.
 
